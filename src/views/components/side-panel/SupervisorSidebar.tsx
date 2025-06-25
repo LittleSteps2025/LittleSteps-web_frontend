@@ -49,7 +49,7 @@ const SupervisorSidebar = () => {
         ))}
       </nav>
       <div className="p-4 border-t border-[#7c73e6]">
-        <div className="text-xs text-white/70">Supervisor Portal v2.1.0</div>
+       
       </div>
     </div>
   );
