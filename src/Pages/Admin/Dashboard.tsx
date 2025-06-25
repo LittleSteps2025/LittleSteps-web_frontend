@@ -1,0 +1,89 @@
+import { BarChart, PieChart, Plus, RefreshCw, Download } from 'lucide-react';
+import StatsCards from '../../Components/Admin/StatsCards';
+import RecentActivity from '../../Components/Admin/RecentActivity';
+import QuickActions from '../../Components/Admin/QuickActions.tsx';
+
+const Dashboard = () => {
+  // Sample data - replace with real data from your API
+  const stats = {
+    totalChildren: 245,
+    activeParents: 180,
+    activeTeachers: 25,
+    activeSupervisors: 8,
+    todayCheckIns: 120,
+    pendingComplaints: 5,
+    monthlyRevenue: 12500,
+    attendanceRate: '92%'
+  };
+
+  const recentActivities = [
+    { id: 1, user: 'Sarah Johnson', action: 'checked in', time: '10 min ago' },
+    { id: 2, user: 'Michael Chen', action: 'made payment', time: '25 min ago' },
+    { id: 3, user: 'Emily Rodriguez', action: 'submitted complaint', time: '1 hour ago' },
+    { id: 4, user: 'David Wilson', action: 'registered child', time: '2 hours ago' }
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold text-gray-800">Dashboard Overview</h1>
+        <div className="flex space-x-3">
+          <button className="btn-secondary">
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Refresh
+          </button>
+          <button className="btn-primary">
+            <Plus className="w-4 h-4 mr-2" />
+            New Entry
+          </button>
+        </div>
+      </div>
+      
+      <StatsCards stats={stats} />
+      
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 col-span-2">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-semibold text-gray-800">Monthly Check-ins</h2>
+            <div className="flex space-x-2">
+              <select className="select-small">
+                <option>This Month</option>
+                <option>Last Month</option>
+                <option>This Year</option>
+              </select>
+              <button className="btn-icon-small">
+                <Download className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+          <div className="h-80 bg-gradient-to-br from-[#f9f6ff] to-[#f0e9ff] rounded-xl flex items-center justify-center">
+            {/* Replace with actual chart component */}
+            <div className="text-center">
+              <BarChart className="w-12 h-12 mx-auto text-[#6339C0]" />
+              <p className="mt-2 text-gray-500">Attendance analytics chart</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="space-y-6">
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-semibold text-gray-800">Quick Actions</h2>
+            </div>
+            <QuickActions />
+          </div>
+          
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-semibold text-gray-800">Recent Activity</h2>
+              <button className="text-sm text-[#6339C0] hover:underline">View All</button>
+            </div>
+            <RecentActivity activities={recentActivities} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Dashboard;
