@@ -1,6 +1,17 @@
-import { Users, Baby, Clock, AlertCircle, DollarSign, TrendingUp, CheckCircle } from 'lucide-react';
+import { Users, Baby, AlertCircle, DollarSign, TrendingUp, CheckCircle } from 'lucide-react';
 
-const StatsCards = ({ stats }: { stats: any }) => {
+interface Stats {
+  totalChildren: number;
+  activeParents: number;
+  activeTeachers: number;
+  activeSupervisors: number;
+  todayCheckIns: number;
+  attendanceRate: string | number;
+  pendingComplaints: number;
+  monthlyRevenue: number;
+}
+
+const StatsCards = ({ stats }: { stats: Stats }) => {
   const cards = [
     { 
       icon: Baby, 
@@ -22,6 +33,20 @@ const StatsCards = ({ stats }: { stats: any }) => {
       value: stats.activeTeachers, 
       trend: '0%',
       color: 'bg-amber-100 text-amber-800'
+    },
+    { 
+      icon: Users, 
+      title: 'Supervisors', 
+      value: stats.activeSupervisors, 
+      trend: '+2%',
+      color: 'bg-pink-100 text-pink-800'
+    },
+    { 
+      icon: CheckCircle, 
+      title: "Today's Check-ins", 
+      value: stats.todayCheckIns, 
+      trend: '+8%',
+      color: 'bg-cyan-100 text-cyan-800'
     },
     { 
       icon: CheckCircle, 

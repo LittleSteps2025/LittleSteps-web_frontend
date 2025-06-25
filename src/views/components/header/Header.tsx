@@ -2,7 +2,6 @@ import { Link } from 'react-router-dom';
 
 const Header = () => (
   <header className="bg-white shadow-sm fixed w-full z-50">
-   
     <nav className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
       <div className="flex items-center gap-3">
         <img

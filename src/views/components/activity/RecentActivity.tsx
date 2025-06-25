@@ -1,6 +1,13 @@
 import { Clock } from 'lucide-react';
 
-const RecentActivity = ({ activities }: { activities: any[] }) => {
+interface Activity {
+  id: number;
+  user: string;
+  action: string;
+  time: string;
+}
+
+const RecentActivity = ({ activities }: { activities: Activity[] }) => {
   return (
     <div className="space-y-4">
       {activities.map((activity) => (

@@ -1,10 +1,9 @@
-import { BarChart, PieChart, Plus, RefreshCw, Download } from 'lucide-react';
-import StatsCards from '../../Components/Admin/StatsCards';
-import RecentActivity from '../../Components/Admin/RecentActivity';
-import QuickActions from '../../Components/Admin/QuickActions.tsx';
+import { BarChart, Download } from 'lucide-react';
+import StatsCards from '../components/stats/StatsCards';
+import RecentActivity from '../components/activity/RecentActivity';
+import QuickActions from '../components/actions/QuickActions';
 
 const Dashboard = () => {
-  // Sample data - replace with real data from your API
   const stats = {
     totalChildren: 245,
     activeParents: 180,
@@ -28,14 +27,7 @@ const Dashboard = () => {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-800">Dashboard Overview</h1>
         <div className="flex space-x-3">
-          <button className="btn-secondary">
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Refresh
-          </button>
-          <button className="btn-primary">
-            <Plus className="w-4 h-4 mr-2" />
-            New Entry
-          </button>
+          
         </div>
       </div>
       
@@ -46,18 +38,17 @@ const Dashboard = () => {
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-semibold text-gray-800">Monthly Check-ins</h2>
             <div className="flex space-x-2">
-              <select className="select-small">
+              <select className="select-small" aria-label="Select time period">
                 <option>This Month</option>
                 <option>Last Month</option>
                 <option>This Year</option>
               </select>
-              <button className="btn-icon-small">
+              <button className="btn-icon-small" title="Download">
                 <Download className="w-4 h-4" />
               </button>
             </div>
           </div>
           <div className="h-80 bg-gradient-to-br from-[#f9f6ff] to-[#f0e9ff] rounded-xl flex items-center justify-center">
-            {/* Replace with actual chart component */}
             <div className="text-center">
               <BarChart className="w-12 h-12 mx-auto text-[#6339C0]" />
               <p className="mt-2 text-gray-500">Attendance analytics chart</p>

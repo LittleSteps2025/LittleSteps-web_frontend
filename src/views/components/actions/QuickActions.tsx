@@ -1,4 +1,4 @@
-import { Plus, Mail, AlertTriangle, UserPlus, FileText } from 'lucide-react';
+import { Mail, AlertTriangle, UserPlus, FileText } from 'lucide-react';
 
 const QuickActions = () => {
   const actions = [

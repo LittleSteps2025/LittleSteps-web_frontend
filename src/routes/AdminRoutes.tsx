@@ -1,14 +1,13 @@
 import { Route, Routes } from 'react-router-dom';
-import AdminLayout from '../Components/Admin/AdminLayout';
-import Dashboard from '../Pages/Admin/Dashboard';
-
+import AdminLayout from '../views/layouts/AdminLayout';
+import Dashboard from '../views/admin/Dashboard';
 
 const AdminRoutes = () => {
   return (
     <Routes>
-      <Route path="" element={<AdminLayout />}>
+      <Route element={<AdminLayout />}>
         <Route index element={<Dashboard />} />
-        
+        {/* Add more admin routes here */}
       </Route>
     </Routes>
   );

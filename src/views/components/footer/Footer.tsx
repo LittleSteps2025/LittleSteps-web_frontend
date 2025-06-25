@@ -1,19 +1,18 @@
 import { Link } from 'react-router-dom';
-import { Heart } from 'lucide-react';
 
 const Footer = () => {
   return (
-    <footer className="bg-gray-900 text-gray-400">
+    <footer className="bg-white">
       <div className="max-w-7xl mx-auto px-6 py-16 grid grid-cols-1 md:grid-cols-5 gap-12">
         <div className="md:col-span-2">
           <div className="flex items-center gap-3 mb-6">
             <img 
-              src="https://img.icons8.com/fluency/96/000000/children.png" 
+              src="/logo-white.png" 
               alt="Little Steps Logo" 
               className="h-10 w-auto"
             />
             <span className="text-xl font-bold bg-gradient-to-r from-[#9F66FF] to-[#6339C0] bg-clip-text text-transparent">
-              Little Steps
+              LittleSteps
             </span>
           </div>
           <p className="mb-6">
