@@ -12,3 +12,7 @@ export const getUsers = async () => {
   const res = await axios.get(`${API_BASE_URL}/users`);
   return res.data;
 };
+
+axios.get('http://localhost:5000/api/hello').then(res => {
+  console.log(res.data);
+});
