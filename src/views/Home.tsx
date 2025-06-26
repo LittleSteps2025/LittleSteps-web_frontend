@@ -184,7 +184,7 @@ const Home: React.FC = () => {
         </div>
       </section>
 
-      <Footer />
+   
     </div>
   );
 };
