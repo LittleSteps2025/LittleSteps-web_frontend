@@ -6,16 +6,18 @@ import Signup from './views/auth/Signup';
 import RequireAuth from './views/components/auth/RequireAuth';
 import Footer from './views/components/footer/Footer';
 import Layout from './views/layouts/Layout';
-import AdminRoutes from './routes/AdminRoutes';
-import SupervisorRoutes from './routes/SupervisorRoutes';
+import AdminLayout from './views/layouts/AdminLayout'; // Create this component
+import SupervisorLayout from './views/layouts/SupervisorLayout'; // Create this component
 import Unauthorized from './views/Unauthorized';
+import AdminDashboard from './views/admin/Dashboard'; // Your admin dashboard component
+import SupervisorDashboard from './views/supervisor/Dashboard'; // Your supervisor dashboard component
 
 function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          {/* Public routes */}
+          {/* Public routes with common layout */}
           <Route element={<Layout />}>
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
@@ -23,25 +25,31 @@ function App() {
             <Route path="/unauthorized" element={<Unauthorized />} />
           </Route>
 
-          {/* Protected admin routes */}
+          {/* Protected admin routes with admin layout */}
           <Route
-            path="/admin/*"
+            path="/admin"
             element={
               <RequireAuth roles={['admin']}>
-                <AdminRoutes />
+                <AdminLayout />
               </RequireAuth>
             }
-          />
+          >
+            <Route index element={<AdminDashboard />} />
+            {/* Add more admin sub-routes here */}
+          </Route>
 
-          {/* Protected supervisor routes */}
+          {/* Protected supervisor routes with supervisor layout */}
           <Route
-            path="/supervisor/*"
+            path="/supervisor"
             element={
               <RequireAuth roles={['supervisor']}>
-                <SupervisorRoutes />
+                <SupervisorLayout />
               </RequireAuth>
             }
-          />
+          >
+            <Route index element={<SupervisorDashboard />} />
+            {/* Add more supervisor sub-routes here */}
+          </Route>
 
           {/* 404 catch-all route */}
           <Route path="*" element={<Navigate to="/" replace />} />
