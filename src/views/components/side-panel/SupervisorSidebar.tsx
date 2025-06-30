@@ -3,7 +3,6 @@ import {
   LayoutDashboard,
   Users,
   Calendar,
-  BookOpen,
   Bell,
   FileText,
   Heart,
@@ -24,7 +23,6 @@ const SupervisorSidebar = () => {
     { path: '/supervisor/appointments', icon: Calendar, label: 'Appointments' },
     { path: '/supervisor/health-records', icon: Heart, label: 'Health Records' },
     { path: '/supervisor/attendance', icon: ClipboardList, label: 'Attendance' },
-    { path: '/supervisor/activities', icon: BookOpen, label: 'Activities' },
     { path: '/supervisor/reports', icon: FileText, label: 'Reports' }
   ];
 

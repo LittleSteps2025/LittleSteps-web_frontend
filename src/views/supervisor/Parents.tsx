@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Users, Search, Edit, Trash2, Send, UserPlus, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Users, Search, Edit, Trash2, UserPlus, X } from 'lucide-react';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -20,11 +20,7 @@ type ValidationErrors = {
 };
 
 const Parents = () => {
-  const [parents, setParents] = useState<Parent[]>([
-    { id: '123456789V', name: 'John Smith', email: 'john@example.com', phone: '0775123456', children: 2 },
-    { id: '987654321V', name: 'Sarah Johnson', email: 'sarah@example.com', phone: '0775567878', children: 1 },
-    { id: '456789123V', name: 'Michael Chen', email: 'michael@example.com', phone: '0775901234', children: 1 }
-  ]);
+  const [parents, setParents] = useState<Parent[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -38,21 +34,55 @@ const Parents = () => {
     children: 1
   });
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Generate a random 6-digit code
-  const generateVerificationCode = () => {
-    return Math.floor(100000 + Math.random() * 900000).toString();
+  // Fetch parents from API
+  useEffect(() => {
+    fetchParents();
+  }, []);
+
+  const fetchParents = async () => {
+    setIsLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/parents', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) throw new Error('Failed to fetch parents');
+      const data = await response.json();
+      setParents(data);
+    } catch {
+      toast.error('Failed to load parents');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  // Filter parents based on search term
-  const filteredParents = parents.filter(parent => {
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      parent.name.toLowerCase().includes(searchLower) ||
-      parent.id.toLowerCase().includes(searchLower) ||
-      parent.phone.includes(searchTerm)
-    );
-  });
+  // Search parents
+  const handleSearch = async () => {
+    if (!searchTerm.trim()) {
+      fetchParents();
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/parents/search?term=${encodeURIComponent(searchTerm)}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) throw new Error('Search failed');
+      const data = await response.json();
+      setParents(data);
+    } catch {
+      toast.error('Search failed');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Handle input changes for form
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -67,16 +97,11 @@ const Parents = () => {
   const validateForm = () => {
     const errors: ValidationErrors = {};
 
-    if (!formData.id) errors.id = 'NIC is required';
-    else if (!/^[0-9]{9}[Vv]$|^[0-9]{12}$/.test(formData.id)) errors.id = 'Invalid NIC format';
-
-    if (!formData.name) errors.name = 'Name is required';
-    if (!formData.email) errors.email = 'Email is required';
+    if (!formData.id.trim()) errors.id = 'ID is required';
+    if (!formData.name.trim()) errors.name = 'Name is required';
+    if (!formData.email.trim()) errors.email = 'Email is required';
     else if (!/^\S+@\S+\.\S+$/.test(formData.email)) errors.email = 'Invalid email format';
-
-    if (!formData.phone) errors.phone = 'Phone is required';
-    else if (!/^[0-9]{10}$/.test(formData.phone)) errors.phone = 'Phone must be 10 digits';
-
+    if (!formData.phone.trim()) errors.phone = 'Phone is required';
     if (!formData.children || formData.children < 1) errors.children = 'Must have at least 1 child';
 
     setValidationErrors(errors);
@@ -127,107 +152,124 @@ const Parents = () => {
   };
 
   // Handle form submission
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!validateForm()) return;
-
-    if (isEditMode) {
-      // Update existing parent
-      if (!currentParent) {
-        toast.error('No parent selected for editing.');
-        return;
+    try {
+      const token = localStorage.getItem('token');
+      let response;
+      if (isEditMode) {
+        response = await fetch(`/api/parents/${formData.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify(formData),
+        });
+      } else {
+        response = await fetch('/api/parents', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify(formData),
+        });
       }
-      setParents(parents.map(parent =>
-        parent.id === currentParent.id ? formData : parent
-      ));
-      toast.success('Parent updated successfully!');
-    } else {
-      // Add new parent
-      if (parents.some(parent => parent.id === formData.id)) {
-        toast.error('A parent with this NIC already exists');
-        return;
+      const result = await response.json();
+      if (!response.ok) {
+        const msg = result.message || (result.errors && result.errors[0]?.msg) || 'Operation failed';
+        throw new Error(msg);
       }
-
-      setParents([...parents, formData]);
-
-      // In a real app, you would send this code via SMS API
-      const verificationCode = generateVerificationCode();
-      toast.success(
-        <div>
-          <p>Parent registered successfully!</p>
-          <p>Verification code sent to {formData.phone}: <strong>{verificationCode}</strong></p>
-        </div>
-      );
+      if (isEditMode) {
+        setParents(parents.map(parent => parent.id === formData.id ? result : parent));
+        toast.success('Parent updated successfully!');
+      } else {
+        setParents([...parents, result]);
+        toast.success('Parent added successfully!');
+      }
+      closeModal();
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        toast.error(error.message || 'An error occurred');
+      } else {
+        toast.error('An error occurred');
+      }
     }
-
-    closeModal();
   };
 
   // Delete parent
-  const deleteParent = () => {
+  const deleteParent = async () => {
     if (!currentParent) return;
-    setParents(parents.filter(parent => parent.id !== currentParent.id));
-    toast.success('Parent deleted successfully!');
-    closeModal();
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/parents/${currentParent.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) throw new Error('Failed to delete parent');
+      setParents(parents.filter(parent => parent.id !== currentParent.id));
+      toast.success('Parent deleted successfully!');
+      closeModal();
+    } catch {
+      toast.error('Failed to delete parent');
+    }
   };
 
-  // Send verification code (simulated)
-  const sendVerificationCode = (parent: Parent) => {
-    const verificationCode = generateVerificationCode();
-    toast.info(
-      <div>
-        <p>New verification code sent to {parent.phone}:</p>
-        <p className="font-bold text-center text-lg">{verificationCode}</p>
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
       </div>
     );
-  };
+  }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
+      {/* Header and Search */}
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <h1 className="text-2xl font-bold text-gray-800">Parents Management</h1>
-        <button
-          onClick={openAddModal}
-          className="btn-primary flex items-center bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors"
-        >
-          <UserPlus className="w-4 h-4 mr-2" />
-          Add Parent
-        </button>
-      </div>
-
-      {/* Main Content */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-        {/* Search Bar */}
-        <div className="flex items-center mb-6">
-          <div className="relative flex-1 max-w-md">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
             <Search className="absolute left-3 top-3 text-gray-400" />
             <input
               type="text"
-              placeholder="Search by name, NIC or phone..."
+              placeholder="Search parents..."
               className="pl-10 pr-4 py-2 w-full border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
             />
           </div>
+          <button
+            onClick={openAddModal}
+            className="btn-primary flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors"
+          >
+            <UserPlus className="w-4 h-4 mr-2" />
+            Add Parent
+          </button>
         </div>
+      </div>
 
-        {/* Parents Table */}
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NIC</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Children</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredParents.length > 0 ? (
-                filteredParents.map((parent) => (
+      {/* Parents Table */}
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+        {parents.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Children</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {parents.map((parent) => (
                   <tr key={parent.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
                       {parent.id}
@@ -262,26 +304,24 @@ const Parents = () => {
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
-                      <button
-                        onClick={() => sendVerificationCode(parent)}
-                        className="text-green-600 hover:text-green-900 p-1 rounded hover:bg-green-50"
-                        title="Resend Code"
-                      >
-                        <Send className="w-4 h-4" />
-                      </button>
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={5} className="px-6 py-4 text-center text-sm text-gray-500">
-                    No parents found matching your search criteria
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="text-center py-10">
+            <p className="text-gray-500">No parents found</p>
+            <button
+              onClick={openAddModal}
+              className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
+            >
+              <UserPlus className="w-4 h-4 mr-2" />
+              Add New Parent
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Add/Edit Parent Modal */}
@@ -302,7 +342,7 @@ const Parents = () => {
               <form onSubmit={handleSubmit}>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">NIC Number</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">ID</label>
                     <input
                       type="text"
                       name="id"
@@ -310,7 +350,7 @@ const Parents = () => {
                       onChange={handleInputChange}
                       disabled={isEditMode}
                       className={`w-full px-3 py-2 border rounded-md ${validationErrors.id ? 'border-red-500' : 'border-gray-300'} ${isEditMode ? 'bg-gray-100' : ''}`}
-                      placeholder="e.g., 123456789V or 123456789012"
+                      placeholder="Parent ID"
                     />
                     {validationErrors.id && (
                       <p className="mt-1 text-sm text-red-600">{validationErrors.id}</p>
@@ -355,7 +395,7 @@ const Parents = () => {
                       value={formData.phone}
                       onChange={handleInputChange}
                       className={`w-full px-3 py-2 border rounded-md ${validationErrors.phone ? 'border-red-500' : 'border-gray-300'}`}
-                      placeholder="0771234567"
+                      placeholder="Phone number"
                     />
                     {validationErrors.phone && (
                       <p className="mt-1 text-sm text-red-600">{validationErrors.phone}</p>
@@ -371,8 +411,8 @@ const Parents = () => {
                       value={formData.children}
                       onChange={handleInputChange}
                       className={`w-full px-3 py-2 border rounded-md ${validationErrors.children ? 'border-red-500' : 'border-gray-300'}`}
-                      placeholder="Enter number of children"
-                      title="Number of Children"
+                      placeholder="Number of children"
+                      title="Enter the number of children"
                     />
                     {validationErrors.children && (
                       <p className="mt-1 text-sm text-red-600">{validationErrors.children}</p>
@@ -392,7 +432,7 @@ const Parents = () => {
                     type="submit"
                     className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
                   >
-                    {isEditMode ? 'Update Parent' : 'Register Parent'}
+                    {isEditMode ? 'Update' : 'Create'}
                   </button>
                 </div>
               </form>
@@ -410,11 +450,12 @@ const Parents = () => {
                 <h2 className="text-xl font-bold text-gray-800">Confirm Deletion</h2>
                 <button onClick={closeModal} className="text-gray-400 hover:text-gray-500" title="Close">
                   <X className="w-6 h-6" />
+                  <span className="sr-only">Close</span>
                 </button>
               </div>
 
               <p className="mb-6 text-gray-600">
-                Are you sure you want to delete parent <span className="font-semibold">{currentParent?.name}</span> (NIC: {currentParent?.id})? This action cannot be undone.
+                Are you sure you want to delete parent <span className="font-semibold">{currentParent?.name}</span>? This action cannot be undone.
               </p>
 
               <div className="flex justify-end space-x-3">
@@ -428,7 +469,7 @@ const Parents = () => {
                   onClick={deleteParent}
                   className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700"
                 >
-                  Delete Parent
+                  Delete
                 </button>
               </div>
             </div>

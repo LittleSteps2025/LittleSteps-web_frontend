@@ -8,10 +8,10 @@ const pool = new Pool({
   }
 });
 
-// Add connection test
-pool.query('SELECT NOW()', (err) => {
+// Test the database connection
+pool.query('SELECT NOW()', (err, res) => {
   if (err) {
-    console.error('Database connection error:', err.stack);
+    console.error('Database connection error:', err);
   } else {
     console.log('Database connected successfully');
   }
@@ -19,4 +19,5 @@ pool.query('SELECT NOW()', (err) => {
 
 module.exports = {
   query: (text, params) => pool.query(text, params),
+  end: () => pool.end()
 };
