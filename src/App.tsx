@@ -13,6 +13,8 @@ import AdminDashboard from './views/admin/Dashboard'; // Your admin dashboard co
 import SupervisorDashboard from './views/supervisor/Dashboard'; // Your supervisor dashboard component
 import UserManagement from './views/admin/UserManagement';
 import SubscriptionsManagement from './views/admin/SubscriptionsManagement';
+import ComplaintsManagement from './views/admin/ComplaintsManagement';
+import AttendanceManagement from './views/admin/AttendanceManagement';
 
 function App() {
   return (
@@ -40,6 +42,8 @@ function App() {
             {/* Add more admin sub-routes here */}
             <Route path="users" element={<UserManagement />} />
             <Route path="subscriptions" element={<SubscriptionsManagement />} />
+            <Route path="complaints" element={<ComplaintsManagement />} />
+            <Route path="attendance" element={<AttendanceManagement />} />
           </Route>
 
           {/* Protected supervisor routes with supervisor layout */}

@@ -38,6 +38,12 @@ const AdminNavbar = () => {
               >
                 Complaints
               </Link>
+              <Link
+                to="/admin/attendance"
+                className="text-gray-700 hover:text-indigo-600 font-medium px-3 py-2 rounded transition-colors"
+              >
+                Attendance
+              </Link>
               <button className="bg-white p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                 <span className="sr-only">View notifications</span>
                 <Bell className="h-6 w-6" />

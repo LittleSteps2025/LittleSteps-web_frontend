@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import {
-  Calendar, Clock, User, UserCheck, UserX, Users, CheckCircle, XCircle,
+  Calendar, Clock, User, UserCheck, Users, CheckCircle, XCircle,
   ChevronDown, ChevronUp, Search, Filter, Download, Plus, MoreVertical,
-  ArrowLeft, ArrowRight, ClipboardList, Clock as ClockIcon
+  ArrowLeft, ArrowRight, ClipboardList, Clock as ClockIcon, Shield, X
 } from 'lucide-react';
 
 type AttendanceRecord = {
