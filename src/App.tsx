@@ -11,6 +11,8 @@ import SupervisorLayout from './views/layouts/SupervisorLayout'; // Create this 
 import Unauthorized from './views/Unauthorized';
 import AdminDashboard from './views/admin/Dashboard'; // Your admin dashboard component
 import SupervisorDashboard from './views/supervisor/Dashboard'; // Your supervisor dashboard component
+import UserManagement from './views/admin/UserManagement';
+import SubscriptionsManagement from './views/admin/SubscriptionsManagement';
 
 function App() {
   return (
@@ -36,6 +38,8 @@ function App() {
           >
             <Route index element={<AdminDashboard />} />
             {/* Add more admin sub-routes here */}
+            <Route path="users" element={<UserManagement />} />
+            <Route path="subscriptions" element={<SubscriptionsManagement />} />
           </Route>
 
           {/* Protected supervisor routes with supervisor layout */}

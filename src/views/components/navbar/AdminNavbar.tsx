@@ -1,5 +1,6 @@
 import { Menu, X, User, Bell } from 'lucide-react';
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 const AdminNavbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -18,7 +19,25 @@ const AdminNavbar = () => {
             </button>
           </div>
           <div className="flex-1 flex items-center justify-end">
-            <div className="flex items-center">
+            <div className="flex items-center space-x-4">
+              <Link
+                to="/admin/users"
+                className="text-gray-700 hover:text-indigo-600 font-medium px-3 py-2 rounded transition-colors"
+              >
+                User Management
+              </Link>
+              <Link
+                to="/admin/subscriptions"
+                className="text-gray-700 hover:text-indigo-600 font-medium px-3 py-2 rounded transition-colors"
+              >
+                Subscriptions
+              </Link>
+              <Link
+                to="/admin/complaints"
+                className="text-gray-700 hover:text-indigo-600 font-medium px-3 py-2 rounded transition-colors"
+              >
+                Complaints
+              </Link>
               <button className="bg-white p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                 <span className="sr-only">View notifications</span>
                 <Bell className="h-6 w-6" />
