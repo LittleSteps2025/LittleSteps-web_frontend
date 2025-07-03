@@ -26,7 +26,7 @@ import AdminSupport from './views/admin/Support';
 // Import supervisor components
 import SupervisorDashboard from './views/supervisor/Dashboard';
 import SupervisorParents from './views/supervisor/Parents';
-import SupervisorStudents from './views/supervisor/Students';
+import SupervisorChildrens from './views/supervisor/Childrens';
 import SupervisorTeachers from './views/supervisor/Teachers';
 import SupervisorPayments from './views/supervisor/Payments';
 import SupervisorAnnouncements from './views/supervisor/Announcements';
@@ -35,6 +35,7 @@ import SupervisorHealthRecords from './views/supervisor/HealthRecords';
 import SupervisorAttendance from './views/supervisor/Attendance';
 import SupervisorActivities from './views/supervisor/Activities';
 import SupervisorReports from './views/supervisor/Reports';
+import SupervisorEvents from './views/supervisor/Events';
 
 function App() {
   return (
@@ -82,7 +83,7 @@ function App() {
           >
             <Route index element={<SupervisorDashboard />} />
             <Route path="parents" element={<SupervisorParents />} />
-            <Route path="students" element={<SupervisorStudents />} />
+            <Route path="childrens" element={<SupervisorChildrens />} />
             <Route path="teachers" element={<SupervisorTeachers />} />
             <Route path="payments" element={<SupervisorPayments />} />
             <Route path="announcements" element={<SupervisorAnnouncements />} />
@@ -91,6 +92,8 @@ function App() {
             <Route path="attendance" element={<SupervisorAttendance />} />
             <Route path="activities" element={<SupervisorActivities />} />
             <Route path="reports" element={<SupervisorReports />} />
+            <Route path="events" element={<SupervisorEvents />} />
+            
           </Route>
 
           {/* 404 catch-all route */}

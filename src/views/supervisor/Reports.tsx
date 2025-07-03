@@ -35,9 +35,10 @@ const Reports = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-800 flex items-center">
-          <FileText className="mr-2 text-[#4f46e5]" size={24} />
-          Reports
+         <h1 className="text-2xl font-bold text-gray-800 flex items-center">
+          <span className="bg-gradient-to-r from-[#4f46e5] to-[#7c73e6] bg-clip-text text-transparent">
+            Reports
+          </span>
         </h1>
         <div className="flex space-x-3">
           <button className="btn-secondary">
