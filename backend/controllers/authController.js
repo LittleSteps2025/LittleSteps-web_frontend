@@ -1,163 +1,82 @@
-const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const jwtConfig = require('../config/jwt');
+const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
-const authController = {
-  async signup(req, res) {
-    try {
-      console.log('Signup request received:', req.body);
-      
-      const { name, email, password, role = 'parent', adminKey } = req.body;
+const generateToken = (user) => {
+  return jwt.sign(
+    { id: user.id, role: user.role },
+    process.env.JWT_SECRET,
+    { expiresIn: '1d' }
+  );
+};
 
-      // Validate required fields
-      if (!name || !email || !password) {
-        return res.status(400).json({ 
-          success: false,
-          message: 'Name, email and password are required' 
-        });
-      }
+exports.signup = async (req, res) => {
+  try {
+    const { name, email, password, role } = req.body;
 
-      // Validate email format
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        return res.status(400).json({ 
-          success: false,
-          message: 'Invalid email format' 
-        });
-      }
-
-      // Validate role
-      const validRoles = ['parent', 'teacher', 'supervisor', 'admin'];
-      if (!validRoles.includes(role)) {
-        return res.status(400).json({ 
-          success: false,
-          message: 'Invalid role specified' 
-        });
-      }
-
-      // Check for privileged role creation
-      if (['admin', 'supervisor'].includes(role)) {
-        if (adminKey !== process.env.ADMIN_KEY) {
-          return res.status(403).json({ 
-            success: false,
-            message: 'Invalid admin key for privileged role creation' 
-          });
-        }
-      }
-
-      // Check if user already exists
-      const existingUser = await User.findByEmail(email);
-      if (existingUser) {
-        return res.status(400).json({ 
-          success: false,
-          message: 'User already exists' 
-        });
-      }
-
-      // Create new user
-      const user = await User.create({ name, email, password, role });
-      
-      // Generate JWT token
-      const token = jwt.sign(
-        { 
-          userId: user.id, 
-          role: user.role,
-          email: user.email
-        },
-        jwtConfig.secret,
-        { expiresIn: jwtConfig.expiresIn }
-      );
-
-      console.log('User created successfully:', user.email);
-
-      res.status(201).json({
-        success: true,
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          createdAt: user.created_at
-        },
-        token
-      });
-
-    } catch (error) {
-      console.error('Signup error:', error);
-      
-      // Handle specific database errors
-      if (error.code === '23505') { // Unique violation
-        return res.status(400).json({
-          success: false,
-          message: 'Email already exists'
-        });
-      }
-      
-      res.status(500).json({
-        success: false,
-        message: 'Registration failed',
-        error: process.env.NODE_ENV === 'development' ? error.message : undefined
-      });
+    // Check if user already exists
+    const existingUser = await User.findByEmail(email);
+    if (existingUser) {
+      return res.status(400).json({ message: 'Email already in use' });
     }
-  },
 
-  async login(req, res) {
-    try {
-      const { email, password } = req.body;
-      
-      if (!email || !password) {
-        return res.status(400).json({ 
-          success: false,
-          message: 'Email and password are required' 
-        });
-      }
-
-      const user = await User.findByEmail(email);
-      if (!user) {
-        return res.status(401).json({ 
-          success: false,
-          message: 'Invalid credentials' 
-        });
-      }
-
-      const isMatch = await bcrypt.compare(password, user.password);
-      if (!isMatch) {
-        return res.status(401).json({ 
-          success: false,
-          message: 'Invalid credentials' 
-        });
-      }
-
-      const token = jwt.sign(
-        { 
-          userId: user.id,
-          role: user.role,
-          email: user.email
-        },
-        jwtConfig.secret,
-        { expiresIn: jwtConfig.expiresIn }
-      );
-
-      res.json({
-        success: true,
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role
-        },
-        token
-      });
-    } catch (error) {
-      console.error('Login error:', error);
-      res.status(500).json({ 
-        success: false,
-        message: 'Login failed',
-        error: process.env.NODE_ENV === 'development' ? error.message : undefined
-      });
+    // Validate role
+    if (!['admin', 'supervisor'].includes(role)) {
+      return res.status(400).json({ message: 'Invalid role specified' });
     }
+
+    // Create new user
+    const user = await User.create({ name, email, password, role });
+    const token = generateToken(user);
+
+    res.status(201).json({ user, token });
+  } catch (error) {
+    console.error('Signup error:', error);
+    res.status(500).json({ message: 'Error creating user' });
   }
 };
 
-module.exports = authController;
+exports.login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Find user by email
+    const user = await User.findByEmail(email);
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    // Check password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    // Generate token
+    const token = generateToken(user);
+    const userData = {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role
+    };
+
+    res.json({ user: userData, token });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ message: 'Error logging in' });
+  }
+};
+
+exports.getMe = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.json(user);
+  } catch (error) {
+    console.error('Get user error:', error);
+    res.status(500).json({ message: 'Error fetching user' });
+  }
+};

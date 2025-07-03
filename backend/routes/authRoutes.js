@@ -1,15 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
+const { authenticate, role } = require('../middleware/auth');
 
-// @route   POST /api/auth/signup
-// @desc    Register a new user
-// @access  Public
 router.post('/signup', authController.signup);
-
-// @route   POST /api/auth/login
-// @desc    Login user
-// @access  Public
 router.post('/login', authController.login);
+router.get('/me', authenticate, authController.getMe);
 
 module.exports = router;
