@@ -19,6 +19,105 @@ type ValidationErrors = {
   children?: string;
 };
 
+// Mock data for parents
+const mockParents: Parent[] = [
+  {
+    id: 'parent-001',
+    name: 'John Smith',
+    email: 'john.smith@example.com',
+    phone: '555-123-4567',
+    children: 2
+  },
+  {
+    id: 'parent-002',
+    name: 'Emily Johnson',
+    email: 'emily.j@example.com',
+    phone: '555-987-6543',
+    children: 1
+  },
+  {
+    id: 'parent-003',
+    name: 'Michael Brown',
+    email: 'michael.b@example.com',
+    phone: '555-456-7890',
+    children: 3
+  },
+  {
+    id: 'parent-004',
+    name: 'Sarah Davis',
+    email: 'sarah.d@example.com',
+    phone: '555-789-0123',
+    children: 2
+  },
+  {
+    id: 'parent-005',
+    name: 'Robert Wilson',
+    email: 'robert.w@example.com',
+    phone: '555-234-5678',
+    children: 1
+  }
+];
+
+// Mock API functions
+const fetchMockParents = async (): Promise<Parent[]> => {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      resolve([...mockParents]);
+    }, 500);
+  });
+};
+
+const searchMockParents = async (term: string): Promise<Parent[]> => {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      if (!term.trim()) {
+        resolve([...mockParents]);
+        return;
+      }
+      const filtered = mockParents.filter(parent => 
+        parent.name.toLowerCase().includes(term.toLowerCase()) ||
+        parent.email.toLowerCase().includes(term.toLowerCase()) ||
+        parent.phone.includes(term) ||
+        parent.id.toLowerCase().includes(term.toLowerCase())
+      );
+      resolve(filtered);
+    }, 300); // Shorter delay for better UX
+  });
+};
+
+const createMockParent = async (parent: Parent): Promise<Parent> => {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      mockParents.push(parent);
+      resolve(parent);
+    }, 500);
+  });
+};
+
+const updateMockParent = async (parent: Parent): Promise<Parent> => {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      const index = mockParents.findIndex(p => p.id === parent.id);
+      if (index !== -1) {
+        mockParents[index] = parent;
+      }
+      resolve(parent);
+    }, 500);
+  });
+};
+
+const deleteMockParent = async (id: string): Promise<void> => {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      const index = mockParents.findIndex(p => p.id === id);
+      if (index !== -1) {
+        mockParents.splice(index, 1);
+      }
+      resolve();
+    }, 500);
+  });
+};
+
 const Parents = () => {
   const [parents, setParents] = useState<Parent[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -35,28 +134,36 @@ const Parents = () => {
   });
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
 
-  // Fetch parents from API
+  // Fetch parents from mock API
   useEffect(() => {
     fetchParents();
   }, []);
 
+  // Search effect with debounce
+  useEffect(() => {
+    const timerId = setTimeout(() => {
+      if (searchTerm.trim() || isSearching) {
+        handleSearch();
+      }
+    }, 500);
+
+    return () => {
+      clearTimeout(timerId);
+    };
+  }, [searchTerm]);
+
   const fetchParents = async () => {
     setIsLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/parents', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      if (!response.ok) throw new Error('Failed to fetch parents');
-      const data = await response.json();
+      const data = await fetchMockParents();
       setParents(data);
     } catch {
       toast.error('Failed to load parents');
     } finally {
       setIsLoading(false);
+      setIsSearching(false);
     }
   };
 
@@ -67,15 +174,9 @@ const Parents = () => {
       return;
     }
     setIsLoading(true);
+    setIsSearching(true);
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`/api/parents/search?term=${encodeURIComponent(searchTerm)}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      if (!response.ok) throw new Error('Search failed');
-      const data = await response.json();
+      const data = await searchMockParents(searchTerm);
       setParents(data);
     } catch {
       toast.error('Search failed');
@@ -155,37 +256,15 @@ const Parents = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
+    
     try {
-      const token = localStorage.getItem('token');
-      let response;
+      let result;
       if (isEditMode) {
-        response = await fetch(`/api/parents/${formData.id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-          body: JSON.stringify(formData),
-        });
-      } else {
-        response = await fetch('/api/parents', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-          body: JSON.stringify(formData),
-        });
-      }
-      const result = await response.json();
-      if (!response.ok) {
-        const msg = result.message || (result.errors && result.errors[0]?.msg) || 'Operation failed';
-        throw new Error(msg);
-      }
-      if (isEditMode) {
+        result = await updateMockParent(formData);
         setParents(parents.map(parent => parent.id === formData.id ? result : parent));
         toast.success('Parent updated successfully!');
       } else {
+        result = await createMockParent(formData);
         setParents([...parents, result]);
         toast.success('Parent added successfully!');
       }
@@ -203,14 +282,7 @@ const Parents = () => {
   const deleteParent = async () => {
     if (!currentParent) return;
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`/api/parents/${currentParent.id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      if (!response.ok) throw new Error('Failed to delete parent');
+      await deleteMockParent(currentParent.id);
       setParents(parents.filter(parent => parent.id !== currentParent.id));
       toast.success('Parent deleted successfully!');
       closeModal();
@@ -229,24 +301,27 @@ const Parents = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header and Search */}
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+      {/* Header */}
+      <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-800">Parents Management</h1>
-        <div className="flex flex-col sm:flex-row gap-3">
+      </div>
+
+      {/* Search and Add Parent */}
+      <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+        <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-3 text-gray-400" />
             <input
               type="text"
-              placeholder="Search parents..."
+              placeholder="Search parents by name, email, phone or ID..."
               className="pl-10 pr-4 py-2 w-full border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
             />
           </div>
           <button
             onClick={openAddModal}
-            className="btn-primary flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors"
+            className="btn-primary flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors whitespace-nowrap"
           >
             <UserPlus className="w-4 h-4 mr-2" />
             Add Parent
@@ -312,7 +387,9 @@ const Parents = () => {
           </div>
         ) : (
           <div className="text-center py-10">
-            <p className="text-gray-500">No parents found</p>
+            <p className="text-gray-500">
+              {isSearching ? 'No matching parents found' : 'No parents found'}
+            </p>
             <button
               onClick={openAddModal}
               className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
