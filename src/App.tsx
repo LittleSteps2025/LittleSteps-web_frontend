@@ -12,9 +12,11 @@ import Unauthorized from './views/Unauthorized';
 import AdminDashboard from './views/admin/Dashboard'; // Your admin dashboard component
 import SupervisorDashboard from './views/supervisor/Dashboard'; // Your supervisor dashboard component
 import UserManagement from './views/admin/UserManagement';
+import ChildManagement from './views/admin/ChildManagement';
 import SubscriptionsManagement from './views/admin/SubscriptionsManagement';
 import ComplaintsManagement from './views/admin/ComplaintsManagement';
 import AttendanceManagement from './views/admin/AttendanceManagement';
+import Announcements from './views/admin/Announcements';
 
 function App() {
   return (
@@ -41,9 +43,11 @@ function App() {
             <Route index element={<AdminDashboard />} />
             {/* Add more admin sub-routes here */}
             <Route path="users" element={<UserManagement />} />
+            <Route path="children" element={<ChildManagement />} />
             <Route path="subscriptions" element={<SubscriptionsManagement />} />
             <Route path="complaints" element={<ComplaintsManagement />} />
             <Route path="attendance" element={<AttendanceManagement />} />
+            <Route path="announcements" element={<Announcements />} />
           </Route>
 
           {/* Protected supervisor routes with supervisor layout */}

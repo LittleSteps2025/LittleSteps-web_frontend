@@ -28,53 +28,73 @@ const SubscriptionManagement = () => {
   const subscriptionPlans = [
     {
       id: '1',
-      name: 'Full Week Plan',
+      name: 'Week Full Day',
       type: 'weekly',
       duration: 'full-day',
       days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
-      price: 200,
+      price: 12000,
       services: ['meals', 'nap', 'activities', 'extended-care'],
       status: 'active'
     },
     {
       id: '2',
-      name: 'Weekend Warrior',
-      type: 'weekend',
+      name: 'Week Half Day',
+      type: 'weekly',
       duration: 'half-day',
-      days: ['saturday'],
-      price: 75,
-      services: ['activities', 'snacks'],
+      days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
+      price: 8000,
+      services: ['meals', 'activities'],
       status: 'active'
     },
     {
       id: '3',
-      name: 'Monthly Premium',
-      type: 'monthly',
+      name: 'Weekend Full Day',
+      type: 'weekend',
       duration: 'full-day',
-      days: ['monday', 'wednesday', 'friday'],
-      price: 450,
-      services: ['meals', 'nap', 'activities', 'transport', 'premium-activities'],
+      days: ['saturday', 'sunday'],
+      price: 5000,
+      services: ['meals', 'activities', 'premium-activities'],
       status: 'active'
     },
     {
       id: '4',
-      name: 'Annual Unlimited',
-      type: 'annual',
-      duration: 'full-day',
-      days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'],
-      price: 4800,
-      services: ['all-inclusive'],
+      name: 'Weekend Half Day',
+      type: 'weekend',
+      duration: 'half-day',
+      days: ['saturday', 'sunday'],
+      price: 3500,
+      services: ['activities'],
       status: 'active'
     },
     {
       id: '5',
-      name: 'Morning Half-Day',
+      name: 'Saturday Only',
+      type: 'custom',
+      duration: 'full-day',
+      days: ['saturday'],
+      price: 2500,
+      services: ['meals', 'activities'],
+      status: 'active'
+    },
+    {
+      id: '6',
+      name: 'Full Week Half Day',
       type: 'weekly',
-      duration: 'morning',
-      days: ['monday', 'wednesday', 'friday'],
-      price: 120,
-      services: ['snacks', 'activities'],
+      duration: 'half-day',
+      days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'],
+      price: 9000,
+      services: ['meals', 'activities'],
       status: 'inactive'
+    },
+    {
+      id: '7',
+      name: 'Full Week Full Day',
+      type: 'weekly',
+      duration: 'full-day',
+      days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'],
+      price: 14000,
+      services: ['meals', 'nap', 'activities', 'extended-care', 'premium-activities'],
+      status: 'active'
     }
   ];
 
@@ -141,7 +161,7 @@ const SubscriptionManagement = () => {
             <Plus className="w-4 h-4 mr-2" />
             Create New Plan
           </button>
-          <button className="btn-secondary">
+          <button className="btn-secondary flex flex-wrap items-center">
             <Download className="w-4 h-4 mr-2" />
             Export Plans
           </button>
@@ -173,8 +193,8 @@ const SubscriptionManagement = () => {
       {/* Plans Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredPlans.map(plan => (
-          <div key={plan.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all">
-            <div className="p-6">
+          <div key={plan.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all flex flex-col">
+            <div className="p-6 flex-1 flex flex-col">
               <div className="flex justify-between items-start">
                 <div>
                   <h3 className="text-lg font-bold text-gray-800">{plan.name}</h3>
@@ -190,8 +210,8 @@ const SubscriptionManagement = () => {
                   </div>
                 </div>
                 <div className="text-2xl font-bold text-[#6339C0]">
-                  ${plan.price}
-                  <span className="text-sm font-normal text-gray-500">/{plan.type === 'annual' ? 'yr' : plan.type === 'monthly' ? 'mo' : 'wk'}</span>
+                  LKR {plan.price.toLocaleString()}
+                  <span className="text-sm font-normal text-gray-500">/wk</span>
                 </div>
               </div>
 
@@ -205,9 +225,11 @@ const SubscriptionManagement = () => {
                 <div className="flex items-center text-sm text-gray-600">
                   <Clock className="w-4 h-4 mr-2 text-[#6339C0]" />
                   <span>
-                    {plan.duration === 'full-day' ? 'Full Day (8am-6pm)' : 
-                     plan.duration === 'morning' ? 'Morning (8am-12pm)' : 
-                     'Afternoon (1pm-6pm)'}
+                    {plan.duration === 'full-day' ? 'Full Day (8am-6pm)' :
+                     plan.duration === 'half-day' ? 'Half Day (8am-1pm)' :
+                     plan.duration === 'morning' ? 'Morning (8am-12pm)' :
+                     plan.duration === 'afternoon' ? 'Afternoon (1pm-6pm)' :
+                     'Custom Hours'}
                   </span>
                 </div>
                 <div className="flex items-start text-sm text-gray-600">
@@ -228,21 +250,23 @@ const SubscriptionManagement = () => {
                 </div>
               </div>
 
-              <div className="mt-6 flex space-x-2">
-                <button className="btn-outline flex items-center">
+              {/* Action buttons */}
+              <div className="mt-6 flex flex-wrap gap-2 items-center">
+                <button className="btn-outline flex items-center whitespace-nowrap">
                   <Edit className="w-4 h-4 mr-2" />
                   Edit
                 </button>
-                <button className="btn-outline text-red-600 border-red-200 hover:bg-red-50">
+                <button className="btn-outline text-red-600 border-red-200 hover:bg-red-50 flex items-center whitespace-nowrap">
                   <Trash2 className="w-4 h-4 mr-2" />
                   Delete
                 </button>
               </div>
             </div>
+            {/* Billing and subscribers section at the very bottom of the card */}
             <div className="bg-gray-50 px-6 py-3 border-t border-gray-100 flex justify-between items-center">
               <span className="text-sm text-gray-500">
                 {plan.type === 'annual' ? 'Annual plan' : 
-                 plan.type === 'monthly' ? 'Monthly billing' : 'Weekly billing'}
+                  plan.type === 'monthly' ? 'Monthly billing' : 'Weekly billing'}
               </span>
               <button className="text-sm font-medium text-[#6339C0] hover:text-[#7e57ff]">
                 View Subscribers
@@ -302,7 +326,7 @@ const SubscriptionManagement = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Price ($)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Price (LKR)</label>
                   <input
                     type="number"
                     className="w-full border rounded-lg px-4 py-2 focus:border-[#6339C0] focus:ring-2 focus:ring-[#f3eeff] outline-none"

@@ -1,99 +1,93 @@
 import { useState } from 'react';
 import {
-  Search, Plus, Edit, Trash2, Filter, Download, ChevronDown, ChevronUp, Baby, Calendar, School, X, FileText, CheckCircle
+  Search, Edit, Trash2, Filter, Download, ChevronDown, ChevronUp,
+  UserPlus, Shield, Users, Baby, X, FileText, CheckCircle, Lock, Mail
 } from 'lucide-react';
-import UserModals, { type UserType } from './UserModals';
+import React from 'react';
 
-type ChildType = {
+type UserType = {
   id: string;
   name: string;
-  birthDate: string;
-  age: string;
-  parentName: string;
-  parentContact: string;
-  classroom: string;
-  allergies: string[];
-  status: 'active' | 'inactive' | 'waitlist';
-  enrollmentDate: string;
-  lastCheckIn?: string;
+  email: string;
+  role: 'parent' | 'child' | 'supervisor' | 'admin';
+  status: 'active' | 'inactive' | 'pending';
+  lastLogin?: string;
+  joinDate: string;
+  children?: string[]; // For parents
+  classroom?: string; // For children and supervisors
+  permissions?: string[]; // For admins and supervisors
 };
 
-const children: ChildType[] = [
+const users: UserType[] = [
   { 
     id: '1', 
-    name: 'Emma Johnson', 
-    birthDate: '2020-05-15', 
-    age: '3 years', 
-    parentName: 'Sarah Johnson', 
-    parentContact: 'sarah@example.com', 
-    classroom: 'Sunflowers', 
-    allergies: ['Peanuts'], 
+    name: 'Sarah Johnson', 
+    email: 'sarah@example.com', 
+    role: 'parent', 
     status: 'active', 
-    enrollmentDate: '2023-01-10',
-    lastCheckIn: '2023-06-15 08:30'
+    joinDate: '2023-01-10',
+    lastLogin: '2023-06-15 08:30',
+    children: ['Emma Johnson', 'Liam Johnson']
   },
   { 
     id: '2', 
-    name: 'Liam Smith', 
-    birthDate: '2019-11-03', 
-    age: '4 years', 
-    parentName: 'Michael Smith', 
-    parentContact: 'michael@example.com', 
-    classroom: 'Butterflies', 
-    allergies: [], 
+    name: 'Michael Smith', 
+    email: 'michael@example.com', 
+    role: 'parent', 
     status: 'active', 
-    enrollmentDate: '2022-09-05',
-    lastCheckIn: '2023-06-15 08:45'
+    joinDate: '2022-09-05',
+    lastLogin: '2023-06-15 08:45',
+    children: ['Noah Smith']
   },
   { 
     id: '3', 
-    name: 'Olivia Williams', 
-    birthDate: '2021-02-20', 
-    age: '2 years', 
-    parentName: 'James Williams', 
-    parentContact: 'james@example.com', 
-    classroom: 'Caterpillars', 
-    allergies: ['Dairy', 'Eggs'], 
+    name: 'Emma Johnson', 
+    email: 'emma@example.com', 
+    role: 'child', 
     status: 'active', 
-    enrollmentDate: '2023-03-15',
-    lastCheckIn: '2023-06-14 09:15'
+    joinDate: '2023-01-10',
+    classroom: 'Sunflowers'
   },
   { 
     id: '4', 
-    name: 'Noah Brown', 
-    birthDate: '2022-01-10', 
-    age: '1 year', 
-    parentName: 'Jessica Brown', 
-    parentContact: 'jessica@example.com', 
-    classroom: 'Waitlist', 
-    allergies: [], 
-    status: 'waitlist', 
-    enrollmentDate: '2023-05-01'
+    name: 'Lisa Chen', 
+    email: 'lisa@daycare.com', 
+    role: 'supervisor', 
+    status: 'active', 
+    joinDate: '2021-03-15',
+    lastLogin: '2023-06-14 09:15',
+    classroom: 'Butterflies',
+    permissions: ['attendance', 'reports']
   },
   { 
     id: '5', 
-    name: 'Ava Jones', 
-    birthDate: '2020-08-25', 
-    age: '2 years', 
-    parentName: 'David Jones', 
-    parentContact: 'david@example.com', 
-    classroom: 'Sunflowers', 
-    allergies: ['Tree nuts'], 
-    status: 'inactive', 
-    enrollmentDate: '2022-11-18',
-    lastCheckIn: '2023-05-30 09:00'
+    name: 'Admin User', 
+    email: 'admin@daycare.com', 
+    role: 'admin', 
+    status: 'active', 
+    joinDate: '2020-08-25',
+    lastLogin: '2023-06-15 07:30',
+    permissions: ['all']
+  },
+  { 
+    id: '6', 
+    name: 'James Wilson', 
+    email: 'james@example.com', 
+    role: 'parent', 
+    status: 'pending', 
+    joinDate: '2023-05-01'
   },
 ];
 
-const sortKeys = ['name', 'classroom', 'status', 'enrollmentDate', 'lastCheckIn'] as const;
+const sortKeys = ['name', 'email', 'role', 'status', 'joinDate', 'lastLogin'] as const;
 type SortKey = typeof sortKeys[number];
 
-const ChildManagement = () => {
+const UserManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [itemsPerPage] = useState(10);
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: 'asc' | 'desc' }>({ key: 'name', direction: 'asc' });
   const [activeFilter, setActiveFilter] = useState('all');
-  const [selectedChildren, setSelectedChildren] = useState<string[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   
   // Modal states
@@ -101,59 +95,27 @@ const ChildManagement = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
-  const [currentChild, setCurrentChild] = useState<ChildType | null>(null);
+  const [currentUser, setCurrentUser] = useState<UserType | null>(null);
   
   // Form state
   const [formData, setFormData] = useState({
     name: '',
-    birthDate: '',
-    parentName: '',
-    parentContact: '',
-    classroom: '',
-    allergies: '',
-    status: 'active' as ChildType['status']
-  });
-
-  // User modal state and handlers (minimal, only for modals)
-  const [showAddUserModal, setShowAddUserModal] = useState(false);
-  const [showEditUserModal, setShowEditUserModal] = useState(false);
-  const [showDeleteUserModal, setShowDeleteUserModal] = useState(false);
-  const [showExportUserModal, setShowExportUserModal] = useState(false);
-  const [userForm, setUserForm] = useState({
-    name: '',
     email: '',
-    role: '' as UserType['role'],
+    role: 'parent' as UserType['role'],
     status: 'active' as UserType['status'],
+    classroom: '',
+    children: [] as string[],
+    permissions: [] as string[],
   });
-  const [currentUser] = useState<UserType | null>(null);
-  const handleUserInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setUserForm(prev => ({ ...prev, [name]: value }));
-  };
-  const handleAddUserSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setShowAddUserModal(false);
-  };
-  const handleEditUserSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setShowEditUserModal(false);
-  };
-  const handleDeleteUser = () => {
-    setShowDeleteUserModal(false);
-  };
-  const handleExportUser = () => {
-    setShowExportUserModal(false);
-  };
 
-  // Filter and sort children
-  const filteredChildren = children
-    .filter((child: ChildType) => 
-      child.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      child.parentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      child.classroom.toLowerCase().includes(searchTerm.toLowerCase())
+  // Filter and sort users
+  const filteredUsers = users
+    .filter((user) => 
+      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase())
     )
-    .filter((child: ChildType) => activeFilter === 'all' || child.status === activeFilter)
-    .sort((a: ChildType, b: ChildType) => {
+    .filter((user) => activeFilter === 'all' || user.role === activeFilter || user.status === activeFilter)
+    .sort((a, b) => {
       const key = sortConfig.key;
       const aValue = a[key] ?? '';
       const bValue = b[key] ?? '';
@@ -167,10 +129,10 @@ const ChildManagement = () => {
     });
 
   // Pagination
-  const indexOfLastChild = 1 * itemsPerPage;
-  const indexOfFirstChild = indexOfLastChild - itemsPerPage;
-  const currentChildren = filteredChildren.slice(indexOfFirstChild, indexOfLastChild);
-  const totalPages = Math.ceil(filteredChildren.length / itemsPerPage);
+  const indexOfLastUser = 1 * itemsPerPage;
+  const indexOfFirstUser = indexOfLastUser - itemsPerPage;
+  const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
 
   const requestSort = (key: SortKey) => {
     let direction: 'asc' | 'desc' = 'asc';
@@ -180,27 +142,27 @@ const ChildManagement = () => {
     setSortConfig({ key, direction });
   };
 
-  const toggleSelectChild = (childId: string) => {
-    setSelectedChildren(prev =>
-      prev.includes(childId) 
-        ? prev.filter(id => id !== childId) 
-        : [...prev, childId]
+  const toggleSelectUser = (userId: string) => {
+    setSelectedUsers(prev =>
+      prev.includes(userId) 
+        ? prev.filter(id => id !== userId) 
+        : [...prev, userId]
     );
   };
 
   const toggleSelectAll = () => {
-    if (selectedChildren.length === currentChildren.length) {
-      setSelectedChildren([]);
+    if (selectedUsers.length === currentUsers.length) {
+      setSelectedUsers([]);
     } else {
-      setSelectedChildren(currentChildren.map(child => child.id));
+      setSelectedUsers(currentUsers.map(user => user.id));
     }
   };
 
-  const getStatusBadge = (status: ChildType['status']) => {
-    const statusClasses: Record<ChildType['status'], string> = {
+  const getStatusBadge = (status: UserType['status']) => {
+    const statusClasses: Record<UserType['status'], string> = {
       active: 'bg-green-100 text-green-800',
       inactive: 'bg-red-100 text-red-800',
-      waitlist: 'bg-yellow-100 text-yellow-800',
+      pending: 'bg-yellow-100 text-yellow-800',
     };
     return (
       <span className={`px-2 py-1 text-xs rounded-full ${statusClasses[status]}`}>
@@ -209,36 +171,43 @@ const ChildManagement = () => {
     );
   };
 
-  const getClassroomBadge = (classroom: string) => {
-    const classroomColors: Record<string, string> = {
-      'Sunflowers': 'bg-amber-100 text-amber-800',
-      'Butterflies': 'bg-blue-100 text-blue-800',
-      'Caterpillars': 'bg-green-100 text-green-800',
-      'Waitlist': 'bg-gray-100 text-gray-800',
+  const getRoleBadge = (role: UserType['role']) => {
+    const roleClasses: Record<UserType['role'], string> = {
+      parent: 'bg-blue-100 text-blue-800',
+      child: 'bg-purple-100 text-purple-800',
+      supervisor: 'bg-amber-100 text-amber-800',
+      admin: 'bg-green-100 text-green-800',
+    };
+    const roleIcons: Record<UserType['role'], React.ReactNode> = {
+      parent: <Users className="w-3 h-3 mr-1" />,
+      child: <Baby className="w-3 h-3 mr-1" />,
+      supervisor: <Shield className="w-3 h-3 mr-1" />,
+      admin: <Lock className="w-3 h-3 mr-1" />,
     };
     return (
-      <span className={`px-2 py-1 text-xs rounded-full ${classroomColors[classroom] || 'bg-purple-100 text-purple-800'}`}>
-        {classroom}
+      <span className={`px-2 py-1 text-xs rounded-full ${roleClasses[role]} flex items-center`}>
+        {roleIcons[role]}
+        {role}
       </span>
     );
   };
 
-  const openEditModal = (child: ChildType) => {
-    setCurrentChild(child);
+  const openEditModal = (user: UserType) => {
+    setCurrentUser(user);
     setFormData({
-      name: child.name,
-      birthDate: child.birthDate,
-      parentName: child.parentName,
-      parentContact: child.parentContact,
-      classroom: child.classroom,
-      allergies: child.allergies.join(', '),
-      status: child.status
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      status: user.status,
+      classroom: user.classroom || '',
+      children: user.children || [],
+      permissions: user.permissions || [],
     });
     setShowEditModal(true);
   };
 
-  const openDeleteModal = (child: ChildType) => {
-    setCurrentChild(child);
+  const openDeleteModal = (user: UserType) => {
+    setCurrentUser(user);
     setShowDeleteModal(true);
   };
 
@@ -250,23 +219,31 @@ const ChildManagement = () => {
     }));
   };
 
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, checked, value } = e.target;
+    if (name === 'permissions') {
+      setFormData(prev => ({
+        ...prev,
+        permissions: checked
+          ? [...prev.permissions, value]
+          : prev.permissions.filter(p => p !== value)
+      }));
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Here you would typically call an API to save the child
     console.log('Form submitted:', formData);
-    // Close the modal after submission
     setShowAddModal(false);
     setShowEditModal(false);
   };
 
   const handleDelete = () => {
-    // Here you would typically call an API to delete the child
-    console.log('Deleting child:', currentChild?.id);
+    console.log('Deleting user:', currentUser?.id);
     setShowDeleteModal(false);
   };
 
   const handleExport = (format: 'csv' | 'pdf') => {
-    // Here you would typically call an API to export data
     console.log(`Exporting data as ${format}`);
     setShowExportModal(false);
   };
@@ -274,14 +251,14 @@ const ChildManagement = () => {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-2xl font-bold text-gray-800">Child Management</h1>
+        <h1 className="text-2xl font-bold text-gray-800">User Management</h1>
         <div className="flex space-x-3 w-full sm:w-auto">
           <button 
             onClick={() => setShowAddModal(true)}
             className="btn-primary flex items-center"
           >
-            <Plus className="w-4 h-4 mr-2" />
-            Add Child
+            <UserPlus className="w-4 h-4 mr-2" />
+            Add User
           </button>
           <button 
             onClick={() => setShowExportModal(true)} 
@@ -300,7 +277,7 @@ const ChildManagement = () => {
             <Search className="absolute left-3 top-3 text-gray-400" />
             <input
               type="text"
-              placeholder="Search children by name, parent or classroom..."
+              placeholder="Search users by name or email..."
               className="pl-10 pr-4 py-2 w-full border rounded-lg focus:border-[#6339C0] focus:ring-2 focus:ring-[#f3eeff] outline-none"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -328,8 +305,36 @@ const ChildManagement = () => {
                       className={`w-full text-left px-4 py-2 text-sm rounded ${activeFilter === 'all' ? 'bg-[#f3eeff] text-[#6339C0]' : 'hover:bg-gray-50'}`}
                       onClick={() => { setActiveFilter('all'); setShowFilterDropdown(false); }}
                     >
-                      All Children
+                      All Users
                     </button>
+                    <div className="border-t border-gray-200 my-1"></div>
+                    <div className="px-3 py-1 text-xs font-medium text-gray-500 uppercase tracking-wider">Roles</div>
+                    <button 
+                      className={`w-full text-left px-4 py-2 text-sm rounded ${activeFilter === 'parent' ? 'bg-[#f3eeff] text-[#6339C0]' : 'hover:bg-gray-50'}`}
+                      onClick={() => { setActiveFilter('parent'); setShowFilterDropdown(false); }}
+                    >
+                      Parents
+                    </button>
+                    <button 
+                      className={`w-full text-left px-4 py-2 text-sm rounded ${activeFilter === 'child' ? 'bg-[#f3eeff] text-[#6339C0]' : 'hover:bg-gray-50'}`}
+                      onClick={() => { setActiveFilter('child'); setShowFilterDropdown(false); }}
+                    >
+                      Children
+                    </button>
+                    <button 
+                      className={`w-full text-left px-4 py-2 text-sm rounded ${activeFilter === 'supervisor' ? 'bg-[#f3eeff] text-[#6339C0]' : 'hover:bg-gray-50'}`}
+                      onClick={() => { setActiveFilter('supervisor'); setShowFilterDropdown(false); }}
+                    >
+                      Supervisors
+                    </button>
+                    <button 
+                      className={`w-full text-left px-4 py-2 text-sm rounded ${activeFilter === 'admin' ? 'bg-[#f3eeff] text-[#6339C0]' : 'hover:bg-gray-50'}`}
+                      onClick={() => { setActiveFilter('admin'); setShowFilterDropdown(false); }}
+                    >
+                      Admins
+                    </button>
+                    <div className="border-t border-gray-200 my-1"></div>
+                    <div className="px-3 py-1 text-xs font-medium text-gray-500 uppercase tracking-wider">Status</div>
                     <button 
                       className={`w-full text-left px-4 py-2 text-sm rounded ${activeFilter === 'active' ? 'bg-[#f3eeff] text-[#6339C0]' : 'hover:bg-gray-50'}`}
                       onClick={() => { setActiveFilter('active'); setShowFilterDropdown(false); }}
@@ -343,35 +348,35 @@ const ChildManagement = () => {
                       Inactive
                     </button>
                     <button 
-                      className={`w-full text-left px-4 py-2 text-sm rounded ${activeFilter === 'waitlist' ? 'bg-[#f3eeff] text-[#6339C0]' : 'hover:bg-gray-50'}`}
-                      onClick={() => { setActiveFilter('waitlist'); setShowFilterDropdown(false); }}
+                      className={`w-full text-left px-4 py-2 text-sm rounded ${activeFilter === 'pending' ? 'bg-[#f3eeff] text-[#6339C0]' : 'hover:bg-gray-50'}`}
+                      onClick={() => { setActiveFilter('pending'); setShowFilterDropdown(false); }}
                     >
-                      Waitlist
+                      Pending
                     </button>
                   </div>
                 </div>
               )}
             </div>
             
-            {selectedChildren.length > 0 && (
+            {selectedUsers.length > 0 && (
               <div className="dropdown relative">
                 <button className="btn-outline bg-red-50 text-red-600 border-red-200 hover:bg-red-100 flex items-center">
-                  <span className="mr-2">{selectedChildren.length} selected</span>
+                  <span className="mr-2">{selectedUsers.length} selected</span>
                   <ChevronDown className="w-4 h-4" />
                 </button>
                 <div className="dropdown-menu absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-200">
                   <div className="p-2 space-y-1">
                     <button className="w-full text-left px-4 py-2 text-sm rounded hover:bg-gray-50 flex items-center">
                       <CheckCircle className="w-4 h-4 mr-2 text-green-600" />
-                      Mark Active
+                      Activate
                     </button>
                     <button className="w-full text-left px-4 py-2 text-sm rounded hover:bg-gray-50 flex items-center">
                       <X className="w-4 h-4 mr-2 text-red-600" />
-                      Mark Inactive
+                      Deactivate
                     </button>
                     <button className="w-full text-left px-4 py-2 text-sm rounded hover:bg-gray-50 flex items-center">
-                      <School className="w-4 h-4 mr-2 text-blue-600" />
-                      Assign Classroom
+                      <Mail className="w-4 h-4 mr-2 text-blue-600" />
+                      Send Email
                     </button>
                     <button className="w-full text-left px-4 py-2 text-sm rounded hover:bg-gray-50 flex items-center text-red-600">
                       <Trash2 className="w-4 h-4 mr-2" />
@@ -385,7 +390,7 @@ const ChildManagement = () => {
         </div>
       </div>
 
-      {/* Children Table */}
+      {/* Users Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
@@ -394,7 +399,7 @@ const ChildManagement = () => {
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   <input 
                     type="checkbox" 
-                    checked={selectedChildren.length === currentChildren.length && currentChildren.length > 0}
+                    checked={selectedUsers.length === currentUsers.length && currentUsers.length > 0}
                     onChange={toggleSelectAll}
                     className="h-4 w-4 text-[#6339C0] border-gray-300 rounded focus:ring-[#6339C0]"
                   />
@@ -405,7 +410,7 @@ const ChildManagement = () => {
                   onClick={() => requestSort('name')}
                 >
                   <div className="flex items-center">
-                    Child
+                    User
                     {sortConfig.key === 'name' && (
                       sortConfig.direction === 'asc' ? 
                         <ChevronUp className="ml-1 w-4 h-4" /> : 
@@ -413,17 +418,28 @@ const ChildManagement = () => {
                     )}
                   </div>
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Parent Info
+                <th 
+                  scope="col" 
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                  onClick={() => requestSort('email')}
+                >
+                  <div className="flex items-center">
+                    Email
+                    {sortConfig.key === 'email' && (
+                      sortConfig.direction === 'asc' ? 
+                        <ChevronUp className="ml-1 w-4 h-4" /> : 
+                        <ChevronDown className="ml-1 w-4 h-4" />
+                    )}
+                  </div>
                 </th>
                 <th 
                   scope="col" 
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => requestSort('classroom')}
+                  onClick={() => requestSort('role')}
                 >
                   <div className="flex items-center">
-                    Classroom
-                    {sortConfig.key === 'classroom' && (
+                    Role
+                    {sortConfig.key === 'role' && (
                       sortConfig.direction === 'asc' ? 
                         <ChevronUp className="ml-1 w-4 h-4" /> : 
                         <ChevronDown className="ml-1 w-4 h-4" />
@@ -431,7 +447,7 @@ const ChildManagement = () => {
                   </div>
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Allergies
+                  Details
                 </th>
                 <th 
                   scope="col" 
@@ -450,11 +466,11 @@ const ChildManagement = () => {
                 <th 
                   scope="col" 
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => requestSort('lastCheckIn')}
+                  onClick={() => requestSort('lastLogin')}
                 >
                   <div className="flex items-center">
-                    Last Check-In
-                    {sortConfig.key === 'lastCheckIn' && (
+                    Last Login
+                    {sortConfig.key === 'lastLogin' && (
                       sortConfig.direction === 'asc' ? 
                         <ChevronUp className="ml-1 w-4 h-4" /> : 
                         <ChevronDown className="ml-1 w-4 h-4" />
@@ -467,67 +483,74 @@ const ChildManagement = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {currentChildren.length > 0 ? (
-                currentChildren.map((child) => (
-                  <tr key={child.id} className="hover:bg-gray-50">
+              {currentUsers.length > 0 ? (
+                currentUsers.map((user) => (
+                  <tr key={user.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <input 
                         type="checkbox" 
-                        checked={selectedChildren.includes(child.id)}
-                        onChange={() => toggleSelectChild(child.id)}
+                        checked={selectedUsers.includes(user.id)}
+                        onChange={() => toggleSelectUser(user.id)}
                         className="h-4 w-4 text-[#6339C0] border-gray-300 rounded focus:ring-[#6339C0]"
                       />
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10 bg-[#f3eeff] rounded-full flex items-center justify-center">
-                          <Baby className="text-[#6339C0]" />
+                          {user.role === 'child' ? (
+                            <Baby className="text-[#6339C0]" />
+                          ) : user.role === 'parent' ? (
+                            <Users className="text-[#6339C0]" />
+                          ) : user.role === 'supervisor' ? (
+                            <Shield className="text-[#6339C0]" />
+                          ) : (
+                            <Lock className="text-[#6339C0]" />
+                          )}
                         </div>
                         <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">{child.name}</div>
-                          <div className="text-sm text-gray-500 flex items-center">
-                            <Calendar className="w-3 h-3 mr-1" />
-                            {child.birthDate} ({child.age})
-                          </div>
+                          <div className="text-sm font-medium text-gray-900">{user.name}</div>
+                          <div className="text-sm text-gray-500">ID: {user.id}</div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{child.parentName}</div>
-                      <div className="text-sm text-gray-500">{child.parentContact}</div>
+                      <div className="text-sm text-gray-900">{user.email}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {getClassroomBadge(child.classroom)}
+                      {getRoleBadge(user.role)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {child.allergies.length > 0 ? (
-                        <div className="flex flex-wrap gap-1 max-w-xs">
-                          {child.allergies.map(allergy => (
-                            <span key={allergy} className="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">
-                              {allergy}
-                            </span>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-sm text-gray-500">None</span>
-                      )}
+                      <div className="text-sm text-gray-500">
+                        {user.role === 'parent' && user.children && (
+                          <div>Children: {user.children.join(', ')}</div>
+                        )}
+                        {user.role === 'child' && user.classroom && (
+                          <div>Class: {user.classroom}</div>
+                        )}
+                        {user.role === 'supervisor' && user.classroom && (
+                          <div>Responsible for: {user.classroom}</div>
+                        )}
+                        {user.role === 'admin' && (
+                          <div>Full system access</div>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {getStatusBadge(child.status)}
+                      {getStatusBadge(user.status)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {child.lastCheckIn || 'N/A'}
+                      {user.lastLogin || 'Never'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">
                         <button
-                          onClick={() => openEditModal(child)}
+                          onClick={() => openEditModal(user)}
                           className="text-[#6339C0] hover:text-[#7e57ff]"
                         >
                           <Edit className="w-5 h-5" />
                         </button>
                         <button 
-                          onClick={() => openDeleteModal(child)}
+                          onClick={() => openDeleteModal(user)}
                           className="text-red-500 hover:text-red-700"
                         >
                           <Trash2 className="w-5 h-5" />
@@ -539,7 +562,7 @@ const ChildManagement = () => {
               ) : (
                 <tr>
                   <td colSpan={8} className="px-6 py-4 text-center text-sm text-gray-500">
-                    No children found matching your criteria
+                    No users found matching your criteria
                   </td>
                 </tr>
               )}
@@ -547,21 +570,61 @@ const ChildManagement = () => {
           </table>
         </div>
 
-        {/* Pagination (same as UserManagement) */}
+        {/* Pagination */}
         {totalPages > 1 && (
           <div className="bg-white px-6 py-3 flex items-center justify-between border-t border-gray-200">
-            {/* ... (same pagination implementation as UserManagement) */}
+            <div className="flex-1 flex justify-between sm:hidden">
+              <button className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                Previous
+              </button>
+              <button className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                Next
+              </button>
+            </div>
+            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm text-gray-700">
+                  Showing <span className="font-medium">{indexOfFirstUser + 1}</span> to{' '}
+                  <span className="font-medium">{Math.min(indexOfLastUser, filteredUsers.length)}</span> of{' '}
+                  <span className="font-medium">{filteredUsers.length}</span> results
+                </p>
+              </div>
+              <div>
+                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                  <button className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                    <span className="sr-only">Previous</span>
+                    <ChevronUp className="h-5 w-5" aria-hidden="true" />
+                  </button>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <button
+                      key={page}
+                      className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                        1 === page
+                          ? 'z-10 bg-[#6339C0] border-[#6339C0] text-white'
+                          : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                  <button className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                    <span className="sr-only">Next</span>
+                    <ChevronDown className="h-5 w-5" aria-hidden="true" />
+                  </button>
+                </nav>
+              </div>
+            </div>
           </div>
         )}
       </div>
 
-      {/* Add Child Modal */}
+      {/* Add User Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-gray-800">Add New Child</h2>
+                <h2 className="text-xl font-bold text-gray-800">Add New User</h2>
                 <button onClick={() => setShowAddModal(false)} className="text-gray-400 hover:text-gray-500">
                   <X className="w-6 h-6" />
                 </button>
@@ -570,7 +633,7 @@ const ChildManagement = () => {
                 <div className="space-y-4">
                   <div>
                     <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                      Child's Full Name
+                      Full Name
                     </label>
                     <input
                       type="text"
@@ -583,80 +646,131 @@ const ChildManagement = () => {
                     />
                   </div>
                   <div>
-                    <label htmlFor="birthDate" className="block text-sm font-medium text-gray-700 mb-1">
-                      Birth Date
-                    </label>
-                    <input
-                      type="date"
-                      id="birthDate"
-                      name="birthDate"
-                      value={formData.birthDate}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6339C0] focus:border-transparent"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="parentName" className="block text-sm font-medium text-gray-700 mb-1">
-                      Parent/Guardian Name
-                    </label>
-                    <input
-                      type="text"
-                      id="parentName"
-                      name="parentName"
-                      value={formData.parentName}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6339C0] focus:border-transparent"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="parentContact" className="block text-sm font-medium text-gray-700 mb-1">
-                      Parent Contact
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                      Email
                     </label>
                     <input
                       type="email"
-                      id="parentContact"
-                      name="parentContact"
-                      value={formData.parentContact}
+                      id="email"
+                      name="email"
+                      value={formData.email}
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6339C0] focus:border-transparent"
                       required
                     />
                   </div>
                   <div>
-                    <label htmlFor="classroom" className="block text-sm font-medium text-gray-700 mb-1">
-                      Classroom
+                    <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
+                      Role
                     </label>
                     <select
-                      id="classroom"
-                      name="classroom"
-                      value={formData.classroom}
+                      id="role"
+                      name="role"
+                      value={formData.role}
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6339C0] focus:border-transparent"
                       required
                     >
-                      <option value="">Select classroom</option>
-                      <option value="Sunflowers">Sunflowers (2-3 years)</option>
-                      <option value="Butterflies">Butterflies (3-4 years)</option>
-                      <option value="Caterpillars">Caterpillars (1-2 years)</option>
-                      <option value="Waitlist">Waitlist</option>
+                      <option value="parent">Parent</option>
+                      <option value="child">Child</option>
+                      <option value="supervisor">Supervisor</option>
+                      <option value="admin">Admin</option>
                     </select>
                   </div>
-                  <div>
-                    <label htmlFor="allergies" className="block text-sm font-medium text-gray-700 mb-1">
-                      Allergies (comma separated)
-                    </label>
-                    <input
-                      type="text"
-                      id="allergies"
-                      name="allergies"
-                      value={formData.allergies}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6339C0] focus:border-transparent"
-                      placeholder="Peanuts, Dairy, Eggs, etc."
-                    />
-                  </div>
+                  {formData.role === 'child' && (
+                    <div>
+                      <label htmlFor="classroom" className="block text-sm font-medium text-gray-700 mb-1">
+                        Classroom
+                      </label>
+                      <select
+                        id="classroom"
+                        name="classroom"
+                        value={formData.classroom}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6339C0] focus:border-transparent"
+                      >
+                        <option value="">Select classroom</option>
+                        <option value="Sunflowers">Sunflowers</option>
+                        <option value="Butterflies">Butterflies</option>
+                        <option value="Caterpillars">Caterpillars</option>
+                      </select>
+                    </div>
+                  )}
+                  {formData.role === 'supervisor' && (
+                    <div>
+                      <label htmlFor="classroom" className="block text-sm font-medium text-gray-700 mb-1">
+                        Responsible Classroom
+                      </label>
+                      <select
+                        id="classroom"
+                        name="classroom"
+                        value={formData.classroom}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6339C0] focus:border-transparent"
+                      >
+                        <option value="">Select classroom</option>
+                        <option value="Sunflowers">Sunflowers</option>
+                        <option value="Butterflies">Butterflies</option>
+                        <option value="Caterpillars">Caterpillars</option>
+                        <option value="All">All Classrooms</option>
+                      </select>
+                    </div>
+                  )}
+                  {(formData.role === 'supervisor' || formData.role === 'admin') && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Permissions
+                      </label>
+                      <div className="space-y-2">
+                        <label className="flex items-center">
+                          <input
+                            type="checkbox"
+                            name="permissions"
+                            value="dashboard"
+                            checked={formData.permissions.includes('dashboard')}
+                            onChange={handleCheckboxChange}
+                            className="h-4 w-4 text-[#6339C0] focus:ring-[#6339C0] border-gray-300 rounded"
+                          />
+                          <span className="ml-2 text-sm text-gray-700">Dashboard Access</span>
+                        </label>
+                        <label className="flex items-center">
+                          <input
+                            type="checkbox"
+                            name="permissions"
+                            value="attendance"
+                            checked={formData.permissions.includes('attendance')}
+                            onChange={handleCheckboxChange}
+                            className="h-4 w-4 text-[#6339C0] focus:ring-[#6339C0] border-gray-300 rounded"
+                          />
+                          <span className="ml-2 text-sm text-gray-700">Attendance Management</span>
+                        </label>
+                        <label className="flex items-center">
+                          <input
+                            type="checkbox"
+                            name="permissions"
+                            value="reports"
+                            checked={formData.permissions.includes('reports')}
+                            onChange={handleCheckboxChange}
+                            className="h-4 w-4 text-[#6339C0] focus:ring-[#6339C0] border-gray-300 rounded"
+                          />
+                          <span className="ml-2 text-sm text-gray-700">Report Generation</span>
+                        </label>
+                        {formData.role === 'admin' && (
+                          <label className="flex items-center">
+                            <input
+                              type="checkbox"
+                              name="permissions"
+                              value="admin"
+                              checked={formData.permissions.includes('admin')}
+                              onChange={handleCheckboxChange}
+                              className="h-4 w-4 text-[#6339C0] focus:ring-[#6339C0] border-gray-300 rounded"
+                            />
+                            <span className="ml-2 text-sm text-gray-700">Admin Privileges</span>
+                          </label>
+                        )}
+                      </div>
+                    </div>
+                  )}
                   <div>
                     <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
                       Status
@@ -671,7 +785,7 @@ const ChildManagement = () => {
                     >
                       <option value="active">Active</option>
                       <option value="inactive">Inactive</option>
-                      <option value="waitlist">Waitlist</option>
+                      <option value="pending">Pending</option>
                     </select>
                   </div>
                 </div>
@@ -687,7 +801,7 @@ const ChildManagement = () => {
                     type="submit"
                     className="btn-primary"
                   >
-                    Add Child
+                    Add User
                   </button>
                 </div>
               </form>
@@ -696,13 +810,13 @@ const ChildManagement = () => {
         </div>
       )}
 
-      {/* Edit Child Modal */}
-      {showEditModal && currentChild && (
+      {/* Edit User Modal */}
+      {showEditModal && currentUser && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-gray-800">Edit Child</h2>
+                <h2 className="text-xl font-bold text-gray-800">Edit User</h2>
                 <button onClick={() => setShowEditModal(false)} className="text-gray-400 hover:text-gray-500">
                   <X className="w-6 h-6" />
                 </button>
@@ -711,16 +825,24 @@ const ChildManagement = () => {
                 <div className="space-y-4">
                   <div className="flex items-center space-x-3">
                     <div className="flex-shrink-0 h-12 w-12 bg-[#f3eeff] rounded-full flex items-center justify-center">
-                      <Baby className="text-[#6339C0]" />
+                      {currentUser.role === 'child' ? (
+                        <Baby className="text-[#6339C0]" />
+                      ) : currentUser.role === 'parent' ? (
+                        <Users className="text-[#6339C0]" />
+                      ) : currentUser.role === 'supervisor' ? (
+                        <Shield className="text-[#6339C0]" />
+                      ) : (
+                        <Lock className="text-[#6339C0]" />
+                      )}
                     </div>
                     <div>
-                      <h3 className="text-lg font-medium text-gray-800">{currentChild.name}</h3>
-                      <p className="text-sm text-gray-500">Enrolled on {currentChild.enrollmentDate}</p>
+                      <h3 className="text-lg font-medium text-gray-800">{currentUser.name}</h3>
+                      <p className="text-sm text-gray-500">Joined on {currentUser.joinDate}</p>
                     </div>
                   </div>
                   <div>
                     <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                      Child's Full Name
+                      Full Name
                     </label>
                     <input
                       type="text"
@@ -733,79 +855,129 @@ const ChildManagement = () => {
                     />
                   </div>
                   <div>
-                    <label htmlFor="birthDate" className="block text-sm font-medium text-gray-700 mb-1">
-                      Birth Date
-                    </label>
-                    <input
-                      type="date"
-                      id="birthDate"
-                      name="birthDate"
-                      value={formData.birthDate}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6339C0] focus:border-transparent"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="parentName" className="block text-sm font-medium text-gray-700 mb-1">
-                      Parent/Guardian Name
-                    </label>
-                    <input
-                      type="text"
-                      id="parentName"
-                      name="parentName"
-                      value={formData.parentName}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6339C0] focus:border-transparent"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="parentContact" className="block text-sm font-medium text-gray-700 mb-1">
-                      Parent Contact
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                      Email
                     </label>
                     <input
                       type="email"
-                      id="parentContact"
-                      name="parentContact"
-                      value={formData.parentContact}
+                      id="email"
+                      name="email"
+                      value={formData.email}
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6339C0] focus:border-transparent"
                       required
                     />
                   </div>
                   <div>
-                    <label htmlFor="classroom" className="block text-sm font-medium text-gray-700 mb-1">
-                      Classroom
+                    <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
+                      Role
                     </label>
                     <select
-                      id="classroom"
-                      name="classroom"
-                      value={formData.classroom}
+                      id="role"
+                      name="role"
+                      value={formData.role}
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6339C0] focus:border-transparent"
                       required
                     >
-                      <option value="Sunflowers">Sunflowers (2-3 years)</option>
-                      <option value="Butterflies">Butterflies (3-4 years)</option>
-                      <option value="Caterpillars">Caterpillars (1-2 years)</option>
-                      <option value="Waitlist">Waitlist</option>
+                      <option value="parent">Parent</option>
+                      <option value="child">Child</option>
+                      <option value="supervisor">Supervisor</option>
+                      <option value="admin">Admin</option>
                     </select>
                   </div>
-                  <div>
-                    <label htmlFor="allergies" className="block text-sm font-medium text-gray-700 mb-1">
-                      Allergies (comma separated)
-                    </label>
-                    <input
-                      type="text"
-                      id="allergies"
-                      name="allergies"
-                      value={formData.allergies}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6339C0] focus:border-transparent"
-                      placeholder="Peanuts, Dairy, Eggs, etc."
-                    />
-                  </div>
+                  {formData.role === 'child' && (
+                    <div>
+                      <label htmlFor="classroom" className="block text-sm font-medium text-gray-700 mb-1">
+                        Classroom
+                      </label>
+                      <select
+                        id="classroom"
+                        name="classroom"
+                        value={formData.classroom}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6339C0] focus:border-transparent"
+                      >
+                        <option value="Sunflowers">Sunflowers</option>
+                        <option value="Butterflies">Butterflies</option>
+                        <option value="Caterpillars">Caterpillars</option>
+                      </select>
+                    </div>
+                  )}
+                  {formData.role === 'supervisor' && (
+                    <div>
+                      <label htmlFor="classroom" className="block text-sm font-medium text-gray-700 mb-1">
+                        Responsible Classroom
+                      </label>
+                      <select
+                        id="classroom"
+                        name="classroom"
+                        value={formData.classroom}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6339C0] focus:border-transparent"
+                      >
+                        <option value="Sunflowers">Sunflowers</option>
+                        <option value="Butterflies">Butterflies</option>
+                        <option value="Caterpillars">Caterpillars</option>
+                        <option value="All">All Classrooms</option>
+                      </select>
+                    </div>
+                  )}
+                  {(formData.role === 'supervisor' || formData.role === 'admin') && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Permissions
+                      </label>
+                      <div className="space-y-2">
+                        <label className="flex items-center">
+                          <input
+                            type="checkbox"
+                            name="permissions"
+                            value="dashboard"
+                            checked={formData.permissions.includes('dashboard')}
+                            onChange={handleCheckboxChange}
+                            className="h-4 w-4 text-[#6339C0] focus:ring-[#6339C0] border-gray-300 rounded"
+                          />
+                          <span className="ml-2 text-sm text-gray-700">Dashboard Access</span>
+                        </label>
+                        <label className="flex items-center">
+                          <input
+                            type="checkbox"
+                            name="permissions"
+                            value="attendance"
+                            checked={formData.permissions.includes('attendance')}
+                            onChange={handleCheckboxChange}
+                            className="h-4 w-4 text-[#6339C0] focus:ring-[#6339C0] border-gray-300 rounded"
+                          />
+                          <span className="ml-2 text-sm text-gray-700">Attendance Management</span>
+                        </label>
+                        <label className="flex items-center">
+                          <input
+                            type="checkbox"
+                            name="permissions"
+                            value="reports"
+                            checked={formData.permissions.includes('reports')}
+                            onChange={handleCheckboxChange}
+                            className="h-4 w-4 text-[#6339C0] focus:ring-[#6339C0] border-gray-300 rounded"
+                          />
+                          <span className="ml-2 text-sm text-gray-700">Report Generation</span>
+                        </label>
+                        {formData.role === 'admin' && (
+                          <label className="flex items-center">
+                            <input
+                              type="checkbox"
+                              name="permissions"
+                              value="admin"
+                              checked={formData.permissions.includes('admin')}
+                              onChange={handleCheckboxChange}
+                              className="h-4 w-4 text-[#6339C0] focus:ring-[#6339C0] border-gray-300 rounded"
+                            />
+                            <span className="ml-2 text-sm text-gray-700">Admin Privileges</span>
+                          </label>
+                        )}
+                      </div>
+                    </div>
+                  )}
                   <div>
                     <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
                       Status
@@ -820,7 +992,7 @@ const ChildManagement = () => {
                     >
                       <option value="active">Active</option>
                       <option value="inactive">Inactive</option>
-                      <option value="waitlist">Waitlist</option>
+                      <option value="pending">Pending</option>
                     </select>
                   </div>
                 </div>
@@ -846,7 +1018,7 @@ const ChildManagement = () => {
       )}
 
       {/* Delete Confirmation Modal */}
-      {showDeleteModal && currentChild && (
+      {showDeleteModal && currentUser && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-lg max-w-md w-full">
             <div className="p-6">
@@ -858,7 +1030,7 @@ const ChildManagement = () => {
               </div>
               <div className="space-y-4">
                 <p className="text-gray-600">
-                  Are you sure you want to delete <span className="font-semibold">{currentChild.name}</span>? This will permanently remove all records associated with this child.
+                  Are you sure you want to delete <span className="font-semibold">{currentUser.name}</span>? This will permanently remove all records associated with this user.
                 </p>
                 <div className="bg-red-50 p-4 rounded-lg">
                   <div className="flex items-start">
@@ -870,7 +1042,7 @@ const ChildManagement = () => {
                     <div className="ml-3">
                       <h3 className="text-sm font-medium text-red-800">Important Notice</h3>
                       <div className="mt-2 text-sm text-red-700">
-                        <p>This action cannot be undone. All attendance records, photos, and other data will be permanently deleted.</p>
+                        <p>This action cannot be undone. All user records, permissions, and associated data will be permanently deleted.</p>
                       </div>
                     </div>
                   </div>
@@ -889,7 +1061,7 @@ const ChildManagement = () => {
                   onClick={handleDelete}
                   className="btn-danger"
                 >
-                  Delete Child Record
+                  Delete User
                 </button>
               </div>
             </div>
@@ -903,14 +1075,14 @@ const ChildManagement = () => {
           <div className="bg-white rounded-xl shadow-lg max-w-md w-full">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-gray-800">Export Child Data</h2>
+                <h2 className="text-xl font-bold text-gray-800">Export User Data</h2>
                 <button onClick={() => setShowExportModal(false)} className="text-gray-400 hover:text-gray-500">
                   <X className="w-6 h-6" />
                 </button>
               </div>
               <div className="space-y-4">
                 <p className="text-gray-600">
-                  Select the format you want to export the child data in:
+                  Select the format you want to export the user data in:
                 </p>
                 <div className="grid grid-cols-2 gap-4">
                   <button
@@ -936,17 +1108,17 @@ const ChildManagement = () => {
                       type="checkbox"
                       className="h-4 w-4 text-[#6339C0] focus:ring-[#6339C0] border-gray-300 rounded"
                     />
-                    <span className="ml-2 text-sm text-gray-700">Include all child details</span>
+                    <span className="ml-2 text-sm text-gray-700">Include all user details</span>
                   </label>
                   <label className="flex items-center mt-2">
                     <input
                       type="checkbox"
                       className="h-4 w-4 text-[#6339C0] focus:ring-[#6339C0] border-gray-300 rounded"
-                      checked={selectedChildren.length > 0}
-                      disabled={selectedChildren.length === 0}
+                      checked={selectedUsers.length > 0}
+                      disabled={selectedUsers.length === 0}
                     />
-                    <span className={`ml-2 text-sm ${selectedChildren.length === 0 ? 'text-gray-400' : 'text-gray-700'}`}>
-                      Export only selected children ({selectedChildren.length})
+                    <span className={`ml-2 text-sm ${selectedUsers.length === 0 ? 'text-gray-400' : 'text-gray-700'}`}>
+                      Export only selected users ({selectedUsers.length})
                     </span>
                   </label>
                   <label className="flex items-center mt-2">
@@ -954,14 +1126,14 @@ const ChildManagement = () => {
                       type="checkbox"
                       className="h-4 w-4 text-[#6339C0] focus:ring-[#6339C0] border-gray-300 rounded"
                     />
-                    <span className="ml-2 text-sm text-gray-700">Include medical/allergy information</span>
+                    <span className="ml-2 text-sm text-gray-700">Include role information</span>
                   </label>
                   <label className="flex items-center mt-2">
                     <input
                       type="checkbox"
                       className="h-4 w-4 text-[#6339C0] focus:ring-[#6339C0] border-gray-300 rounded"
                     />
-                    <span className="ml-2 text-sm text-gray-700">Include attendance history</span>
+                    <span className="ml-2 text-sm text-gray-700">Include permission details</span>
                   </label>
                 </div>
               </div>
@@ -985,27 +1157,8 @@ const ChildManagement = () => {
           </div>
         </div>
       )}
-
-      {/* User Management Modals */}
-      <UserModals
-        showAdd={showAddUserModal}
-        showEdit={showEditUserModal}
-        showDelete={showDeleteUserModal}
-        showExport={showExportUserModal}
-        userForm={userForm}
-        currentUser={currentUser}
-        onCloseAdd={() => setShowAddUserModal(false)}
-        onCloseEdit={() => setShowEditUserModal(false)}
-        onCloseDelete={() => setShowDeleteUserModal(false)}
-        onCloseExport={() => setShowExportUserModal(false)}
-        onChange={handleUserInputChange}
-        onAdd={handleAddUserSubmit}
-        onEdit={handleEditUserSubmit}
-        onDelete={handleDeleteUser}
-        onExport={handleExportUser}
-      />
     </div>
   );
 };
 
-export default ChildManagement;
+export default UserManagement;

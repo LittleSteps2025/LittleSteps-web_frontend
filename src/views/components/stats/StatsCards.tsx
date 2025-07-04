@@ -6,8 +6,6 @@ interface Stats {
   activeTeachers: number;
   activeSupervisors: number;
   todayCheckIns: number;
-  attendanceRate: string | number;
-  pendingComplaints: number;
   monthlyRevenue: number;
 }
 
@@ -48,20 +46,7 @@ const StatsCards = ({ stats }: { stats: Stats }) => {
       trend: '+8%',
       color: 'bg-cyan-100 text-cyan-800'
     },
-    { 
-      icon: CheckCircle, 
-      title: 'Attendance Rate', 
-      value: stats.attendanceRate, 
-      trend: '+3%',
-      color: 'bg-green-100 text-green-800'
-    },
-    { 
-      icon: AlertCircle, 
-      title: 'Pending Issues', 
-      value: stats.pendingComplaints, 
-      trend: '-2%',
-      color: 'bg-red-100 text-red-800'
-    },
+    
     { 
       icon: DollarSign, 
       title: 'Monthly Revenue', 

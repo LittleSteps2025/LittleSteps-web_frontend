@@ -8,7 +8,7 @@ const AdminNavbar = () => {
   return (
     <nav className="bg-white shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
+        <div className="flex justify-between h-15">
           <div className="flex items-center sm:hidden">
             <button
               onClick={() => setIsOpen(!isOpen)}
@@ -20,30 +20,7 @@ const AdminNavbar = () => {
           </div>
           <div className="flex-1 flex items-center justify-end">
             <div className="flex items-center space-x-4">
-              <Link
-                to="/admin/users"
-                className="text-gray-700 hover:text-indigo-600 font-medium px-3 py-2 rounded transition-colors"
-              >
-                User Management
-              </Link>
-              <Link
-                to="/admin/subscriptions"
-                className="text-gray-700 hover:text-indigo-600 font-medium px-3 py-2 rounded transition-colors"
-              >
-                Subscriptions
-              </Link>
-              <Link
-                to="/admin/complaints"
-                className="text-gray-700 hover:text-indigo-600 font-medium px-3 py-2 rounded transition-colors"
-              >
-                Complaints
-              </Link>
-              <Link
-                to="/admin/attendance"
-                className="text-gray-700 hover:text-indigo-600 font-medium px-3 py-2 rounded transition-colors"
-              >
-                Attendance
-              </Link>
+              
               <button className="bg-white p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                 <span className="sr-only">View notifications</span>
                 <Bell className="h-6 w-6" />
