@@ -10,6 +10,7 @@ import AdminLayout from './views/layouts/AdminLayout';
 import SupervisorLayout from './views/layouts/SupervisorLayout';
 import Unauthorized from './views/Unauthorized';
 
+
 // Import admin components
 import AdminDashboard from './views/admin/Dashboard';
 import AdminUsers from './views/admin/Users';
@@ -37,6 +38,7 @@ import SupervisorActivities from './views/supervisor/Activities';
 import SupervisorReports from './views/supervisor/Reports';
 import SupervisorEvents from './views/supervisor/Events';
 
+
 function App() {
   return (
     <AuthProvider>
@@ -60,6 +62,7 @@ function App() {
             }
           >
             <Route index element={<AdminDashboard />} />
+
             <Route path="users" element={<AdminUsers />} />
             <Route path="children" element={<AdminChildren />} />
             <Route path="subscriptions" element={<AdminSubscriptions />} />
@@ -70,6 +73,7 @@ function App() {
             <Route path="activities" element={<AdminActivities />} />
             <Route path="settings" element={<AdminSettings />} />
             <Route path="support" element={<AdminSupport />} />
+
           </Route>
 
           {/* Protected supervisor routes with supervisor layout */}
