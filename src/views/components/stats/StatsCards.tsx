@@ -4,9 +4,8 @@ interface Stats {
   totalChildren: number;
   activeParents: number;
   activeTeachers: number;
-
-  attendanceRate: string | number;
- 
+  activeSupervisors: number;
+  todayCheckIns: number;
   monthlyRevenue: number;
 }
 
@@ -33,15 +32,22 @@ const StatsCards = ({ stats }: { stats: Stats }) => {
       trend: '0%',
       color: 'bg-amber-100 text-amber-800'
     },
- 
+
+    { 
+      icon: Users, 
+      title: 'Supervisors', 
+      value: stats.activeSupervisors, 
+      trend: '+2%',
+      color: 'bg-pink-100 text-pink-800'
+    },
     { 
       icon: CheckCircle, 
-      title: 'Attendance Rate', 
-      value: stats.attendanceRate, 
-      trend: '+3%',
-      color: 'bg-green-100 text-green-800'
+      title: "Today's Check-ins", 
+      value: stats.todayCheckIns, 
+      trend: '+8%',
+      color: 'bg-cyan-100 text-cyan-800'
     },
-   
+
     { 
       icon: DollarSign, 
       title: 'Monthly Revenue', 
