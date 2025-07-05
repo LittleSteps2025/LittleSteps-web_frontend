@@ -1,4 +1,4 @@
-import { Users, Baby, AlertCircle, DollarSign, TrendingUp, CheckCircle } from 'lucide-react';
+import { Users, Baby, DollarSign, TrendingUp, CheckCircle } from 'lucide-react';
 
 interface Stats {
   totalChildren: number;
@@ -32,6 +32,7 @@ const StatsCards = ({ stats }: { stats: Stats }) => {
       trend: '0%',
       color: 'bg-amber-100 text-amber-800'
     },
+
     { 
       icon: Users, 
       title: 'Supervisors', 
@@ -46,7 +47,7 @@ const StatsCards = ({ stats }: { stats: Stats }) => {
       trend: '+8%',
       color: 'bg-cyan-100 text-cyan-800'
     },
-    
+
     { 
       icon: DollarSign, 
       title: 'Monthly Revenue', 
