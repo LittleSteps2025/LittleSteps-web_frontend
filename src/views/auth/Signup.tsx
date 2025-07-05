@@ -4,13 +4,14 @@ import { Eye, EyeOff } from 'lucide-react';
 
 const Signup: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
-  // const [name, setName] = useState('');
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [nic, setNic] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
-  // const [role, setRole] = useState('admin');
+  const [role, setRole] = useState('admin');
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
@@ -21,12 +22,22 @@ const Signup: React.FC = () => {
 
     try {
       // Basic validation
-      // if (!name.trim()) {
-      //   throw new Error('Name is required');
-      // }
+      if (!name.trim()) {
+        throw new Error('Name is required');
+      }
 
       if (!email.trim()) {
         throw new Error('Email is required');
+      }
+
+      if (!nic.trim()) {
+        throw new Error('NIC is required');
+      }
+
+      // NIC format validation (Sri Lankan NIC)
+      const nicPattern = /^(?:\d{9}[VXvx]|\d{12})$/;
+      if (!nicPattern.test(nic.trim())) {
+        throw new Error('Please enter a valid NIC number (9 digits + V/X or 12 digits)');
       }
 
       if (password.length < 6) {
@@ -37,49 +48,41 @@ const Signup: React.FC = () => {
         throw new Error('Passwords do not match');
       }
 
-      const response = await fetch('http://localhost:5001/api/supervisor/supervisorSignup', {
+      // Determine the correct endpoint based on role
+      const endpoint = role === 'admin' 
+        ? 'http://localhost:5001/api/supervisors/adminSignup'
+        : 'http://localhost:5001/api/supervisors/supervisorSignup';
+
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({  
-          email, 
+        body: JSON.stringify({ 
+          name, 
+          email,
+          nic, 
           password, 
+          role // Include role for backend processing
         }),
       });
 
       const data = await response.json();
-      
-      // Debug: Log what the server actually returns
-      console.log('Server response:', data);
 
       if (!response.ok) {
         throw new Error(data.message || 'Signup failed');
       }
 
-      // Safe navigation - check if data.user.email exists before using it
-      const userEmail = data?.user?.email || email; // Use form email as fallback
-      
       navigate('/login', { 
         state: { 
           success: 'Account created successfully! Please login.',
-          email: userEmail
+          email: data.user.email 
         } 
       });
     } catch (err) {
       const error = err as Error;
-      
-      // Debug: Log the full error details
-      console.error('Full error details:', error);
-      
-      // Handle different types of errors
-      if (error.message.includes('Cannot read properties of undefined')) {
-        setError('Server response format error. The signup might have worked - try logging in with your email.');
-      } else if (error.message.includes('Failed to fetch') || error.name === 'TypeError') {
-        setError('Network error: Cannot connect to server. Please check if your backend is running on http://localhost:5001');
-      } else {
-        setError(error.message || 'An unexpected error occurred during signup.');
-      }
+      setError(error.message);
+      console.error('Signup error:', error);
     } finally {
       setIsLoading(false);
     }
@@ -98,7 +101,7 @@ const Signup: React.FC = () => {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Name field */}
-          {/* <div>
+          <div>
             <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
               Name
             </label>
@@ -110,7 +113,7 @@ const Signup: React.FC = () => {
               className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6339C0]"
               required
             />
-          </div> */}
+          </div>
 
           {/* Email field */}
           <div>
@@ -126,9 +129,28 @@ const Signup: React.FC = () => {
               required
             />
           </div>
+          {/* NIC field */}
+          <div>
+            <label htmlFor="nic" className="block text-sm font-medium text-gray-700 mb-1">
+              NIC Number
+            </label>
+            <input
+              id="nic"
+              type="text"
+              value={nic}
+              onChange={e => setNic(e.target.value)}
+              className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6339C0]"
+              placeholder="Enter your NIC (e.g., 123456789V or 123456789012)"
+              maxLength={12}
+              required
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Enter 9 digits + V/X (old format) or 12 digits (new format)
+            </p>
+          </div>
 
           {/* Role field - only admin and supervisor options */}
-          {/* <div>
+          <div>
             <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
               Role
             </label>
@@ -142,7 +164,7 @@ const Signup: React.FC = () => {
               <option value="admin">Admin</option>
               <option value="supervisor">Supervisor</option>
             </select>
-          </div> */}
+          </div>
 
           {/* Password field */}
           <div>

@@ -3,10 +3,19 @@ import { createContext, useContext, useState } from 'react';
 import type { ReactNode } from 'react';
 
 interface User {
-  id: string;
+  id: number;
+  firebaseUid: string;
   name: string;
   email: string;
   role: 'admin' | 'supervisor' | 'teacher' | 'parent';
+  nic?: string;
+  address?: string;
+  phone?: string;
+  image?: string;
+  status: string;
+  created_at: string;
+  sup_id?: number;
+  cv?: string;
   token?: string;
 }
 

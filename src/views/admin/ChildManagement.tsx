@@ -85,6 +85,7 @@ const children: ChildType[] = [
   },
 ];
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const sortKeys = ['name', 'classroom', 'status', 'enrollmentDate', 'lastCheckIn'] as const;
 type SortKey = typeof sortKeys[number];
 
