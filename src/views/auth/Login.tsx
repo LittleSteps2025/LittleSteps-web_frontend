@@ -3,6 +3,8 @@ import { Lock, Mail, Eye, EyeOff } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
+
+//malith
 const Login: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -21,95 +23,40 @@ const Login: React.FC = () => {
     setError('');
 
     try {
-      // Try admin login first
-      let response;
-      try {
-        response = await fakeAdminLogin({ email, password });
-      } catch {
-        // If admin login fails, try supervisor login
-        response = await fakeSupervisorLogin({ email, password });
-      }
-      
-      // Type assertion for response
-      const typedResponse = response as {
-        user: { id: string; name: string; email: string; role: 'admin' | 'supervisor' };
-        token: string;
-      };
+      const response = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
-      // Login the user
-      login(typedResponse.user, typedResponse.token);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Login failed');
+      }
+
+      // Login the user with the response data
+      login(data.user, data.token);
       
       // Redirect based on role
-      if (typedResponse.user.role === 'admin') {
-        navigate('/admin', { replace: true });
-      } else if (typedResponse.user.role === 'supervisor') {
-        navigate('/supervisor', { replace: true });
-      } else {
-        navigate(from, { replace: true });
+      switch (data.user.role) {
+        case 'admin':
+          navigate('/admin', { replace: true });
+          break;
+        case 'supervisor':
+          navigate('/supervisor', { replace: true });
+          break;
+        default:
+          navigate(from, { replace: true });
       }
       
-    } catch {
-      setError('Invalid email or password');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Invalid email or password');
+    } finally {
       setIsLoading(false);
     }
-  };
-
-  // Mock admin login function
-  const fakeAdminLogin = async (credentials: { email: string; password: string }) => {
-    const adminCredentials = {
-      email: 'admin@example.com',
-      password: 'admin123'
-    };
-
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        if (
-          credentials.email === adminCredentials.email &&
-          credentials.password === adminCredentials.password
-        ) {
-          resolve({
-            user: {
-              id: '1',
-              name: 'Admin User',
-              email: credentials.email,
-              role: "admin" as const
-            },
-            token: 'fake-admin-token'
-          });
-        } else {
-          reject(new Error('Invalid admin credentials'));
-        }
-      }, 1000);
-    });
-  };
-
-  // Mock supervisor login function
-  const fakeSupervisorLogin = async (credentials: { email: string; password: string }) => {
-    const supervisorCredentials = {
-      email: 'supervisor@example.com',
-      password: 'supervisor123'
-    };
-
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        if (
-          credentials.email === supervisorCredentials.email &&
-          credentials.password === supervisorCredentials.password
-        ) {
-          resolve({
-            user: {
-              id: '2',
-              name: 'Supervisor User',
-              email: credentials.email,
-              role: "supervisor" as const
-            },
-            token: 'fake-supervisor-token'
-          });
-        } else {
-          reject(new Error('Invalid supervisor credentials'));
-        }
-      }, 1000);
-    });
   };
 
   return (
@@ -134,7 +81,7 @@ const Login: React.FC = () => {
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 required
-                placeholder="admin@example.com or supervisor@example.com"
+                placeholder="Enter your email"
               />
             </div>
           </div>
@@ -148,7 +95,8 @@ const Login: React.FC = () => {
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 required
-                placeholder="admin123 or supervisor123"
+                placeholder="Enter your password"
+                minLength={6}
               />
               <button
                 type="button"
@@ -174,10 +122,18 @@ const Login: React.FC = () => {
           </div>
           <button
             type="submit"
-            className="w-full bg-gradient-to-r from-[#6339C0] to-[#9F66FF] text-white py-3 rounded-lg font-semibold hover:shadow-lg transition"
+            className="w-full bg-gradient-to-r from-[#6339C0] to-[#9F66FF] text-white py-3 rounded-lg font-semibold hover:shadow-lg transition flex justify-center items-center"
             disabled={isLoading}
           >
-            {isLoading ? 'Logging in...' : 'Login'}
+            {isLoading ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Logging in...
+              </>
+            ) : 'Login'}
           </button>
         </form>
         <div className="mt-6 text-center text-sm text-gray-600">

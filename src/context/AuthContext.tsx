@@ -1,3 +1,4 @@
+// frontend >> src/context/AuthContext.jsx
 import { createContext, useContext, useState } from 'react';
 import type { ReactNode } from 'react';
 
@@ -20,7 +21,6 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(() => {
-    // Initialize from localStorage if available
     const storedUser = localStorage.getItem('user');
     return storedUser ? JSON.parse(storedUser) : null;
   });
