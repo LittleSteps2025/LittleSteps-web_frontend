@@ -13,11 +13,11 @@ import Unauthorized from './views/Unauthorized';
 
 // Import admin components
 import AdminDashboard from './views/admin/Dashboard';
-import AdminUsers from './views/admin/Users';
-import AdminChildren from './views/admin/Children';
-import AdminSubscriptions from './views/admin/Subscriptions';
-import AdminComplaints from './views/admin/Complaints';
-import AdminAttendance from './views/admin/Attendance';
+import AdminUsers from './views/admin/UsersManagement';
+import AdminChildren from './views/admin/ChildManagement';
+import AdminSubscriptions from './views/admin/SubscriptionsManagement';
+import AdminComplaints from './views/admin/ComplaintsManagement';
+import AdminAttendance from './views/admin/AttendanceManagement';
 import AdminAnnouncements from './views/admin/Announcements';
 import AdminReports from './views/admin/Reports';
 import AdminActivities from './views/admin/Activities';
