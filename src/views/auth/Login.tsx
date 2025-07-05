@@ -10,7 +10,7 @@ const Login: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [rememberMe, setRemremberMe] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -23,7 +23,7 @@ const Login: React.FC = () => {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/login', {
+      const response = await fetch('http://localhost:5001/api/supervisors/supervisorLogin', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -37,8 +37,8 @@ const Login: React.FC = () => {
         throw new Error(data.message || 'Login failed');
       }
 
-      // Login the user with the response data
-      login(data.user, data.token);
+      // Store user data and use AuthContext
+      login(data.user, data.customToken);
       
       // Redirect based on role
       switch (data.user.role) {
