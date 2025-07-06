@@ -10,13 +10,14 @@ import AdminLayout from './views/layouts/AdminLayout';
 import SupervisorLayout from './views/layouts/SupervisorLayout';
 import Unauthorized from './views/Unauthorized';
 
+
 // Import admin components
 import AdminDashboard from './views/admin/Dashboard';
-import AdminUsers from './views/admin/Users';
-import AdminChildren from './views/admin/Children';
-import AdminSubscriptions from './views/admin/Subscriptions';
-import AdminComplaints from './views/admin/Complaints';
-import AdminAttendance from './views/admin/Attendance';
+import AdminUsers from './views/admin/UsersManagement';
+import AdminChildren from './views/admin/ChildManagement';
+import AdminSubscriptions from './views/admin/SubscriptionsManagement';
+import AdminComplaints from './views/admin/ComplaintsManagement';
+import AdminAttendance from './views/admin/AttendanceManagement';
 import AdminAnnouncements from './views/admin/Announcements';
 import AdminReports from './views/admin/Reports';
 import AdminActivities from './views/admin/Activities';
@@ -26,7 +27,7 @@ import AdminSupport from './views/admin/Support';
 // Import supervisor components
 import SupervisorDashboard from './views/supervisor/Dashboard';
 import SupervisorParents from './views/supervisor/Parents';
-import SupervisorStudents from './views/supervisor/Students';
+import SupervisorChildrens from './views/supervisor/Childrens';
 import SupervisorTeachers from './views/supervisor/Teachers';
 import SupervisorPayments from './views/supervisor/Payments';
 import SupervisorAnnouncements from './views/supervisor/Announcements';
@@ -35,6 +36,8 @@ import SupervisorHealthRecords from './views/supervisor/HealthRecords';
 import SupervisorAttendance from './views/supervisor/Attendance';
 import SupervisorActivities from './views/supervisor/Activities';
 import SupervisorReports from './views/supervisor/Reports';
+import SupervisorEvents from './views/supervisor/Events';
+
 
 function App() {
   return (
@@ -59,6 +62,7 @@ function App() {
             }
           >
             <Route index element={<AdminDashboard />} />
+
             <Route path="users" element={<AdminUsers />} />
             <Route path="children" element={<AdminChildren />} />
             <Route path="subscriptions" element={<AdminSubscriptions />} />
@@ -69,6 +73,7 @@ function App() {
             <Route path="activities" element={<AdminActivities />} />
             <Route path="settings" element={<AdminSettings />} />
             <Route path="support" element={<AdminSupport />} />
+
           </Route>
 
           {/* Protected supervisor routes with supervisor layout */}
@@ -82,7 +87,7 @@ function App() {
           >
             <Route index element={<SupervisorDashboard />} />
             <Route path="parents" element={<SupervisorParents />} />
-            <Route path="students" element={<SupervisorStudents />} />
+            <Route path="childrens" element={<SupervisorChildrens />} />
             <Route path="teachers" element={<SupervisorTeachers />} />
             <Route path="payments" element={<SupervisorPayments />} />
             <Route path="announcements" element={<SupervisorAnnouncements />} />
@@ -91,6 +96,8 @@ function App() {
             <Route path="attendance" element={<SupervisorAttendance />} />
             <Route path="activities" element={<SupervisorActivities />} />
             <Route path="reports" element={<SupervisorReports />} />
+            <Route path="events" element={<SupervisorEvents />} />
+            
           </Route>
 
           {/* 404 catch-all route */}
