@@ -2,114 +2,128 @@ import { useState, useEffect } from 'react';
 import { Search, Plus, Mail, Phone, Edit, Trash2, X } from 'lucide-react';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import userImg from '../../assets/user.png';
 
 type Teacher = {
-  id: string;
+  id: number;
+  teacher_id?: number;
   name: string;
   email: string;
-  phone: string;
-  classroom: string;
-  subjects: string[];
-  profileImage?: string;
+  nic?: number;
+  address?: string;
+  phone?: number;
+  image?: string;
+  cv?: string;
+  group_id?: number;
+  group_name?: string;
+  role: string;
+  status: string;
+  created_at: string;
 };
 
-// Mock data for teachers
-const mockTeachers: Teacher[] = [
-  {
-    id: 'teacher-001',
-    name: 'malith',
-    email: 'maith@gmail.com',
-    phone: '11111111',
-    classroom: 'Sunflower',
-    subjects: ['Math', 'Science'],
-    profileImage: 'https://randomuser.me/api/portraits/men/72.jpg'
+type CreateTeacherRequest = {
+  name: string;
+  email: string;
+  password: string;
+  nic?: number;
+  address?: string;
+  phone?: number;
+  image?: string;
+  cv?: string;
+  group_id?: number;
+};
+
+type AvailableGroup = {
+  group_id: number;
+  name: string;
+  age_category: number;
+  available_position: 'main_teacher' | 'co_teacher' | 'full';
+  main_teacher_id?: number;
+  co_teacher_id?: number;
+};
+
+// API Base URL
+const API_BASE_URL = 'http://localhost:5001/api/teachers';
+
+// API Response types
+interface ApiResponse<T> {
+  success: boolean;
+  message?: string;
+  error?: string;
+  teachers?: T[];
+  teacher?: T;
+  user?: T;
+  groups?: AvailableGroup[];
+  count?: number;
+  searchTerm?: string;
+}
+
+// API functions
+const teacherApi = {
+  // Create a new teacher
+  async createTeacher(teacherData: CreateTeacherRequest): Promise<ApiResponse<Teacher>> {
+    const response = await fetch(`${API_BASE_URL}/teacherRegister`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(teacherData),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
   },
-  {
-    id: 'teacher-002',
-    name: 'chathumini',
-    email: 'chathumini@gmail.com',
-    phone: '22222222',
-    classroom: 'Butterfly',
-    subjects: ['Language', 'Arts'],
-    profileImage: 'https://randomuser.me/api/portraits/women/62.jpg'
+
+  // Get all teachers
+  async getAllTeachers(): Promise<ApiResponse<Teacher>> {
+    const response = await fetch(`${API_BASE_URL}/teachers`);
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
   },
-  {
-    id: 'teacher-003',
-    name: 'Farshad',
-    email: 'Farshad@gmail.com',
-    phone: '333333333',
-    classroom: 'Rainbow',
-    subjects: ['Music', 'Dance'],
-    profileImage: 'https://randomuser.me/api/portraits/men/44.jpg'
-  }
-];
 
-// Mock API functions
-const fetchMockTeachers = async (): Promise<Teacher[]> => {
-  return new Promise(resolve => {
-    setTimeout(() => {
-      resolve([...mockTeachers]);
-    }, 500);
-  });
+  // Search teachers
+  async searchTeachers(searchTerm: string): Promise<ApiResponse<Teacher>> {
+    const response = await fetch(`${API_BASE_URL}/teachers/search?search=${encodeURIComponent(searchTerm)}`);
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  },
+
+  // Get teacher by ID
+  async getTeacherById(id: number): Promise<ApiResponse<Teacher>> {
+    const response = await fetch(`${API_BASE_URL}/teachers/${id}`);
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  },
+
+  // Get available groups for teacher assignment
+  async getAvailableGroups(): Promise<ApiResponse<Teacher>> {
+    const response = await fetch(`${API_BASE_URL}/available-groups`);
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  },
 };
 
-const searchMockTeachers = async (term: string): Promise<Teacher[]> => {
-  return new Promise(resolve => {
-    setTimeout(() => {
-      if (!term.trim()) {
-        resolve([...mockTeachers]);
-        return;
-      }
-      const filtered = mockTeachers.filter(teacher => 
-        teacher.name.toLowerCase().includes(term.toLowerCase()) ||
-        teacher.email.toLowerCase().includes(term.toLowerCase()) ||
-        teacher.phone.includes(term) ||
-        teacher.classroom.toLowerCase().includes(term.toLowerCase()) ||
-        teacher.subjects.some(subject => subject.toLowerCase().includes(term.toLowerCase())) ||
-        teacher.id.toLowerCase().includes(term.toLowerCase())
-      );
-      resolve(filtered);
-    }, 300);
-  });
-};
 
-const createMockTeacher = async (teacher: Teacher): Promise<Teacher> => {
-  return new Promise(resolve => {
-    setTimeout(() => {
-      const newTeacher = { 
-        ...teacher, 
-        id: `teacher-${Math.floor(1000 + Math.random() * 9000)}`,
-        profileImage: teacher.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(teacher.name)}&background=random`
-      };
-      mockTeachers.push(newTeacher);
-      resolve(newTeacher);
-    }, 500);
-  });
-};
 
-const updateMockTeacher = async (teacher: Teacher): Promise<Teacher> => {
-  return new Promise(resolve => {
-    setTimeout(() => {
-      const index = mockTeachers.findIndex(t => t.id === teacher.id);
-      if (index !== -1) {
-        mockTeachers[index] = teacher;
-      }
-      resolve(teacher);
-    }, 500);
-  });
-};
-
-const deleteMockTeacher = async (id: string): Promise<void> => {
-  return new Promise(resolve => {
-    setTimeout(() => {
-      const index = mockTeachers.findIndex(t => t.id === id);
-      if (index !== -1) {
-        mockTeachers.splice(index, 1);
-      }
-      resolve();
-    }, 500);
-  });
-};
 
 const Teachers = () => {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
@@ -118,19 +132,21 @@ const Teachers = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [currentTeacher, setCurrentTeacher] = useState<Teacher | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [formData, setFormData] = useState<Teacher>({
-    id: '',
+  const [availableGroups, setAvailableGroups] = useState<AvailableGroup[]>([]);
+  const [isLoadingGroups, setIsLoadingGroups] = useState(false);
+  const [formData, setFormData] = useState<CreateTeacherRequest>({
     name: '',
     email: '',
-    phone: '',
-    classroom: '',
-    subjects: [],
-    profileImage: ''
+    password: 'teacher@123', // Default password
+    nic: undefined,
+    address: '',
+    phone: undefined,
+    image: '',
+    cv: '',
+    group_id: undefined,
   });
-  const [newSubject, setNewSubject] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   // Fetch teachers from mock API
   useEffect(() => {
@@ -140,22 +156,29 @@ const Teachers = () => {
   // Search effect with debounce
   useEffect(() => {
     const timerId = setTimeout(() => {
-      if (searchTerm.trim() || isSearching) {
+      if (searchTerm.trim()) {
         handleSearch();
+      } else if (isSearching) {
+        fetchTeachers();
       }
     }, 500);
 
     return () => {
       clearTimeout(timerId);
     };
-  }, [searchTerm]);
+  }, [searchTerm]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchTeachers = async () => {
     setIsLoading(true);
     try {
-      const data = await fetchMockTeachers();
-      setTeachers(data);
-    } catch {
+      const response = await teacherApi.getAllTeachers();
+      if (response.success) {
+        setTeachers(response.teachers || []);
+      } else {
+        toast.error(response.message || 'Failed to load teachers');
+      }
+    } catch (error) {
+      console.error('Error fetching teachers:', error);
       toast.error('Failed to load teachers');
     } finally {
       setIsLoading(false);
@@ -172,9 +195,14 @@ const Teachers = () => {
     setIsLoading(true);
     setIsSearching(true);
     try {
-      const data = await searchMockTeachers(searchTerm);
-      setTeachers(data);
-    } catch {
+      const response = await teacherApi.searchTeachers(searchTerm);
+      if (response.success) {
+        setTeachers(response.teachers || []);
+      } else {
+        toast.error(response.message || 'Search failed');
+      }
+    } catch (error) {
+      console.error('Error searching teachers:', error);
       toast.error('Search failed');
     } finally {
       setIsLoading(false);
@@ -186,59 +214,91 @@ const Teachers = () => {
     const { name, value } = e.target;
     setFormData({
       ...formData,
-      [name]: value
+      [name]: name === 'nic' || name === 'phone' || name === 'group_id'
+        ? (value ? parseInt(value) : undefined)
+        : value
     });
   };
 
-  // Handle image upload
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-        setFormData({
-          ...formData,
-          profileImage: reader.result as string
-        });
-      };
-      reader.readAsDataURL(file);
+  // Handle form submission
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      if (isEditMode) {
+        // For edit mode, you might want to implement an update endpoint
+        toast.info('Edit functionality not implemented yet');
+      } else {
+        // Create new teacher
+        const response = await teacherApi.createTeacher(formData);
+        if (response.success) {
+          toast.success('Teacher added successfully!');
+          closeModal();
+          fetchTeachers(); // Refresh the list
+        } else {
+          toast.error(response.message || 'Failed to add teacher');
+        }
+      }
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      toast.error('Failed to save teacher');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Handle subject addition
-  const handleAddSubject = () => {
-    if (newSubject.trim() && !formData.subjects.includes(newSubject)) {
-      setFormData({
-        ...formData,
-        subjects: [...formData.subjects, newSubject]
-      });
-      setNewSubject('');
-    }
+  // Delete teacher function (placeholder)
+  const deleteTeacher = async () => {
+    // You might want to implement a delete endpoint
+    toast.info('Delete functionality not implemented yet');
+    closeModal();
   };
 
-  // Handle subject removal
-  const handleRemoveSubject = (subjectToRemove: string) => {
-    setFormData({
-      ...formData,
-      subjects: formData.subjects.filter(subject => subject !== subjectToRemove)
-    });
+  // Close all modals
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setIsDeleteModalOpen(false);
+    setCurrentTeacher(null);
+  };
+
+  // Fetch available groups for teacher assignment
+  const fetchAvailableGroups = async () => {
+    setIsLoadingGroups(true);
+    try {
+      const response = await teacherApi.getAvailableGroups();
+      if (response.success) {
+        setAvailableGroups(response.groups || []);
+      } else {
+        console.error('Failed to fetch available groups:', response.message);
+        setAvailableGroups([]);
+      }
+    } catch (error) {
+      console.error('Error fetching available groups:', error);
+      setAvailableGroups([]);
+    } finally {
+      setIsLoadingGroups(false);
+    }
   };
 
   // Open modal for adding new teacher
-  const openAddModal = () => {
+  const openAddModal = async () => {
     setIsModalOpen(true);
     setIsEditMode(false);
     setFormData({
-      id: '',
       name: '',
       email: '',
-      phone: '',
-      classroom: '',
-      subjects: [],
-      profileImage: ''
+      password: 'teacher@123', // Default password
+      nic: undefined,
+      address: '',
+      phone: undefined,
+      image: '',
+      cv: '',
+      group_id: undefined,
     });
-    setImagePreview(null);
+
+    // Fetch available groups when opening the modal
+    await fetchAvailableGroups();
   };
 
   // Open modal for editing teacher
@@ -247,15 +307,16 @@ const Teachers = () => {
     setIsEditMode(true);
     setCurrentTeacher(teacher);
     setFormData({
-      id: teacher.id,
       name: teacher.name,
       email: teacher.email,
+      password: '', // Don't pre-fill password for editing
+      nic: teacher.nic,
+      address: teacher.address || '',
       phone: teacher.phone,
-      classroom: teacher.classroom,
-      subjects: [...teacher.subjects],
-      profileImage: teacher.profileImage || ''
+      image: teacher.image || '',
+      cv: teacher.cv || '',
+      group_id: teacher.group_id,
     });
-    setImagePreview(teacher.profileImage || null);
   };
 
   // Open delete confirmation modal
@@ -264,51 +325,11 @@ const Teachers = () => {
     setCurrentTeacher(teacher);
   };
 
-  // Close all modals
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setIsDeleteModalOpen(false);
-    setCurrentTeacher(null);
-    setImagePreview(null);
-  };
-
   // Handle form submission
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    try {
-      let result: Teacher;
-      if (isEditMode) {
-        result = await updateMockTeacher(formData);
-        setTeachers(teachers.map(teacher => teacher.id === formData.id ? result : teacher));
-        toast.success('Teacher updated successfully!');
-      } else {
-        result = await createMockTeacher(formData);
-        setTeachers([...teachers, result]);
-        toast.success('Teacher added successfully!');
-      }
-      closeModal();
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        toast.error(error.message || 'An error occurred');
-      } else {
-        toast.error('An error occurred');
-      }
-    }
-  };
+
 
   // Delete teacher
-  const deleteTeacher = async () => {
-    if (!currentTeacher) return;
-    try {
-      await deleteMockTeacher(currentTeacher.id);
-      setTeachers(teachers.filter(teacher => teacher.id !== currentTeacher.id));
-      toast.success('Teacher deleted successfully!');
-      closeModal();
-    } catch {
-      toast.error('Failed to delete teacher');
-    }
-  };
+
 
   if (isLoading) {
     return (
@@ -370,16 +391,22 @@ const Teachers = () => {
                   <tr key={teacher.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10">
-                          <img 
-                            className="h-10 w-10 rounded-full object-cover" 
-                            src={teacher.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(teacher.name)}&background=random`} 
+                        <div className="flex-shrink-0 h-10 w-10 rounded-full overflow-hidden">
+                          <img
+                            src={
+                              teacher.image && teacher.image.trim() !== ''
+                                ? teacher.image
+                                : userImg
+                            }
                             alt={teacher.name}
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = userImg;
+                            }}
                           />
                         </div>
                         <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900">{teacher.name}</div>
-                          <div className="text-sm text-gray-500">{teacher.classroom}</div>
+                          <div className="text-sm text-gray-500">ID: {teacher.id}</div>
                         </div>
                       </div>
                     </td>
@@ -390,18 +417,17 @@ const Teachers = () => {
                       </div>
                       <div className="flex items-center text-sm text-gray-500 mt-1">
                         <Phone className="mr-2 w-4 h-4" />
-                        {teacher.phone}
+                        {teacher.phone || 'N/A'}
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-wrap gap-2">
-                        {teacher.subjects.map((subject, i) => (
-                          <span key={i} className="px-2 py-1 text-xs rounded-full bg-indigo-100 text-indigo-800">
-                            {subject}
-                          </span>
-                        ))}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        <div><strong>NIC:</strong> {teacher.nic || 'N/A'}</div>
+                        <div><strong>Address:</strong> {teacher.address || 'N/A'}</div>
+                        {teacher.group_name && <div><strong>Group:</strong> {teacher.group_name}</div>}
                       </div>
                     </td>
+
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                       <button
                         onClick={() => openEditModal(teacher)}
@@ -441,14 +467,14 @@ const Teachers = () => {
 
       {/* Add/Edit Teacher Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold text-gray-800">
                   {isEditMode ? 'Edit Teacher' : 'Add New Teacher'}
                 </h2>
-                <button 
+                <button
                   onClick={closeModal}
                   className="text-gray-400 hover:text-gray-500"
                   title="Close"
@@ -457,175 +483,181 @@ const Teachers = () => {
                 </button>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <form onSubmit={handleSubmit} className="space-y-5 bg-white rounded-lg shadow-sm p-6 ">
+                <div >
                   {/* Teacher Information */}
                   <div className="space-y-4">
                     <h3 className="text-lg font-medium text-indigo-700 border-b border-indigo-100 pb-2">
                       Teacher Information
                     </h3>
-                    
-                    <div className="flex flex-col items-center">
-                      <div className="relative mb-4">
-                        <img 
-                          className="h-24 w-24 rounded-full object-cover border-2 border-gray-200"
-                          src={imagePreview || `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.name)}&background=random`}
-                          alt="Profile preview"
-                        />
-                        {imagePreview && (
+
+                    <div className='flex flex-row gap-10 justify-between'>
+                      <div className='flex-1 flex flex-col gap-4'>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                          <input
+                            type="text"
+                            name="name"
+                            value={formData.name}
+                            onChange={handleInputChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            required
+                            placeholder="Enter full name"
+                            title="Full Name"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                          <input
+                            type="email"
+                            name="email"
+                            value={formData.email}
+                            onChange={handleInputChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            required
+                            placeholder="Enter email address"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1 hidden">Password</label>
+                          <input
+                            type="password"
+                            name="password"
+                            value={'teacher@123'}
+                            onChange={handleInputChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 hidden"
+                            required={!isEditMode}
+                            minLength={6}
+                            placeholder={isEditMode ? "Leave blank to keep current password" : "Enter password (min 6 characters)"}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">NIC *</label>
+                          <input
+                            type="number"
+                            name="nic"
+                            value={formData.nic || ''}
+                            onChange={handleInputChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            placeholder="Enter NIC number"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                          <input
+                            type="text"
+                            name="address"
+                            value={formData.address}
+                            onChange={handleInputChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            required
+                            placeholder="Enter address"
+                          />
+                        </div>
+
+                      </div>
+                      <div className='flex-1 flex flex-col gap-4'>
+
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                          <input
+                            type="tel"
+                            name="phone"
+                            value={formData.phone || ''}
+                            onChange={handleInputChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            placeholder="Enter phone number"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">CV URL (Optional)</label>
+                          <input
+                            type="url"
+                            name="cv"
+                            value={formData.cv || ''}
+                            onChange={handleInputChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            placeholder="Enter CV URL"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1 hidden">Profile Image URL (Optional)</label>
+                          <input
+                            type="url"
+                            name="image"
+                            value={formData.image || 'https://pixabay.com/vectors/blank-profile-picture-mystery-man-973460/'}
+                            onChange={handleInputChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 hidden"
+                            placeholder="Enter profile image URL"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Assign to Group (Optional)
+                          </label>
+                          {isLoadingGroups ? (
+                            <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500">
+                              Loading available groups...
+                            </div>
+                          ) : availableGroups.length === 0 ? (
+                            <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500">
+                              No groups available for assignment
+                            </div>
+                          ) : (
+                            <select
+                              name="group_id"
+                              value={formData.group_id || ''}
+                              onChange={handleInputChange}
+                              aria-label="Select group for teacher assignment"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            >
+                              <option value="">Select a group (optional)</option>
+                              {availableGroups.map((group) => (
+                                <option key={group.group_id} value={group.group_id}>
+                                  {group.name} (Age: {group.age_category}) -
+                                  {group.available_position === 'main_teacher' ? ' Main Teacher' : ' Co-Teacher'} position
+                                </option>
+                              ))}
+                            </select>
+                          )}
+                          {availableGroups.length > 0 && (
+                            <p className="text-xs text-gray-500 mt-1">
+                              Only groups with available teacher positions are shown
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex justify-end space-x-3 pt-4">
                           <button
                             type="button"
-                            onClick={() => {
-                              setImagePreview(null);
-                              setFormData({...formData, profileImage: ''});
-                            }}
-                            className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1"
-                            title="Remove uploaded image"
+                            onClick={closeModal}
+                            className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
                           >
-                            <X className="h-4 w-4" />
+                            Cancel
                           </button>
-                        )}
-                      </div>
-                      <label className="cursor-pointer bg-indigo-100 text-indigo-700 px-4 py-2 rounded-md hover:bg-indigo-200">
-                        <span>Upload Photo</span>
-                        <input 
-                          type="file" 
-                          className="hidden" 
-                          accept="image/*"
-                          onChange={handleImageUpload}
-                        />
-                      </label>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                      <input
-                        type="text"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        required
-                        placeholder="Enter full name"
-                        title="Full Name"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                      <input
-                        type="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        required
-                        placeholder="Enter email address"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                      <input
-                        type="tel"
-                        name="phone"
-                        value={formData.phone}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        pattern="[0-9]{10}"
-                        placeholder="Enter 10-digit phone number"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Classroom</label>
-                      <div className="relative">
-                        <select
-                          name="classroom"
-                          value={formData.classroom}
-                          onChange={handleInputChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none"
-                          required
-                          aria-label="Classroom"
-                        >
-                          <option value="">Select Classroom</option>
-                          <option value="Sunflower">Sunflower</option>
-                          <option value="Butterfly">Butterfly</option>
-                          <option value="Rainbow">Rainbow</option>
-                          <option value="Starfish">Starfish</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Subjects */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-medium text-indigo-700 border-b border-indigo-100 pb-2">
-                      Subjects
-                    </h3>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Add Subject</label>
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={newSubject}
-                          onChange={(e) => setNewSubject(e.target.value)}
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                          placeholder="Enter subject name"
-                          title="Enter subject name"
-                        />
-                        <button
-                          type="button"
-                          onClick={handleAddSubject}
-                          className="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
-                        >
-                          Add
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Current Subjects</label>
-                      {formData.subjects.length > 0 ? (
-                        <div className="flex flex-wrap gap-2">
-                          {formData.subjects.map((subject, i) => (
-                            <div key={i} className="flex items-center px-3 py-1 bg-gray-100 rounded-full">
-                              <span className="text-sm">{subject}</span>
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveSubject(subject)}
-                                className="ml-2 text-gray-500 hover:text-red-500"
-                                title={`Remove subject ${subject}`}
-                              >
-                                <X className="w-4 h-4" />
-                              </button>
-                            </div>
-                          ))}
+                          <button
+                            type="submit"
+                            className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+                          >
+                            {isEditMode ? 'Update' : 'Add'} Teacher
+                          </button>
                         </div>
-                      ) : (
-                        <p className="text-sm text-gray-500">No subjects added yet</p>
-                      )}
+                      </div>
+
+
                     </div>
+
+
                   </div>
                 </div>
 
-                <div className="flex justify-end space-x-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={closeModal}
-                    className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
-                  >
-                    {isEditMode ? 'Update' : 'Add'} Teacher
-                  </button>
-                </div>
+
               </form>
             </div>
           </div>
