@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useMemo } from 'react';
+// frontend >> src/context/AuthContext.jsx
+import { createContext, useContext, useState } from 'react';
 import type { ReactNode } from 'react';
 
 interface User {
@@ -16,8 +17,6 @@ interface User {
   sup_id?: number;
   cv?: string;
   token?: string;
-  session_id?: string; // Added session_id for supervisors
-  school_id?: string; // Optional school identifier
 }
 
 interface AuthContextType {
@@ -25,34 +24,18 @@ interface AuthContextType {
   login: (userData: User, token: string) => void;
   logout: () => void;
   isAuthenticated: boolean;
-  isSupervisor: boolean;
-  currentSession: string | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(() => {
-    // Initialize from localStorage
     const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
-        return JSON.parse(storedUser);
-      } catch (e) {
-        console.error('Failed to parse user data', e);
-        return null;
-      }
-    }
-    return null;
+    return storedUser ? JSON.parse(storedUser) : null;
   });
 
   const login = (userData: User, token: string) => {
-    const userWithToken = { 
-      ...userData, 
-      token,
-      // Ensure session_id is preserved if present in userData
-      session_id: userData.session_id || undefined
-    };
+    const userWithToken = { ...userData, token };
     setUser(userWithToken);
     localStorage.setItem('user', JSON.stringify(userWithToken));
     localStorage.setItem('token', token);
@@ -64,15 +47,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('token');
   };
 
-  // Memoized context value
-  const value = useMemo(() => ({
+  const value = {
     user,
     login,
     logout,
-    isAuthenticated: !!user,
-    isSupervisor: user?.role === 'supervisor',
-    currentSession: user?.session_id || null
-  }), [user]);
+    isAuthenticated: !!user
+  };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
@@ -83,9 +63,4 @@ export function useAuth() {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-}
-
-// Type guard for checking if user is supervisor with session
-export function isSupervisorWithSession(user: User | null): user is User & { role: 'supervisor', session_id: string } {
-  return user?.role === 'supervisor' && !!user.session_id;
 }
