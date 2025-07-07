@@ -23,7 +23,11 @@ const Login: React.FC = () => {
     setError('');
 
     try {
+<<<<<<< HEAD
       const response = await fetch('http://localhost:5001/api/auth/login', {
+=======
+      const response = await fetch('http://localhost:5001/api/supervisors/supervisorLogin', {
+>>>>>>> b37c19875ec8a321c4c1e49b68773bb70b1c6070
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -37,8 +41,8 @@ const Login: React.FC = () => {
         throw new Error(data.message || 'Login failed');
       }
 
-      // Login the user with the response data
-      login(data.user, data.token);
+      // Store user data and use AuthContext
+      login(data.user, data.customToken);
       
       // Redirect based on role
       switch (data.user.role) {

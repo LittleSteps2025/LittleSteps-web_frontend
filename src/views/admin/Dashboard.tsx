@@ -10,9 +10,8 @@ const Dashboard = () => {
     activeTeachers: 25,
     activeSupervisors: 8,
     todayCheckIns: 120,
-    pendingComplaints: 5,
     monthlyRevenue: 12500,
-    attendanceRate: '92%'
+   
   };
 
   const recentActivities = [

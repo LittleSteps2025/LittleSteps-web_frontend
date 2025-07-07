@@ -1,4 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
+import logo from '../../../assets/sixth-logo.png';
 import {
   LayoutDashboard,
   Users,
@@ -25,16 +26,17 @@ const AdminSidebar = () => {
     { path: '/admin/attendance', icon: Calendar, label: 'Attendance' },
     { path: '/admin/announcements', icon: Bell, label: 'Announcements' },
     { path: '/admin/reports', icon: PieChart, label: 'Reports' },
-    { path: '/admin/activities', icon: BookOpen, label: 'Activities' },
-    { path: '/admin/settings', icon: Settings, label: 'Settings' },
-    { path: '/admin/support', icon: LifeBuoy, label: 'Support' }
+    { path: '/admin/settings', icon: Settings, label: 'Settings' }
   ];
 
   return (
     <div className="w-64 bg-gradient-to-b from-[#4f46e5] to-[#7c73e6] text-white flex flex-col border-r border-[#7e57ff]">
       <div className="p-6 border-b border-[#7e57ff] flex items-center space-x-3">
-        <img src="/logo-white.png" alt="Logo" className="h-8" />
-        <h1 className="text-xl font-bold">LittleSteps</h1>
+        <img 
+              src={logo} // Replace with your logo path 
+              alt="Little Steps Logo" 
+              className="h-15 w-auto"
+            />
       </div>
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
         {navItems.map((item) => (
@@ -52,7 +54,7 @@ const AdminSidebar = () => {
           </Link>
         ))}
       </nav>
-      <div className="p-4 border-t border-[#7e57ff]">
+      <div className=" border-t border-[#7e57ff]">
         
       </div>
     </div>

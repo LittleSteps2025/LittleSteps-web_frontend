@@ -6,6 +6,7 @@ const Signup: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   // const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [nic, setNic] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [password, setPassword] = useState('');
@@ -21,14 +22,33 @@ const Signup: React.FC = () => {
 
     try {
       // Basic validation
+<<<<<<< HEAD
       // if (!name.trim()) {
       //   throw new Error('Name is required');
       // }
+=======
+      if (!name.trim()) {
+        throw new Error('Name is required');
+      }
+>>>>>>> b37c19875ec8a321c4c1e49b68773bb70b1c6070
 
       if (!email.trim()) {
         throw new Error('Email is required');
       }
 
+<<<<<<< HEAD
+=======
+      if (!nic.trim()) {
+        throw new Error('NIC is required');
+      }
+
+      // NIC format validation (Sri Lankan NIC)
+      const nicPattern = /^(?:\d{9}[VXvx]|\d{12})$/;
+      if (!nicPattern.test(nic.trim())) {
+        throw new Error('Please enter a valid NIC number (9 digits + V/X or 12 digits)');
+      }
+
+>>>>>>> b37c19875ec8a321c4c1e49b68773bb70b1c6070
       if (password.length < 6) {
         throw new Error('Password must be at least 6 characters');
       }
@@ -37,14 +57,32 @@ const Signup: React.FC = () => {
         throw new Error('Passwords do not match');
       }
 
+<<<<<<< HEAD
       const response = await fetch('http://localhost:5001/api/supervisor/supervisorSignup', {
+=======
+      // Determine the correct endpoint based on role
+      const endpoint = role === 'admin' 
+        ? 'http://localhost:5001/api/supervisors/adminSignup'
+        : 'http://localhost:5001/api/supervisors/supervisorSignup';
+
+      const response = await fetch(endpoint, {
+>>>>>>> b37c19875ec8a321c4c1e49b68773bb70b1c6070
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+<<<<<<< HEAD
         body: JSON.stringify({  
           email, 
           password, 
+=======
+        body: JSON.stringify({ 
+          name, 
+          email,
+          nic, 
+          password, 
+          role // Include role for backend processing
+>>>>>>> b37c19875ec8a321c4c1e49b68773bb70b1c6070
         }),
       });
 
@@ -125,6 +163,25 @@ const Signup: React.FC = () => {
               className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6339C0]"
               required
             />
+          </div>
+          {/* NIC field */}
+          <div>
+            <label htmlFor="nic" className="block text-sm font-medium text-gray-700 mb-1">
+              NIC Number
+            </label>
+            <input
+              id="nic"
+              type="text"
+              value={nic}
+              onChange={e => setNic(e.target.value)}
+              className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6339C0]"
+              placeholder="Enter your NIC (e.g., 123456789V or 123456789012)"
+              maxLength={12}
+              required
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Enter 9 digits + V/X (old format) or 12 digits (new format)
+            </p>
           </div>
 
           {/* Role field - only admin and supervisor options */}

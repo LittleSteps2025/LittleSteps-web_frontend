@@ -10,13 +10,14 @@ import AdminLayout from './views/layouts/AdminLayout';
 import SupervisorLayout from './views/layouts/SupervisorLayout';
 import Unauthorized from './views/Unauthorized';
 
+
 // Import admin components
 import AdminDashboard from './views/admin/Dashboard';
-import AdminUsers from './views/admin/Users';
-import AdminChildren from './views/admin/Children';
-import AdminSubscriptions from './views/admin/Subscriptions';
-import AdminComplaints from './views/admin/Complaints';
-import AdminAttendance from './views/admin/Attendance';
+import AdminUsers from './views/admin/UsersManagement';
+import AdminChildren from './views/admin/ChildManagement';
+import AdminSubscriptions from './views/admin/SubscriptionsManagement';
+import AdminComplaints from './views/admin/ComplaintsManagement';
+import AdminAttendance from './views/admin/AttendanceManagement';
 import AdminAnnouncements from './views/admin/Announcements';
 import AdminReports from './views/admin/Reports';
 import AdminActivities from './views/admin/Activities';
@@ -36,6 +37,7 @@ import SupervisorAttendance from './views/supervisor/Attendance';
 import SupervisorActivities from './views/supervisor/Activities';
 import SupervisorReports from './views/supervisor/Reports';
 import SupervisorEvents from './views/supervisor/Events';
+
 
 function App() {
   return (
@@ -60,6 +62,7 @@ function App() {
             }
           >
             <Route index element={<AdminDashboard />} />
+
             <Route path="users" element={<AdminUsers />} />
             <Route path="children" element={<AdminChildren />} />
             <Route path="subscriptions" element={<AdminSubscriptions />} />
@@ -70,6 +73,7 @@ function App() {
             <Route path="activities" element={<AdminActivities />} />
             <Route path="settings" element={<AdminSettings />} />
             <Route path="support" element={<AdminSupport />} />
+
           </Route>
 
           {/* Protected supervisor routes with supervisor layout */}
