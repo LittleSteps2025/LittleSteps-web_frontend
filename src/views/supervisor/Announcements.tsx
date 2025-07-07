@@ -1,46 +1,33 @@
-import { useState, useEffect } from 'react';
-import { Search, Plus, Calendar, Clock, Edit, Trash2, X } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Search, Plus, Clock, Edit, Trash2, X, Calendar } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext'; // Assuming you have an auth context
 
 type Announcement = {
-  id: string;
+  ann_id: string;
   title: string;
-  content: string;
+  details: string;
   date: string;
-  createdAt: string;
-  status: 'Active' | 'Expired';
-  recipients: 'All' | 'Teachers' | 'Parents';
+  time: string;
+  audience: 'All' | 'Teachers' | 'Parents';
+  created_at: string;
+  attachment?: string;
+  session_id?: string;
+  user_id: string;
+  updated_at?: string;
 };
 
-// Mock data for announcements with timestamps
-const mockAnnouncements: Announcement[] = [
-  {
-    id: 'announcement-001',
-    title: 'Parent-Teacher Meeting',
-    content: 'Monthly meeting scheduled for next week',
-    date: '2025-07-10',
-    createdAt: '2025-07-02T10:30:00',
-    status: 'Active',
-    recipients: 'All'
-  },
-  {
-    id: 'announcement-002',
-    title: 'School Holiday',
-    content: 'School will be closed on July 15th',
-    date: '2025-07-15',
-    createdAt: '2025-07-01T14:20:00',
-    status: 'Active',
-    recipients: 'Parents'
-  },
-  {
-    id: 'announcement-003',
-    title: 'Field Trip',
-    content: 'Permission slips due by Friday',
-    date: '2025-06-30',
-    createdAt: '2025-06-28T09:15:00',
-    status: 'Expired',
-    recipients: 'Teachers'
-  }
-];
+// Audience mapping
+const audienceMap: { [key: number]: string } = {
+  1: 'All',
+  2: 'Teachers',
+  3: 'Parents',
+};
+
+const audienceReverseMap = {
+  'All': 1,
+  'Teachers': 2,
+  'Parents': 3,
+};
 
 // Toast notification component
 const Toast = ({ message, type, onClose }: { message: string; type: 'success' | 'error'; onClose: () => void }) => {
@@ -63,96 +50,31 @@ const Toast = ({ message, type, onClose }: { message: string; type: 'success' | 
   );
 };
 
-// Mock API functions
-const fetchMockAnnouncements = async (): Promise<Announcement[]> => {
-  return new Promise(resolve => {
-    setTimeout(() => {
-      resolve([...mockAnnouncements]);
-    }, 500);
-  });
-};
-
-const searchMockAnnouncements = async (term: string): Promise<Announcement[]> => {
-  return new Promise(resolve => {
-    setTimeout(() => {
-      if (!term.trim()) {
-        resolve([...mockAnnouncements]);
-        return;
-      }
-      const filtered = mockAnnouncements.filter(announcement => 
-        announcement.title.toLowerCase().includes(term.toLowerCase()) ||
-        announcement.content.toLowerCase().includes(term.toLowerCase()) ||
-        announcement.date.includes(term) ||
-        announcement.status.toLowerCase().includes(term.toLowerCase()) ||
-        announcement.id.toLowerCase().includes(term.toLowerCase()) ||
-        announcement.recipients.toLowerCase().includes(term.toLowerCase())
-      );
-      resolve(filtered);
-    }, 300);
-  });
-};
-
-const createMockAnnouncement = async (announcement: Omit<Announcement, 'id' | 'createdAt'>): Promise<Announcement> => {
-  return new Promise(resolve => {
-    setTimeout(() => {
-      const newAnnouncement: Announcement = { 
-        ...announcement, 
-        id: `announcement-${Math.floor(1000 + Math.random() * 9000)}`,
-        createdAt: new Date().toISOString(),
-        status: new Date(announcement.date) >= new Date() ? 'Active' : 'Expired'
-      };
-      mockAnnouncements.unshift(newAnnouncement);
-      resolve(newAnnouncement);
-    }, 500);
-  });
-};
-
-const updateMockAnnouncement = async (announcement: Announcement): Promise<Announcement> => {
-  return new Promise(resolve => {
-    setTimeout(() => {
-      const index = mockAnnouncements.findIndex(a => a.id === announcement.id);
-      if (index !== -1) {
-        mockAnnouncements[index] = announcement;
-      }
-      resolve(announcement);
-    }, 500);
-  });
-};
-
-const deleteMockAnnouncement = async (id: string): Promise<void> => {
-  return new Promise(resolve => {
-    setTimeout(() => {
-      const index = mockAnnouncements.findIndex(a => a.id === id);
-      if (index !== -1) {
-        mockAnnouncements.splice(index, 1);
-      }
-      resolve();
-    }, 500);
-  });
-};
-
 const Announcements = () => {
+  const { user } = useAuth(); // Get current user from auth context
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [filteredAnnouncements, setFilteredAnnouncements] = useState<Announcement[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [searchDate, setSearchDate] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [currentAnnouncement, setCurrentAnnouncement] = useState<Announcement | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [formData, setFormData] = useState<Omit<Announcement, 'id' | 'status' | 'createdAt'>>({
+  const [formData, setFormData] = useState<Omit<Announcement, 'ann_id' | 'created_at'>>({
     title: '',
-    content: '',
-    date: '',
-    recipients: 'All'
+    details: '',
+    date: new Date().toISOString().split('T')[0],
+    time: new Date().toTimeString().split(' ')[0],
+    audience: 'All',
+    user_id: user?.id || '', // Get user_id from auth context
+    session_id: user?.session_id || '' // Get session_id from auth context if supervisor
   });
   const [isLoading, setIsLoading] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
-  // Get today's date in YYYY-MM-DD format
-  const getTodayDate = () => {
-    const today = new Date();
-    return today.toISOString().split('T')[0];
-  };
+  // API base URL
+  const API_BASE_URL = '/api/announcements';
 
   // Format date and time for display
   const formatDateTime = (dateString: string) => {
@@ -175,54 +97,144 @@ const Announcements = () => {
     setToast({ message, type });
   };
 
-  // Fetch announcements from mock API
-  useEffect(() => {
-    fetchAnnouncements();
-  }, []);
-
-  // Search effect with debounce
-  useEffect(() => {
-    const timerId = setTimeout(() => {
-      if (searchTerm.trim() || isSearching) {
-        handleSearch();
-      }
-    }, 500);
-
-    return () => {
-      clearTimeout(timerId);
-    };
-  }, [searchTerm]);
-
-  const fetchAnnouncements = async () => {
+  // Fetch announcements from API
+  const fetchAnnouncements = useCallback(async () => {
     setIsLoading(true);
     try {
-      const data = await fetchMockAnnouncements();
+      const response = await fetch(API_BASE_URL);
+      if (!response.ok) throw new Error('Failed to fetch announcements');
+      let data = await response.json();
+      // Map audience integer to string
+      data = data.map((a: { audience: string | number; }) => ({
+        ...a,
+        audience: audienceMap[Number(a.audience)] || 'All',
+      }));
       setAnnouncements(data);
-    } catch {
+      setFilteredAnnouncements(data);
+    } catch (error) {
       showToast('Failed to load announcements', 'error');
+      console.error('Error fetching announcements:', error);
     } finally {
       setIsLoading(false);
       setIsSearching(false);
     }
-  };
+  }, []);
 
-  // Search announcements
-  const handleSearch = async () => {
-    if (!searchTerm.trim()) {
-      fetchAnnouncements();
+  // Search announcements with debounce
+  const searchAnnouncements = useCallback(() => {
+    if (!searchTerm && !searchDate) {
+      setFilteredAnnouncements(announcements);
       return;
     }
-    setIsLoading(true);
+
     setIsSearching(true);
+    
+    const timer = setTimeout(() => {
+      const filtered = announcements.filter(announcement => {
+        const termMatch = searchTerm 
+          ? announcement.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+            announcement.details.toLowerCase().includes(searchTerm.toLowerCase())
+          : true;
+        
+        const dateMatch = searchDate 
+          ? announcement.date.includes(searchDate)
+          : true;
+        
+        return termMatch && dateMatch;
+      });
+      
+      setFilteredAnnouncements(filtered);
+      setIsSearching(false);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm, searchDate, announcements]);
+
+  // Create announcement
+  const createAnnouncement = async (announcement: Omit<Announcement, 'ann_id' | 'created_at'>) => {
+    const payload = {
+      ...announcement,
+      audience: audienceReverseMap[announcement.audience] || 1,
+      session_id: user?.session_id || null // Include session_id if supervisor
+    };
+    
     try {
-      const data = await searchMockAnnouncements(searchTerm);
-      setAnnouncements(data);
-    } catch {
-      showToast('Search failed', 'error');
-    } finally {
-      setIsLoading(false);
+      const response = await fetch(API_BASE_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}` // Include auth token
+        },
+        body: JSON.stringify(payload)
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to create announcement');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      throw error;
     }
   };
+
+  // Update announcement
+  const updateAnnouncement = async (id: string, announcement: Partial<Announcement>) => {
+    const payload: any = {
+      ...announcement,
+      audience: audienceReverseMap[announcement.audience as 'All' | 'Teachers' | 'Parents'] || 1,
+      session_id: user?.session_id || announcement.session_id // Preserve existing or use current session
+    };
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(payload)
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update announcement');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  // Delete announcement
+  const deleteAnnouncement = async (id: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete announcement');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  // Effect to fetch announcements on component mount
+  useEffect(() => {
+    fetchAnnouncements();
+  }, [fetchAnnouncements]);
+
+  // Effect to handle search when search term or date changes
+  useEffect(() => {
+    searchAnnouncements();
+  }, [searchTerm, searchDate, searchAnnouncements]);
 
   // Handle input changes for form
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -239,9 +251,12 @@ const Announcements = () => {
     setIsEditMode(false);
     setFormData({
       title: '',
-      content: '',
-      date: getTodayDate(), // Auto-select today's date
-      recipients: 'All'
+      details: '',
+      date: new Date().toISOString().split('T')[0],
+      time: new Date().toTimeString().split(' ')[0],
+      audience: 'All',
+      user_id: user?.id || '',
+      session_id: user?.session_id || ''
     });
   };
 
@@ -252,9 +267,13 @@ const Announcements = () => {
     setCurrentAnnouncement(announcement);
     setFormData({
       title: announcement.title,
-      content: announcement.content,
+      details: announcement.details,
       date: announcement.date,
-      recipients: announcement.recipients
+      time: announcement.time,
+      audience: announcement.audience,
+      user_id: announcement.user_id,
+      session_id: announcement.session_id || user?.session_id || '',
+      attachment: announcement.attachment
     });
   };
 
@@ -274,27 +293,23 @@ const Announcements = () => {
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     try {
       let result: Announcement;
       if (isEditMode && currentAnnouncement) {
-        const updatedAnnouncement = {
-          ...currentAnnouncement,
-          ...formData,
-          status: (new Date(formData.date) >= new Date() ? 'Active' : 'Expired') as 'Active' | 'Expired'
-        };
-        result = await updateMockAnnouncement(updatedAnnouncement);
-        setAnnouncements(announcements.map(a => a.id === result.id ? result : a));
+        result = await updateAnnouncement(currentAnnouncement.ann_id, {
+          ...formData
+        });
+        setAnnouncements(announcements.map(a => a.ann_id === result.ann_id ? result : a));
         showToast('Announcement updated successfully!', 'success');
       } else {
-        result = await createMockAnnouncement({
-          ...formData,
-          status: new Date(formData.date) >= new Date() ? 'Active' : 'Expired'
+        result = await createAnnouncement({
+          ...formData
         });
         setAnnouncements([result, ...announcements]);
         showToast('Announcement added successfully!', 'success');
       }
       closeModal();
+      fetchAnnouncements();
     } catch (error: unknown) {
       if (error instanceof Error) {
         showToast(error.message || 'An error occurred', 'error');
@@ -304,17 +319,24 @@ const Announcements = () => {
     }
   };
 
-  // Delete announcement
-  const deleteAnnouncement = async () => {
+  // Handle delete announcement
+  const handleDelete = async () => {
     if (!currentAnnouncement) return;
     try {
-      await deleteMockAnnouncement(currentAnnouncement.id);
-      setAnnouncements(announcements.filter(a => a.id !== currentAnnouncement.id));
+      await deleteAnnouncement(currentAnnouncement.ann_id);
+      setAnnouncements(announcements.filter(a => a.ann_id !== currentAnnouncement.ann_id));
       showToast('Announcement deleted successfully!', 'success');
       closeModal();
-    } catch {
+      fetchAnnouncements();
+    } catch (error) {
       showToast('Failed to delete announcement', 'error');
     }
+  };
+
+  // Clear search filters
+  const clearFilters = () => {
+    setSearchTerm('');
+    setSearchDate('');
   };
 
   if (isLoading) {
@@ -338,77 +360,123 @@ const Announcements = () => {
 
       {/* Header */}
       <div className="flex justify-between items-center">
-       <h1 className="text-2xl font-bold text-gray-800 flex items-center">
+        <h1 className="text-2xl font-bold text-gray-800 flex items-center">
           <span className="bg-gradient-to-r from-[#4f46e5] to-[#7c73e6] bg-clip-text text-transparent">
             Announcements
           </span>
         </h1>
+        {user?.session_id && (
+          <span className="text-sm text-gray-500">
+            Session: {user.session_id}
+          </span>
+        )}
       </div>
 
       {/* Search and Add Announcement */}
       <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-3 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search announcements by title, content, date or status..."
-              className="pl-10 pr-4 py-2 w-full border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-3 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search by topic or content..."
+                className="pl-10 pr-10 py-2 w-full border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              {isSearching && (
+                <span className="absolute right-3 top-3">
+                  <svg className="animate-spin h-5 w-5 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+                  </svg>
+                </span>
+              )}
+            </div>
+            <div className="relative flex-1">
+              <Calendar className="absolute left-3 top-3 text-gray-400" />
+              <input
+                type="date"
+                placeholder="Filter by date..."
+                className="pl-10 pr-4 py-2 w-full border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                value={searchDate}
+                onChange={(e) => setSearchDate(e.target.value)}
+              />
+            </div>
+            <button
+              onClick={openAddModal}
+              className="btn-primary flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors whitespace-nowrap"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              New Announcement
+            </button>
           </div>
-          <button
-            onClick={openAddModal}
-            className="btn-primary flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors whitespace-nowrap"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            New Announcement
-          </button>
+          
+          {(searchTerm || searchDate) && (
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-500">
+                Showing {filteredAnnouncements.length} results
+                {searchTerm && ` for "${searchTerm}"`}
+                {searchDate && ` on ${new Date(searchDate).toLocaleDateString()}`}
+              </span>
+              <button
+                onClick={clearFilters}
+                className="text-sm text-indigo-600 hover:text-indigo-800"
+              >
+                Clear filters
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Announcements List */}
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-        {announcements.length > 0 ? (
+        {filteredAnnouncements.length > 0 ? (
           <div className="space-y-4">
-            {announcements.map((announcement) => {
-              const createdDateTime = formatDateTime(announcement.createdAt);
+            {filteredAnnouncements.map((announcement) => {
+              const createdDateTime = formatDateTime(announcement.created_at);
               
               return (
-                <div key={announcement.id} className="p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
+                <div key={announcement.ann_id} className="p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
                       <h3 className="text-lg font-medium text-gray-900">{announcement.title}</h3>
-                      <p className="text-sm text-gray-600 mt-1">{announcement.content}</p>
+                      <p className="text-sm text-gray-600 mt-1">{announcement.details}</p>
                       <div className="mt-2 flex flex-wrap gap-2">
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          To: {announcement.recipients}
+                          To: {announcement.audience}
                         </span>
-                        <span className={`px-2 py-1 text-xs rounded-full ${
-                          announcement.status === 'Active' 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {announcement.status}
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          Date: {announcement.date.split('T')[0]}
                         </span>
+                        {announcement.time && (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                            Time: {announcement.time.slice(0, 5)}
+                          </span>
+                        )}
+                        {announcement.session_id && (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                            Session: {announcement.session_id}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
                   
-                  {/* Date and Time Information */}
-                  <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-500">
+                  <div className="mt-4 text-xs text-gray-500">
                     <div className="flex items-center">
-                      <Calendar className="w-4 h-4 mr-1" />
-                      <span>Due: {new Date(announcement.date).toLocaleDateString()}</span>
+                      <Clock className="w-3 h-3 mr-1" />
+                      <span>Posted: {createdDateTime.date} at {createdDateTime.time}</span>
                     </div>
-                    <div className="flex items-center">
-                      <Clock className="w-4 h-4 mr-1" />
-                      <span>Created: {createdDateTime.date} at {createdDateTime.time}</span>
-                    </div>
+                    {announcement.updated_at && (
+                      <div className="flex items-center mt-1">
+                        <span>Updated: {formatDateTime(announcement.updated_at).date} at {formatDateTime(announcement.updated_at).time}</span>
+                      </div>
+                    )}
                   </div>
                   
-                  {/* Action Buttons */}
                   <div className="flex mt-4 space-x-3">
                     <button
                       onClick={() => openEditModal(announcement)}
@@ -432,15 +500,25 @@ const Announcements = () => {
         ) : (
           <div className="text-center py-10">
             <p className="text-gray-500">
-              {isSearching ? 'No matching announcements found' : 'No announcements found'}
+              {isSearching ? 'Searching...' : 
+               (searchTerm || searchDate) ? 'No matching announcements found' : 'No announcements found'}
             </p>
-            <button
-              onClick={openAddModal}
-              className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Create New Announcement
-            </button>
+            {(searchTerm || searchDate) ? (
+              <button
+                onClick={clearFilters}
+                className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
+              >
+                Clear search filters
+              </button>
+            ) : (
+              <button
+                onClick={openAddModal}
+                className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Create New Announcement
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -465,7 +543,7 @@ const Announcements = () => {
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Title*</label>
                   <input
                     type="text"
                     name="title"
@@ -479,53 +557,63 @@ const Announcements = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Content</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Details*</label>
                   <textarea
-                    name="content"
-                    value={formData.content}
+                    name="details"
+                    value={formData.details}
                     onChange={handleInputChange}
                     rows={4}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     required
-                    placeholder="Enter announcement content"
-                    title="Announcement Content"
+                    placeholder="Enter announcement details"
                   />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                    <div className="relative">
-                      <input
-                        type="date"
-                        name="date"
-                        value={formData.date}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 pl-10"
-                        required
-                        placeholder="Select a date"
-                        title="Select a date"
-                      />
-                      <Calendar className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Send To</label>
-                    <select
-                      name="recipients"
-                      value={formData.recipients}
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Date*</label>
+                    <input
+                      type="date"
+                      name="date"
+                      value={formData.date}
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       required
-                      title="Send To"
-                    >
-                      <option value="All">All</option>
-                      <option value="Teachers">Teachers</option>
-                      <option value="Parents">Parents</option>
-                    </select>
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Time*</label>
+                    <input
+                      type="time"
+                      name="time"
+                      value={formData.time}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      required
+                    />
                   </div>
                 </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Audience*</label>
+                  <select
+                    name="audience"
+                    value={formData.audience}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    required
+                  >
+                    <option value="All">All</option>
+                    <option value="Teachers">Teachers</option>
+                    <option value="Parents">Parents</option>
+                  </select>
+                </div>
+
+                {user?.session_id && (
+                  <div className="text-sm text-gray-500">
+                    This announcement will be associated with your current session: {user.session_id}
+                  </div>
+                )}
 
                 <div className="flex justify-end space-x-3 pt-4">
                   <button
@@ -573,7 +661,7 @@ const Announcements = () => {
                   Cancel
                 </button>
                 <button
-                  onClick={deleteAnnouncement}
+                  onClick={handleDelete}
                   className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700"
                 >
                   Delete
