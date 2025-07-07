@@ -319,13 +319,6 @@ const Parents = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <button
-            onClick={openAddModal}
-            className="btn-primary flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors whitespace-nowrap"
-          >
-            <UserPlus className="w-4 h-4 mr-2" />
-            Add Parent
-          </button>
         </div>
       </div>
 
