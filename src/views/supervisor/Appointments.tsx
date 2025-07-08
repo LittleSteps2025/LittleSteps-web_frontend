@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Calendar, Search, Plus, User, Check, X, Edit, Trash2 } from 'lucide-react';
+import { Calendar, Search, Plus, User, Check, X, Trash2 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -17,8 +17,8 @@ type Appointment = {
 const mockAppointments: Appointment[] = [
   {
     id: 'appointment-001',
-    parent: 'John Smith',
-    student: 'Emma Johnson',
+    parent: 'malith',
+    student: 'damsara',
     date: '2023-05-18',
     time: '10:00 AM',
     status: 'Confirmed',
@@ -26,16 +26,16 @@ const mockAppointments: Appointment[] = [
   },
   {
     id: 'appointment-002',
-    parent: 'Sarah Johnson',
-    student: 'Olivia Smith',
+    parent: 'farshad',
+    student: 'mohomad',
     date: '2023-05-19',
     time: '02:30 PM',
     status: 'Pending'
   },
   {
     id: 'appointment-003',
-    parent: 'Michael Chen',
-    student: 'Liam Chen',
+    parent: 'chathumini',
+    student: 'silva',
     date: '2023-05-20',
     time: '11:15 AM',
     status: 'Cancelled',
@@ -240,7 +240,7 @@ const Appointments = () => {
     e.preventDefault();
     
     try {
-      let result;
+      let result: Appointment;
       if (isEditMode && currentAppointment) {
         const updatedAppointment = {
           ...currentAppointment,
@@ -304,7 +304,11 @@ const Appointments = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-800">Appointments</h1>
+        <h1 className="text-2xl font-bold text-gray-800 flex items-center">
+          <span className="bg-gradient-to-r from-[#4f46e5] to-[#7c73e6] bg-clip-text text-transparent">
+            Appointments
+          </span>
+        </h1>
       </div>
 
       {/* Search and Add Appointment */}
@@ -461,6 +465,7 @@ const Appointments = () => {
                 <button 
                   onClick={closeModal}
                   className="text-gray-400 hover:text-gray-500"
+                  title="Close"
                 >
                   <X className="h-6 w-6" />
                 </button>
@@ -477,6 +482,8 @@ const Appointments = () => {
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       required
+                      placeholder="Enter parent name"
+                      title="Parent Name"
                     />
                   </div>
 
@@ -489,6 +496,8 @@ const Appointments = () => {
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       required
+                      placeholder="Enter student name"
+                      title="Student Name"
                     />
                   </div>
 
@@ -501,6 +510,8 @@ const Appointments = () => {
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       required
+                      placeholder="Select date"
+                      title="Select appointment date"
                     />
                   </div>
 
@@ -513,13 +524,16 @@ const Appointments = () => {
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       required
+                      placeholder="Select time"
+                      title="Select appointment time"
                     />
                   </div>
 
                   {isEditMode && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                      <label htmlFor="appointment-status" className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                       <select
+                        id="appointment-status"
                         name="status"
                         value={formData.status}
                         onChange={handleInputChange}
@@ -541,6 +555,8 @@ const Appointments = () => {
                     onChange={handleInputChange}
                     rows={3}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Add any notes about the appointment"
+                    title="Appointment notes"
                   />
                 </div>
 
@@ -556,7 +572,6 @@ const Appointments = () => {
                     type="submit"
                     className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
                   >
-                  
                     {isEditMode ? 'Update' : 'Schedule'} Appointment
                   </button>
                 </div>

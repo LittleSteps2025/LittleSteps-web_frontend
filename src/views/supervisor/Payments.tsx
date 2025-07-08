@@ -2,15 +2,23 @@ import { CreditCard, Search, DollarSign, FileText, CheckCircle, Clock } from 'lu
 
 const Payments = () => {
   const payments = [
-    { id: 1, parent: 'John Smith', amount: 25000, date: '2023-05-15', status: 'Paid', invoice: 'INV-001' },
-    { id: 2, parent: 'Sarah Johnson', amount: 25000, date: '2023-05-10', status: 'Paid', invoice: 'INV-002' },
-    { id: 3, parent: 'Michael Chen', amount: 25000, date: '2023-05-05', status: 'Pending', invoice: 'INV-003' }
+    { id: 1, parent: 'malith', amount: 250, date: '2023-05-15', status: 'Paid', invoice: '001' },
+    { id: 2, parent: 'farshad', amount: 250, date: '2023-05-10', status: 'Paid', invoice: '002' },
+    { id: 3, parent: 'chathumini', amount: 250, date: '2023-05-05', status: 'Pending', invoice: '003' }
   ];
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-800">Payments Management</h1>
+       <h1 className="text-2xl font-bold text-gray-800 flex items-center">
+          <span className="bg-gradient-to-r from-[#4f46e5] to-[#7c73e6] bg-clip-text text-transparent">
+            Payments
+          </span>
+        </h1>
+        <button className="btn-primary">
+          <CreditCard className="w-4 h-4 mr-2" />
+          Process Payment
+        </button>
       </div>
 
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
