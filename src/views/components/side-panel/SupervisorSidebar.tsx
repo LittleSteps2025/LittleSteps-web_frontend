@@ -3,12 +3,13 @@ import {
   LayoutDashboard,
   Users,
   Calendar,
-  BookOpen,
   Bell,
   FileText,
-  Heart,
+  CalendarDays,
   CreditCard,
-  ClipboardList
+  // ClipboardList
+  // Heart,
+  // Activity,
 } from 'lucide-react';
 
 const SupervisorSidebar = () => {
@@ -17,15 +18,17 @@ const SupervisorSidebar = () => {
   const navItems = [
     { path: '/supervisor', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/supervisor/parents', icon: Users, label: 'Parents' },
-    { path: '/supervisor/students', icon: Users, label: 'Students' },
+    { path: '/supervisor/childrens', icon: Users, label: 'Childrens' },
     { path: '/supervisor/teachers', icon: Users, label: 'Teachers' },
     { path: '/supervisor/payments', icon: CreditCard, label: 'Payments' },
     { path: '/supervisor/announcements', icon: Bell, label: 'Announcements' },
+    { path: '/supervisor/events', icon: CalendarDays, label: 'Events' },
     { path: '/supervisor/appointments', icon: Calendar, label: 'Appointments' },
-    { path: '/supervisor/health-records', icon: Heart, label: 'Health Records' },
-    { path: '/supervisor/attendance', icon: ClipboardList, label: 'Attendance' },
-    { path: '/supervisor/activities', icon: BookOpen, label: 'Activities' },
+    // { path: '/supervisor/health-records', icon: Heart, label: 'Health Records' },
+    // { path: '/supervisor/attendance', icon: ClipboardList, label: 'Attendance' },
+        // { path: '/supervisor/activities', icon: Activity, label: 'Activities' },
     { path: '/supervisor/reports', icon: FileText, label: 'Reports' }
+    
   ];
 
   return (

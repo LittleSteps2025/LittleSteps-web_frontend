@@ -1,7 +1,6 @@
-import { BarChart, Download, Calendar, Bell, ClipboardList, Users, Baby } from 'lucide-react';
+import { BarChart, Download, Calendar} from 'lucide-react';
 import StatsCards from '../components/stats/StatsCards';
-import RecentActivity from '../components/activity/RecentActivity';
-import QuickActions from '../components/actions/QuickActions';
+
 
 const SupervisorDashboard = () => {
   const stats = {
@@ -12,7 +11,6 @@ const SupervisorDashboard = () => {
     upcomingEvents: 5,
     healthChecks: 12,
     activeTeachers: 15,
-    activeSupervisors: 3,
     todayCheckIns: 110,
     pendingComplaints: 2,
     monthlyRevenue: 5000,
@@ -20,19 +18,6 @@ const SupervisorDashboard = () => {
     activitiesToday: 4
   };
 
-  const recentActivities = [
-    { id: 1, user: 'Emma Johnson', action: 'checked in', time: '15 min ago', icon: Baby },
-    { id: 2, user: 'Liam Chen', action: 'completed health check', time: '30 min ago', icon: ClipboardList },
-    { id: 3, user: 'Olivia Smith', action: 'submitted observation', time: '2 hours ago', icon: Users },
-    { id: 4, user: 'Michael Brown', action: 'scheduled parent meeting', time: '3 hours ago', icon: Calendar }
-  ];
-
-  const quickActions = [
-    { icon: Bell, label: 'Send Announcement', color: 'bg-blue-100 text-blue-600', path: '/supervisor/announcements' },
-    { icon: ClipboardList, label: 'Record Attendance', color: 'bg-green-100 text-green-600', path: '/supervisor/attendance' },
-    { icon: Baby, label: 'Add Health Record', color: 'bg-purple-100 text-purple-600', path: '/supervisor/health-records' },
-    { icon: Calendar, label: 'Schedule Activity', color: 'bg-orange-100 text-orange-600', path: '/supervisor/activities' }
-  ];
 
   return (
     <div className="space-y-6">
@@ -59,7 +44,7 @@ const SupervisorDashboard = () => {
       
       <StatsCards stats={stats} />
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6">
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 col-span-2">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-semibold text-gray-800 flex items-center">
@@ -86,28 +71,7 @@ const SupervisorDashboard = () => {
           </div>
         </div>
         
-        <div className="space-y-6">
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-gray-800 flex items-center">
-                <ClipboardList className="mr-2 text-[#4f46e5]" size={20} />
-                Quick Actions
-              </h2>
-            </div>
-            <QuickActions actions={quickActions} />
-          </div>
-          
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-gray-800 flex items-center">
-                <Bell className="mr-2 text-[#4f46e5]" size={20} />
-                Recent Activity
-              </h2>
-              <button className="text-sm text-[#4f46e5] hover:underline">View All</button>
-            </div>
-            <RecentActivity activities={recentActivities} />
-          </div>
-        </div>
+        
       </div>
 
       {/* Upcoming Events Section */}
@@ -123,7 +87,7 @@ const SupervisorDashboard = () => {
           {[
             { id: 1, title: 'Parent-Teacher Meeting', date: 'Tomorrow, 10:00 AM', location: 'Conference Room' },
             { id: 2, title: 'Field Trip', date: 'May 25, 9:00 AM', location: 'City Museum' },
-            { id: 3, title: 'Health Checkup', date: 'May 28, 1:00 PM', location: 'Clinic' },
+            { id: 3, title: 'Aurudu Uthsawa', date: 'May 28, 1:00 PM', location: 'Ground' },
             { id: 4, title: 'Staff Training', date: 'June 2, 3:00 PM', location: 'Training Room' }
           ].map(event => (
             <div key={event.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">

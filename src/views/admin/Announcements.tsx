@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, type JSX } from 'react';
 import {
   Search, Plus, Edit, Trash2, Filter, ChevronDown, ChevronUp, 
-  MessageSquare, User, Users, Bell, Calendar, X, CheckCircle, Send, Clock
+  MessageSquare, User, Users, Bell, X, CheckCircle, Send, Clock
 } from 'lucide-react';
 
 type AudienceType = 'all' | 'parents' | 'staff' | 'classroom' | 'specific';
@@ -420,6 +420,7 @@ const AnnouncementManagement = () => {
                         checked={selectedAnnouncements.includes(announcement.id)}
                         onChange={() => toggleSelectAnnouncement(announcement.id)}
                         className="h-4 w-4 text-[#6339C0] border-gray-300 rounded focus:ring-[#6339C0]"
+                        title="Select announcement"
                       />
                     </td>
                     <td className="px-6 py-4">

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import {
   Calendar, Clock, User, UserCheck, UserX, CheckCircle, XCircle,
   Download, Plus, MoreVertical, ArrowLeft, ArrowRight, ClipboardList,
-  Clock as ClockIcon, BarChart2, Shield, Baby, CalendarDays, FileText, X
+  Clock as BarChart2, Shield, Baby, CalendarDays, FileText, X
 } from 'lucide-react';
 
 // Types
@@ -104,7 +104,7 @@ const AttendanceManagement = () => {
   const [activeTab, setActiveTab] = useState<'summary' | 'calendar' | 'history'>('summary');
   const [showAttendanceModal, setShowAttendanceModal] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
-  const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
+  const [, setSelectedPerson] = useState<Person | null>(null);
 
   // Get records for current date
   const currentRecords = attendanceRecords.filter(record => record.date === currentDate);

@@ -6,17 +6,38 @@ import Signup from './views/auth/Signup';
 import RequireAuth from './views/components/auth/RequireAuth';
 import Footer from './views/components/footer/Footer';
 import Layout from './views/layouts/Layout';
-import AdminLayout from './views/layouts/AdminLayout'; // Create this component
-import SupervisorLayout from './views/layouts/SupervisorLayout'; // Create this component
+import AdminLayout from './views/layouts/AdminLayout';
+import SupervisorLayout from './views/layouts/SupervisorLayout';
 import Unauthorized from './views/Unauthorized';
-import AdminDashboard from './views/admin/Dashboard'; // Your admin dashboard component
-import SupervisorDashboard from './views/supervisor/Dashboard'; // Your supervisor dashboard component
-import UserManagement from './views/admin/UserManagement';
-import ChildManagement from './views/admin/ChildManagement';
-import SubscriptionsManagement from './views/admin/SubscriptionsManagement';
-import ComplaintsManagement from './views/admin/ComplaintsManagement';
-import AttendanceManagement from './views/admin/AttendanceManagement';
-import Announcements from './views/admin/Announcements';
+
+
+// Import admin components
+import AdminDashboard from './views/admin/Dashboard';
+import AdminUsers from './views/admin/UsersManagement';
+import AdminChildren from './views/admin/ChildManagement';
+import AdminSubscriptions from './views/admin/SubscriptionsManagement';
+import AdminComplaints from './views/admin/ComplaintsManagement';
+import AdminAttendance from './views/admin/AttendanceManagement';
+import AdminAnnouncements from './views/admin/Announcements';
+import AdminReports from './views/admin/Reports';
+import AdminActivities from './views/admin/Activities';
+import AdminSettings from './views/admin/Settings';
+import AdminSupport from './views/admin/Support';
+
+// Import supervisor components
+import SupervisorDashboard from './views/supervisor/Dashboard';
+import SupervisorParents from './views/supervisor/Parents';
+import SupervisorChildrens from './views/supervisor/Childrens';
+import SupervisorTeachers from './views/supervisor/Teachers';
+import SupervisorPayments from './views/supervisor/Payments';
+import SupervisorAnnouncements from './views/supervisor/Announcements';
+import SupervisorAppointments from './views/supervisor/Appointments';
+import SupervisorHealthRecords from './views/supervisor/HealthRecords';
+import SupervisorAttendance from './views/supervisor/Attendance';
+import SupervisorActivities from './views/supervisor/Activities';
+import SupervisorReports from './views/supervisor/Reports';
+import SupervisorEvents from './views/supervisor/Events';
+
 
 function App() {
   return (
@@ -41,13 +62,18 @@ function App() {
             }
           >
             <Route index element={<AdminDashboard />} />
-            {/* Add more admin sub-routes here */}
-            <Route path="users" element={<UserManagement />} />
-            <Route path="children" element={<ChildManagement />} />
-            <Route path="subscriptions" element={<SubscriptionsManagement />} />
-            <Route path="complaints" element={<ComplaintsManagement />} />
-            <Route path="attendance" element={<AttendanceManagement />} />
-            <Route path="announcements" element={<Announcements />} />
+
+            <Route path="users" element={<AdminUsers />} />
+            <Route path="children" element={<AdminChildren />} />
+            <Route path="subscriptions" element={<AdminSubscriptions />} />
+            <Route path="complaints" element={<AdminComplaints />} />
+            <Route path="attendance" element={<AdminAttendance />} />
+            <Route path="announcements" element={<AdminAnnouncements />} />
+            <Route path="reports" element={<AdminReports />} />
+            <Route path="activities" element={<AdminActivities />} />
+            <Route path="settings" element={<AdminSettings />} />
+            <Route path="support" element={<AdminSupport />} />
+
           </Route>
 
           {/* Protected supervisor routes with supervisor layout */}
@@ -60,7 +86,18 @@ function App() {
             }
           >
             <Route index element={<SupervisorDashboard />} />
-            {/* Add more supervisor sub-routes here */}
+            <Route path="parents" element={<SupervisorParents />} />
+            <Route path="childrens" element={<SupervisorChildrens />} />
+            <Route path="teachers" element={<SupervisorTeachers />} />
+            <Route path="payments" element={<SupervisorPayments />} />
+            <Route path="announcements" element={<SupervisorAnnouncements />} />
+            <Route path="appointments" element={<SupervisorAppointments />} />
+            <Route path="health-records" element={<SupervisorHealthRecords />} />
+            <Route path="attendance" element={<SupervisorAttendance />} />
+            <Route path="activities" element={<SupervisorActivities />} />
+            <Route path="reports" element={<SupervisorReports />} />
+            <Route path="events" element={<SupervisorEvents />} />
+            
           </Route>
 
           {/* 404 catch-all route */}
