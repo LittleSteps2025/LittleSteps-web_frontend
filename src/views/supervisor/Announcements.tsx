@@ -60,14 +60,14 @@ const Announcements = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [currentAnnouncement, setCurrentAnnouncement] = useState<Announcement | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [formData, setFormData] = useState<Omit<Announcement, 'ann_id' | 'created_at'>>({
+  const [formData, setFormData] = useState<Omit<Announcement, 'ann_id' | 'created_at' | 'session_id'>>({
     title: '',
     details: '',
     date: new Date().toISOString().split('T')[0],
     time: new Date().toTimeString().split(' ')[0],
     audience: 'All',
-    user_id: user?.id || '', // Get user_id from auth context
-    session_id: user?.session_id || '' // Get session_id from auth context if supervisor
+    user_id: user?.id ? String(user.id) : '',
+    attachment: '',
   });
   const [isLoading, setIsLoading] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
@@ -151,39 +151,39 @@ const Announcements = () => {
   }, [searchTerm, searchDate, announcements]);
 
   // Create announcement
-  const createAnnouncement = async (announcement: Omit<Announcement, 'ann_id' | 'created_at'>) => {
-    const payload = {
-      ...announcement,
-      audience: audienceReverseMap[announcement.audience] || 1,
-      session_id: user?.session_id || null // Include session_id if supervisor
-    };
+  // Create announcement
+const createAnnouncement = async (announcement: Omit<Announcement, 'ann_id' | 'created_at'>) => {
+  try {
+    const response = await fetch(API_BASE_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      },
+      body: JSON.stringify({
+        ...announcement,
+        audience: audienceReverseMap[announcement.audience] || 1,
+        // Don't explicitly send session_id - let backend handle it
+      })
+    });
     
-    try {
-      const response = await fetch(API_BASE_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}` // Include auth token
-        },
-        body: JSON.stringify(payload)
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to create announcement');
-      }
-      
-      return await response.json();
-    } catch (error) {
-      throw error;
+    if (!response.ok) {
+      throw new Error('Failed to create announcement');
     }
-  };
+    
+    return await response.json();
+  } catch (error) {
+    throw error;
+  }
+};
 
   // Update announcement
   const updateAnnouncement = async (id: string, announcement: Partial<Announcement>) => {
+    const sessionId = typeof (user as any)?.session_id === 'number' ? (user as any).session_id : ((user as any)?.session_id ? Number((user as any).session_id) : null);
     const payload: any = {
       ...announcement,
       audience: audienceReverseMap[announcement.audience as 'All' | 'Teachers' | 'Parents'] || 1,
-      session_id: user?.session_id || announcement.session_id // Preserve existing or use current session
+      session_id: sessionId,
     };
     
     try {
@@ -255,8 +255,8 @@ const Announcements = () => {
       date: new Date().toISOString().split('T')[0],
       time: new Date().toTimeString().split(' ')[0],
       audience: 'All',
-      user_id: user?.id || '',
-      session_id: user?.session_id || ''
+      user_id: user?.id ? String(user.id) : '',
+      attachment: '',
     });
   };
 
@@ -271,9 +271,8 @@ const Announcements = () => {
       date: announcement.date,
       time: announcement.time,
       audience: announcement.audience,
-      user_id: announcement.user_id,
-      session_id: announcement.session_id || user?.session_id || '',
-      attachment: announcement.attachment
+      user_id: announcement.user_id ? String(announcement.user_id) : '',
+      attachment: announcement.attachment || '',
     });
   };
 
@@ -360,14 +359,14 @@ const Announcements = () => {
 
       {/* Header */}
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-800 flex items-center">
+       <h1 className="text-2xl font-bold text-gray-800 flex items-center">
           <span className="bg-gradient-to-r from-[#4f46e5] to-[#7c73e6] bg-clip-text text-transparent">
             Announcements
           </span>
         </h1>
-        {user?.session_id && (
+        {(user as any).session_id && (
           <span className="text-sm text-gray-500">
-            Session: {user.session_id}
+            Session: {(user as any).session_id}
           </span>
         )}
       </div>
@@ -375,16 +374,16 @@ const Announcements = () => {
       {/* Search and Add Announcement */}
       <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
         <div className="flex flex-col gap-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-3 text-gray-400" />
-              <input
-                type="text"
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-3 text-gray-400" />
+            <input
+              type="text"
                 placeholder="Search by topic or content..."
                 className="pl-10 pr-10 py-2 w-full border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
               {isSearching && (
                 <span className="absolute right-3 top-3">
                   <svg className="animate-spin h-5 w-5 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -403,14 +402,14 @@ const Announcements = () => {
                 value={searchDate}
                 onChange={(e) => setSearchDate(e.target.value)}
               />
-            </div>
-            <button
-              onClick={openAddModal}
-              className="btn-primary flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors whitespace-nowrap"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              New Announcement
-            </button>
+          </div>
+          <button
+            onClick={openAddModal}
+            className="btn-primary flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors whitespace-nowrap"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            New Announcement
+          </button>
           </div>
           
           {(searchTerm || searchDate) && (
@@ -458,7 +457,13 @@ const Announcements = () => {
                         )}
                         {announcement.session_id && (
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                            Session: {announcement.session_id}
+                            {/* Session: {announcement.session_id} */}
+                          </span>
+                        )}
+                        {announcement.attachment && (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                            Attachment
+                            {/* Attachment: {announcement.attachment} */}
                           </span>
                         )}
                       </div>
@@ -473,7 +478,7 @@ const Announcements = () => {
                     {announcement.updated_at && (
                       <div className="flex items-center mt-1">
                         <span>Updated: {formatDateTime(announcement.updated_at).date} at {formatDateTime(announcement.updated_at).time}</span>
-                      </div>
+                    </div>
                     )}
                   </div>
                   
@@ -511,13 +516,13 @@ const Announcements = () => {
                 Clear search filters
               </button>
             ) : (
-              <button
-                onClick={openAddModal}
-                className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Create New Announcement
-              </button>
+            <button
+              onClick={openAddModal}
+              className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Create New Announcement
+            </button>
             )}
           </div>
         )}
@@ -569,51 +574,39 @@ const Announcements = () => {
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Date*</label>
-                    <input
-                      type="date"
-                      name="date"
-                      value={formData.date}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Time*</label>
-                    <input
-                      type="time"
-                      name="time"
-                      value={formData.time}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Audience*</label>
-                  <select
+                    <select
                     name="audience"
                     value={formData.audience}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    required
-                  >
-                    <option value="All">All</option>
-                    <option value="Teachers">Teachers</option>
-                    <option value="Parents">Parents</option>
-                  </select>
-                </div>
-
-                {user?.session_id && (
-                  <div className="text-sm text-gray-500">
-                    This announcement will be associated with your current session: {user.session_id}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      required
+                    >
+                      <option value="All">All</option>
+                      <option value="Teachers">Teachers</option>
+                      <option value="Parents">Parents</option>
+                    </select>
                   </div>
-                )}
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Attachment (optional)</label>
+                  <input
+                    type="file"
+                    name="attachment"
+                    accept="*"
+                    onChange={e => {
+                      const file = e.target.files && e.target.files[0];
+                      if (file) {
+                        setFormData({ ...formData, attachment: file.name });
+                      }
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                  {formData.attachment && (
+                    <p className="mt-1 text-sm text-gray-500">Selected: {formData.attachment}</p>
+                  )}
+                </div>
 
                 <div className="flex justify-end space-x-3 pt-4">
                   <button
