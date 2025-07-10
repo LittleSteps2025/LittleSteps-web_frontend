@@ -79,14 +79,14 @@ const Home: React.FC = () => {
       <Header />
       
       {/* Hero Section */}
-      <section className="relative pt-32 pb-20 px-6 max-w-7xl mx-auto w-full">
-        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+      <section className="relative pt-28 pb-16 px-6 max-w-7xl mx-auto w-full">
+        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div>
             <div className="inline-flex items-center bg-[#f3eeff] text-[#6339C0] px-4 py-2 rounded-full font-medium mb-6">
               <Shield className="mr-2" size={18} />
               <span>Licensed & Accredited</span>
             </div>
-            <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
+            <h1 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">
               <span className="bg-gradient-to-r from-[#6339C0] to-[#9F66FF] bg-clip-text text-transparent">
                 Little Steps
               </span><br />
@@ -95,7 +95,7 @@ const Home: React.FC = () => {
             <p className="text-xl text-gray-600 mb-10 max-w-lg leading-relaxed">
               Comprehensive care and education for children ages 3 to 16. From preschool play to teen development, we support every stage of growth.
             </p>
-            <div className="flex flex-wrap gap-4 mb-12">
+            <div className="flex flex-wrap gap-4 mb-8">
               <Link 
                 to="/contact" 
                 className="bg-gradient-to-r from-[#6339C0] to-[#9F66FF] text-white px-8 py-4 rounded-xl hover:shadow-lg transition-all font-semibold text-lg flex items-center group"
