@@ -37,7 +37,7 @@ const Home: React.FC = () => {
       range: "3-5 Years",
       icon: <Paintbrush className="text-[#6339C0]" size={24} />,
       description: "Play-based learning with focus on social skills and creativity",
-      image: "https://images.unsplash.com/photo-1600046050370-4e64d1e902e0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80"
+
     },
     {
       range: "6-10 Years",
@@ -109,7 +109,7 @@ const Home: React.FC = () => {
           <div className="relative">
             <div className="relative bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
               <img 
-                src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80" 
+                src="../assets/hero-image.jpg" // Replace with your image path
                 alt="Multi-age group of children learning together" 
                 className="w-full h-auto max-h-[400px] object-cover"
               />
@@ -136,13 +136,7 @@ const Home: React.FC = () => {
           <div className="grid md:grid-cols-3 gap-8">
             {ageGroups.map((group, index) => (
               <div key={index} className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all overflow-hidden">
-                <div className="h-48 overflow-hidden">
-                  <img 
-                    src={group.image} 
-                    alt={`Children aged ${group.range}`}
-                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
+                
                 <div className="p-6">
                   <div className="flex items-center mb-4">
                     <div className="w-12 h-12 flex items-center justify-center bg-[#f3eeff] rounded-xl mr-4">
@@ -202,13 +196,7 @@ const Home: React.FC = () => {
                   </li>
                 ))}
               </ul>
-              <div className="h-40 overflow-hidden rounded-lg">
-                <img 
-                  src={`https://source.unsplash.com/random/300x200/?children,${program.name.toLowerCase().replace(' ', '')}`}
-                  alt={program.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
+              
             </div>
           ))}
         </div>
