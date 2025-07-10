@@ -507,8 +507,8 @@ const Events = () => {
                         </div>
                         {createdDateTime && (
                           <div className="mt-1 text-xs text-gray-500 flex items-center">
-                            <Clock className="w-3 h-3 mr-1" />
-                            <span>Created: {createdDateTime.date}</span>
+                            {/* <Clock className="w-3 h-3 mr-1" />
+                            <span>Created: {createdDateTime.date}</span> */}
                           </div>
                         )}
                       </td>

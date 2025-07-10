@@ -472,8 +472,8 @@ const createAnnouncement = async (announcement: Omit<Announcement, 'ann_id' | 'c
                   
                   <div className="mt-4 text-xs text-gray-500">
                     <div className="flex items-center">
-                      <Clock className="w-3 h-3 mr-1" />
-                      <span>Posted: {createdDateTime.date} at {createdDateTime.time}</span>
+                      {/* <Clock className="w-3 h-3 mr-1" />
+                      <span>Posted: {createdDateTime.date} at {createdDateTime.time}</span> */}
                     </div>
                     {announcement.updated_at && (
                       <div className="flex items-center mt-1">
