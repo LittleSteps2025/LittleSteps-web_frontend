@@ -1,5 +1,6 @@
 import { Menu, X, User, Bell } from 'lucide-react';
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 const SupervisorNavbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -7,7 +8,7 @@ const SupervisorNavbar = () => {
   return (
     <nav className="bg-white shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
+        <div className="flex justify-between h-15">
           <div className="flex items-center sm:hidden">
             <button
               onClick={() => setIsOpen(!isOpen)}
@@ -18,7 +19,8 @@ const SupervisorNavbar = () => {
             </button>
           </div>
           <div className="flex-1 flex items-center justify-end">
-            <div className="flex items-center">
+            <div className="flex items-center space-x-4">
+              
               <button className="bg-white p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                 <span className="sr-only">View notifications</span>
                 <Bell className="h-6 w-6" />
