@@ -12,7 +12,7 @@ const UsersManagement = () => {
     created_at: string;
   };
 
-  const [users, ] = useState<UserType[]>([]);
+  const [users, setUsers] = useState<UserType[]>([]);
   type NewUserType = {
     name: string;
     email: string;
@@ -135,6 +135,27 @@ const UsersManagement = () => {
       setLoading(false);
     }
   };
+
+  React.useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        setError('');
+        const response = await fetch('http://localhost:5001/api/users/getEveryone', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        if (!response.ok) {
+          throw new Error('Failed to fetch users');
+        }
+        const data = await response.json();
+        setUsers(data.data || []);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch users');
+      }
+    };
+    fetchUsers();
+  }, [success]);
 
   if (user?.role !== 'admin') {
     return <div>Unauthorized access</div>;
