@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  Search, Plus, Edit, Trash2, Filter, Download, ChevronDown, ChevronUp, Baby, Calendar, School, X, FileText, CheckCircle
+  Search, Edit, Trash2, Filter, Download, ChevronDown, ChevronUp, Baby, Calendar, School, X, FileText, CheckCircle
 } from 'lucide-react';
 import UserModals, { type UserType } from './UserModals';
 
@@ -277,13 +277,13 @@ const ChildManagement = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-2xl font-bold text-gray-800">Child Management</h1>
         <div className="flex space-x-3 w-full sm:w-auto">
-          <button 
+          {/* <button 
             onClick={() => setShowAddModal(true)}
             className="btn-primary flex items-center"
           >
             <Plus className="w-4 h-4 mr-2" />
             Add Child
-          </button>
+          </button> */}
           <button 
             onClick={() => setShowExportModal(true)} 
             className="btn-secondary"

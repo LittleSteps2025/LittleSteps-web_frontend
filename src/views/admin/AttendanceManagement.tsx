@@ -2,7 +2,7 @@ import { useState } from 'react';
 import {
   Calendar, Clock, User, UserCheck, UserX, CheckCircle, XCircle,
   Download, Plus, MoreVertical, ArrowLeft, ArrowRight, ClipboardList,
-  Clock as BarChart2, Shield, Baby, CalendarDays, FileText, X
+  Clock as BarChart2, Baby, CalendarDays, FileText, X
 } from 'lucide-react';
 
 // Types
@@ -39,9 +39,6 @@ type Schedule = {
 
 // Sample Data
 const people: Person[] = [
-  { id: 's1', name: 'Jessica Brown', type: 'supervisor', role: 'Head Supervisor', photo: '/avatars/jessica.jpg' },
-  { id: 't1', name: 'Michael Smith', type: 'teacher', classroom: 'Sunflowers', photo: '/avatars/michael.jpg' },
-  { id: 't2', name: 'David Wilson', type: 'teacher', classroom: 'Butterflies', photo: '/avatars/david.jpg' },
   { id: 'c1', name: 'Emma Johnson', type: 'child', classroom: 'Sunflowers', photo: '/avatars/emma.jpg' },
   { id: 'c2', name: 'Liam Smith', type: 'child', classroom: 'Butterflies', photo: '/avatars/liam.jpg' },
   { id: 'c3', name: 'Olivia Williams', type: 'child', classroom: 'Caterpillars', photo: '/avatars/olivia.jpg' }
@@ -116,8 +113,7 @@ const AttendanceManagement = () => {
   });
 
   // Group by type
-  const supervisors = attendanceWithDetails.filter(r => r.person?.type === 'supervisor');
-  const teachers = attendanceWithDetails.filter(r => r.person?.type === 'teacher');
+
   const children = attendanceWithDetails.filter(r => r.person?.type === 'child');
 
   // Counts
@@ -322,7 +318,7 @@ const AttendanceManagement = () => {
             {/* Role Sections */}
             <div className="space-y-6">
               {/* Supervisors */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+              {/* <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                 <div className="bg-purple-50 px-6 py-3 border-b border-purple-100 flex items-center">
                   <Shield className="w-5 h-5 text-purple-600 mr-2" />
                   <h3 className="text-lg font-medium text-purple-800">Supervisors</h3>
@@ -366,10 +362,10 @@ const AttendanceManagement = () => {
                     <p className="text-sm text-gray-500 text-center py-4">No supervisor records for this date</p>
                   )}
                 </div>
-              </div>
+              </div> */}
 
               {/* Teachers */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+              {/* <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                 <div className="bg-blue-50 px-6 py-3 border-b border-blue-100 flex items-center">
                   <UserCheck className="w-5 h-5 text-blue-600 mr-2" />
                   <h3 className="text-lg font-medium text-blue-800">Teachers</h3>
@@ -413,7 +409,7 @@ const AttendanceManagement = () => {
                     <p className="text-sm text-gray-500 text-center py-4">No teacher records for this date</p>
                   )}
                 </div>
-              </div>
+              </div> */}
 
               {/* Children */}
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
