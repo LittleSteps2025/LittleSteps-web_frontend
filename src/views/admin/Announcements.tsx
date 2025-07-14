@@ -42,14 +42,13 @@ const AnnouncementManagement = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [currentAnnouncement, setCurrentAnnouncement] = useState<AnnouncementType | null>(null);
 
-  // Form state
+  // Form state (only fields user can edit)
   const [formData, setFormData] = useState({
-    title: '',
-    details: '',
-    status: 'draft' as AnnouncementStatus,
-    audience: 1 as AudienceType,
-    date: '',
-    attachment: null as File | null,
+    title: '', // required
+    details: '', // required
+    status: 'draft' as AnnouncementStatus, // draft or published
+    audience: 1 as AudienceType, // 1-5
+    attachment: null as File | null, // optional
   });
 
   // Helper to get status label for button
@@ -143,7 +142,6 @@ const AnnouncementManagement = () => {
       details: announcement.details,
       status: announcement.status,
       audience: announcement.audience,
-      date: announcement.date,
       attachment: null, // Reset attachment on edit
     });
     setShowEditModal(true);
@@ -176,20 +174,20 @@ const AnnouncementManagement = () => {
       const url = showEditModal && currentAnnouncement
         ? `http://localhost:5001/api/announcements/${currentAnnouncement.ann_id}`
         : 'http://localhost:5001/api/announcements';
-      const form = new FormData();
-      form.append('title', formData.title);
-      form.append('details', formData.details);
-      form.append('status', formData.status);
-      form.append('audience', String(formData.audience));
-      // Set date automatically (no timezone consideration)
-      const now = new Date();
-      const dateStr = now.toISOString().slice(0, 10); // YYYY-MM-DD
-      form.append('date', dateStr);
-      form.append('user_id', user?.id ? String(user.id) : '');
-      if (formData.attachment) form.append('attachment', formData.attachment);
+      // Only send fields required by backend
+      const payload = {
+        title: formData.title,
+        details: formData.details,
+        status: formData.status,
+        audience: Number(formData.audience),
+        user_id: user?.user_id ? user.user_id : user?.id // fallback to id if user_id missing
+      };
       const response = await fetch(url, {
         method,
-        body: form,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
       });
       if (!response.ok) throw new Error('Failed to save announcement');
       setShowAddModal(false);

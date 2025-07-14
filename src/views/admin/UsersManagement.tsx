@@ -140,7 +140,7 @@ const UsersManagement = () => {
     const fetchUsers = async () => {
       try {
         setError('');
-        const response = await fetch('http://localhost:5001/api/users/getEveryone', {
+        const response = await fetch('http://localhost:5001/api/getEveryone', {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
