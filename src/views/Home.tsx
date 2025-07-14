@@ -37,7 +37,7 @@ const Home: React.FC = () => {
       range: "3-5 Years",
       icon: <Paintbrush className="text-[#6339C0]" size={24} />,
       description: "Play-based learning with focus on social skills and creativity",
-      image: "https://images.unsplash.com/photo-1600046050370-4e64d1e902e0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80"
+
     },
     {
       range: "6-10 Years",
@@ -79,14 +79,14 @@ const Home: React.FC = () => {
       <Header />
       
       {/* Hero Section */}
-      <section className="relative pt-32 pb-20 px-6 max-w-7xl mx-auto w-full">
-        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+      <section className="relative pt-28 pb-16 px-6 max-w-7xl mx-auto w-full">
+        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div>
             <div className="inline-flex items-center bg-[#f3eeff] text-[#6339C0] px-4 py-2 rounded-full font-medium mb-6">
               <Shield className="mr-2" size={18} />
               <span>Licensed & Accredited</span>
             </div>
-            <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
+            <h1 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">
               <span className="bg-gradient-to-r from-[#6339C0] to-[#9F66FF] bg-clip-text text-transparent">
                 Little Steps
               </span><br />
@@ -95,7 +95,7 @@ const Home: React.FC = () => {
             <p className="text-xl text-gray-600 mb-10 max-w-lg leading-relaxed">
               Comprehensive care and education for children ages 3 to 16. From preschool play to teen development, we support every stage of growth.
             </p>
-            <div className="flex flex-wrap gap-4 mb-12">
+            <div className="flex flex-wrap gap-4 mb-8">
               <Link 
                 to="/contact" 
                 className="bg-gradient-to-r from-[#6339C0] to-[#9F66FF] text-white px-8 py-4 rounded-xl hover:shadow-lg transition-all font-semibold text-lg flex items-center group"
@@ -109,7 +109,7 @@ const Home: React.FC = () => {
           <div className="relative">
             <div className="relative bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
               <img 
-                src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80" 
+                src="../assets/hero-image.jpg" // Replace with your image path
                 alt="Multi-age group of children learning together" 
                 className="w-full h-auto max-h-[400px] object-cover"
               />
@@ -136,13 +136,7 @@ const Home: React.FC = () => {
           <div className="grid md:grid-cols-3 gap-8">
             {ageGroups.map((group, index) => (
               <div key={index} className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all overflow-hidden">
-                <div className="h-48 overflow-hidden">
-                  <img 
-                    src={group.image} 
-                    alt={`Children aged ${group.range}`}
-                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
+                
                 <div className="p-6">
                   <div className="flex items-center mb-4">
                     <div className="w-12 h-12 flex items-center justify-center bg-[#f3eeff] rounded-xl mr-4">
@@ -202,13 +196,7 @@ const Home: React.FC = () => {
                   </li>
                 ))}
               </ul>
-              <div className="h-40 overflow-hidden rounded-lg">
-                <img 
-                  src={`https://source.unsplash.com/random/300x200/?children,${program.name.toLowerCase().replace(' ', '')}`}
-                  alt={program.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
+              
             </div>
           ))}
         </div>
