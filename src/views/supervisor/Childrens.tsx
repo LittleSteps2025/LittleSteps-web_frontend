@@ -18,13 +18,28 @@ interface Student {
   profileImage?: string;
 }
 
+interface ApiStudent {
+  child_id: string;
+  name: string;
+  age: number;
+  group_id: string;
+  dob: string;
+  gender: string;
+  parent_name: string;
+  nic?: string;
+  parent_email: string;
+  parent_address: string;
+  parent_phone: string;
+  image?: string;
+}
+
 const API_URL = 'http://localhost:5001/api/child/';
 
 const fetchStudents = async (): Promise<Student[]> => {
   const res = await fetch(API_URL);
   if (!res.ok) throw new Error('Failed to fetch students');
-  const data = await res.json();
-  return data.map((item: any) => ({
+  const data: ApiStudent[] = await res.json();
+  return data.map((item: ApiStudent) => ({
     id: item.child_id,
     name: item.name,
     age: item.age,
@@ -131,13 +146,15 @@ export default function Childrens() {
     parentName: '', parentNIC: '', parentEmail: '', parentAddress: '', parentContact: '', profileImage: ''
   });
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [showAddForm, setShowAddForm] = useState(false);
 
   const loadStudents = async () => {
     try {
       const data = await fetchStudents();
       setStudents(data);
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+      toast.error(errorMessage);
     }
   };
 
@@ -160,9 +177,11 @@ export default function Childrens() {
       }
       setForm({ name: '', age: 1, classroom: '', birthday: '', gender: '', parentName: '', parentNIC: '', parentEmail: '', parentAddress: '', parentContact: '', profileImage: '' });
       setEditingId(null);
+      setShowAddForm(false);
       await loadStudents();
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+      toast.error(errorMessage);
     }
   };
 
@@ -170,6 +189,7 @@ export default function Childrens() {
     const { id, ...rest } = student;
     setForm(rest);
     setEditingId(id);
+    setShowAddForm(true);
   };
 
   const handleDelete = async (id: string) => {
@@ -178,9 +198,22 @@ export default function Childrens() {
       await deleteStudentApi(id);
       toast.success('Deleted successfully');
       await loadStudents();
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+      toast.error(errorMessage);
     }
+  };
+
+  const openAddModal = () => {
+    setShowAddForm(true);
+    setForm({ name: '', age: 1, classroom: '', birthday: '', gender: '', parentName: '', parentNIC: '', parentEmail: '', parentAddress: '', parentContact: '', profileImage: '' });
+    setEditingId(null);
+  };
+
+  const closeModal = () => {
+    setShowAddForm(false);
+    setForm({ name: '', age: 1, classroom: '', birthday: '', gender: '', parentName: '', parentNIC: '', parentEmail: '', parentAddress: '', parentContact: '', profileImage: '' });
+    setEditingId(null);
   };
 
   return (
@@ -190,114 +223,150 @@ export default function Childrens() {
           <User className="mr-2 text-[#4f46e5]" size={24} />
           Children Management
         </h1>
+        {!showAddForm && (
+          <button
+            onClick={openAddModal}
+            className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add New Child
+          </button>
+        )}
       </div>
 
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-          {Object.entries(form).map(([key, value]) => (
-            <div key={key} className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700 capitalize">
-                {key.replace(/([A-Z])/g, ' $1').trim()}
-              </label>
-              <input
-                name={key}
-                value={value as string}
-                onChange={handleChange}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                type={key === 'age' ? 'number' : key === 'birthday' ? 'date' : 'text'}
-                min={key === 'age' ? 1 : undefined}
-                required
-              />
-            </div>
-          ))}
-          <div className="flex items-end">
-            <button
-              type="submit"
-              className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+      {showAddForm ? (
+        <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-bold text-gray-800">
+              {editingId ? 'Edit Child' : 'Add New Child'}
+            </h2>
+            {/* <button
+              onClick={closeModal}
+              className="flex items-center px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
             >
-              {editingId ? (
-                <>
-                  <Edit className="w-4 h-4 mr-2" />
-                  Update
-                </>
-              ) : (
-                <>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Child
-                </>
-              )}
-            </button>
+              <X className="w-4 h-4 mr-2" />
+              Back to List
+            </button> */}
           </div>
-        </form>
-
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Age</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Classroom</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Birthday</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gender</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Parent</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {students.map(student => (
-                <tr key={student.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      {student.profileImage ? (
-                        <img 
-                          src={student.profileImage} 
-                          alt={student.name}
-                          className="flex-shrink-0 h-10 w-10 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
-                          <User className="h-5 w-5 text-indigo-600" />
-                        </div>
-                      )}
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">{student.name}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{student.age}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {student.classroom || 'Not assigned'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <div className="flex items-center">
-                      <Calendar className="mr-2 text-gray-400" size={14} />
-                      {student.birthday}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{student.gender}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{student.parentName}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button 
-                      onClick={() => handleEdit(student)}
-                      className="text-indigo-600 hover:text-indigo-900 mr-4 flex items-center"
-                    >
-                      <Edit className="w-4 h-4 mr-1" />
-                      Edit
-                    </button>
-                    <button 
-                      onClick={() => handleDelete(student.id)}
-                      className="text-red-600 hover:text-red-900 flex items-center"
-                    >
-                      <Trash2 className="w-4 h-4 mr-1" />
-                      Delete
-                    </button>
-                  </td>
-                </tr>
+          
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {Object.entries(form).map(([key, value]) => (
+                <div key={key} className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700 capitalize">
+                    {key.replace(/([A-Z])/g, ' $1').trim()}
+                  </label>
+                  <input
+                    name={key}
+                    value={value as string}
+                    onChange={handleChange}
+                    className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    type={key === 'age' ? 'number' : key === 'birthday' ? 'date' : 'text'}
+                    min={key === 'age' ? 1 : undefined}
+                    required
+                  />
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+            
+            <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
+              <button
+                type="button"
+                onClick={closeModal}
+                className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="flex items-center px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+              >
+                {editingId ? (
+                  <>
+                    <Edit className="w-4 h-4 mr-2" />
+                    Update Child
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Child
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
         </div>
-      </div>
+      ) : (
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Age</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Classroom</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Birthday</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gender</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Parent</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {students.map(student => (
+                  <tr key={student.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        {student.profileImage ? (
+                          <img 
+                            src={student.profileImage} 
+                            alt={student.name}
+                            className="flex-shrink-0 h-10 w-10 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
+                            <User className="h-5 w-5 text-indigo-600" />
+                          </div>
+                        )}
+                        <div className="ml-4">
+                          <div className="text-sm font-medium text-gray-900">{student.name}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{student.age}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {student.classroom || 'Not assigned'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <div className="flex items-center">
+                        <Calendar className="mr-2 text-gray-400" size={14} />
+                        {student.birthday}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{student.gender}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{student.parentName}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <button 
+                        onClick={() => handleEdit(student)}
+                        className="text-indigo-600 hover:text-indigo-900 mr-4 flex items-center"
+                      >
+                        <Edit className="w-4 h-4 mr-1" />
+                        Edit
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(student.id)}
+                        className="text-red-600 hover:text-red-900 flex items-center"
+                      >
+                        <Trash2 className="w-4 h-4 mr-1" />
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
