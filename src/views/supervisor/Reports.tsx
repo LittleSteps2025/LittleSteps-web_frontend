@@ -1,10 +1,44 @@
 import { FileText, Download, Printer, Calendar, X, FileBarChart2, Plus, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 
+// Define report content types
+interface AttendanceReportContent {
+  totalStudents: number;
+  averageAttendance: string;
+  mostAbsentStudent: string;
+  bestAttender: string;
+}
+
+interface HealthReportContent {
+  studentsScreened: number;
+  followUpsRequired: number;
+  commonIssues: string;
+  nextCheckup: string;
+}
+
+interface ActivitiesReportContent {
+  totalActivities: number;
+  mostPopular: string;
+  leastPopular: string;
+  participationRate: string;
+}
+
+interface GeneratedReportContent {
+  format: string;
+  detailLevel: string;
+  includesCharts: boolean;
+}
+
+type ReportType =
+  | { id: number; name: string; type: 'Attendance'; date: string; size: string; description: string; generatedBy: string; content: AttendanceReportContent }
+  | { id: number; name: string; type: 'Health'; date: string; size: string; description: string; generatedBy: string; content: HealthReportContent }
+  | { id: number; name: string; type: 'Activities'; date: string; size: string; description: string; generatedBy: string; content: ActivitiesReportContent }
+  | { id: number; name: string; type: string; date: string; size: string; description: string; generatedBy: string; content: GeneratedReportContent };
+
 const Reports = () => {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isGenerateOpen, setIsGenerateOpen] = useState(false);
-  const [selectedReport, setSelectedReport] = useState(null);
+  const [selectedReport, setSelectedReport] = useState<ReportType | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [newReport, setNewReport] = useState({
     name: '',
@@ -17,8 +51,8 @@ const Reports = () => {
   });
 
   // Sample report data
-  const [reports, setReports] = useState([
-    { 
+  const [reports, setReports] = useState<ReportType[]>([
+    {
       id: 1,
       name: 'Monthly Attendance Summary',
       type: 'Attendance',
@@ -33,7 +67,7 @@ const Reports = () => {
         bestAttender: 'Olivia Smith (100%)'
       }
     },
-    { 
+    {
       id: 2,
       name: 'Health Checkups Report',
       type: 'Health',
@@ -48,7 +82,7 @@ const Reports = () => {
         nextCheckup: '2023-07-28'
       }
     },
-    { 
+    {
       id: 3,
       name: 'Activities Participation',
       type: 'Activities',
@@ -70,7 +104,7 @@ const Reports = () => {
   const detailLevels = ['Summary', 'Detailed', 'Comprehensive'];
 
   // Open report details modal
-  const openDetails = (report) => {
+  const openDetails = (report: ReportType) => {
     setSelectedReport(report);
     setIsDetailOpen(true);
   };
@@ -101,20 +135,57 @@ const Reports = () => {
   };
 
   // Handle form input changes
-  const handleGenerateChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setNewReport(prev => ({ 
-      ...prev, 
-      [name]: type === 'checkbox' ? checked : value 
-    }));
+  const handleGenerateChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target;
+    if (type === 'checkbox' && e.target instanceof HTMLInputElement) {
+      setNewReport(prev => ({
+        ...prev,
+        [name]: e.target.checked
+      }));
+    } else {
+      setNewReport(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
 
   // Generate new report
-  const generateReport = (e) => {
+  const generateReport = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
-    // Create new report object
-    const generatedReport = {
+    // If the type is not one of the hardcoded types, treat as generated
+    let generatedType: string = newReport.type;
+    let content: AttendanceReportContent | HealthReportContent | ActivitiesReportContent | GeneratedReportContent;
+    if (generatedType === 'Attendance') {
+      content = {
+        totalStudents: 0,
+        averageAttendance: '',
+        mostAbsentStudent: '',
+        bestAttender: ''
+      };
+    } else if (generatedType === 'Health') {
+      content = {
+        studentsScreened: 0,
+        followUpsRequired: 0,
+        commonIssues: '',
+        nextCheckup: ''
+      };
+    } else if (generatedType === 'Activities') {
+      content = {
+        totalActivities: 0,
+        mostPopular: '',
+        leastPopular: '',
+        participationRate: ''
+      };
+    } else {
+      // For custom types, use GeneratedReportContent
+      content = {
+        format: newReport.format,
+        detailLevel: newReport.detailLevel,
+        includesCharts: newReport.includeCharts
+      };
+    }
+    const generatedReport: ReportType = {
       id: reports.length + 1,
       name: newReport.name || `${newReport.type} Report - ${new Date().toLocaleDateString()}`,
       type: newReport.type,
@@ -122,14 +193,8 @@ const Reports = () => {
       size: '1.2 MB',
       description: `Generated ${newReport.type} report for period ${newReport.startDate || 'N/A'} to ${newReport.endDate || 'N/A'}`,
       generatedBy: 'Admin User',
-      content: {
-        format: newReport.format,
-        detailLevel: newReport.detailLevel,
-        includesCharts: newReport.includeCharts
-      }
-    };
-
-    // Add to reports list
+      content
+    } as ReportType;
     setReports([generatedReport, ...reports]);
     closeGenerate();
   };
@@ -150,13 +215,13 @@ const Reports = () => {
             Reports
           </span>
         </h1>
-        <button 
+        {/* <button 
           onClick={openGenerate}
           className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
         >
           <Plus className="w-4 h-4 mr-2" />
           Generate Report
-        </button>
+        </button> */}
       </div>
 
       {/* Search */}
@@ -233,7 +298,7 @@ const Reports = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="5" className="px-6 py-4 text-center text-sm text-gray-500">
+                  <td colSpan={5} className="px-6 py-4 text-center text-sm text-gray-500">
                     No reports found matching your search criteria.
                   </td>
                 </tr>
@@ -244,7 +309,7 @@ const Reports = () => {
       </div>
 
       {/* Report Details Modal */}
-      {isDetailOpen && selectedReport && (
+      {isDetailOpen && selectedReport && typeof selectedReport === 'object' && 'name' in selectedReport && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
             <div className="p-6">
@@ -300,7 +365,7 @@ const Reports = () => {
                   {Object.entries(selectedReport.content).map(([key, value]) => (
                     <div key={key} className="bg-gray-50 p-4 rounded-lg">
                       <h4 className="text-sm font-medium text-gray-500 capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</h4>
-                      <p className="mt-1 text-lg font-medium text-gray-900">{value}</p>
+                      <p className="mt-1 text-lg font-medium text-gray-900">{String(value)}</p>
                     </div>
                   ))}
                 </div>
