@@ -131,6 +131,7 @@ const complaints: ComplaintType[] = [
   }
 ];
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const sortKeys = ['date', 'status', 'priority', 'complainant.name', 'lastUpdated'] as const;
 type SortKey = typeof sortKeys[number];
 
@@ -158,22 +159,22 @@ const ComplaintsManagement = () => {
     )
     .sort((a, b) => {
       const key = sortConfig.key;
-      let aValue: any, bValue: any;
+      let aValue: unknown, bValue: unknown;
 
       if (key.includes('.')) {
         // Handle nested properties
         const keys = key.split('.');
-        aValue = keys.reduce((obj: any, k: string) => obj?.[k], a);
-        bValue = keys.reduce((obj: any, k: string) => obj?.[k], b);
+        aValue = keys.reduce((obj: unknown, k: string) => (obj as Record<string, unknown>)?.[k], a);
+        bValue = keys.reduce((obj: unknown, k: string) => (obj as Record<string, unknown>)?.[k], b);
       } else {
-        aValue = (a as any)[key];
-        bValue = (b as any)[key];
+        aValue = (a as ComplaintType)[key as keyof ComplaintType];
+        bValue = (b as ComplaintType)[key as keyof ComplaintType];
       }
 
-      if (aValue < bValue) {
+      if (String(aValue) < String(bValue)) {
         return sortConfig.direction === 'asc' ? -1 : 1;
       }
-      if (aValue > bValue) {
+      if (String(aValue) > String(bValue)) {
         return sortConfig.direction === 'asc' ? 1 : -1;
       }
       return 0;
@@ -663,7 +664,7 @@ const ComplaintsManagement = () => {
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && currentComplaint && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-lg max-w-md w-full">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
@@ -713,7 +714,7 @@ const ComplaintsManagement = () => {
 
       {/* Resolve Complaint Modal */}
       {showResolveModal && currentComplaint && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">

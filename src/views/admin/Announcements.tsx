@@ -1,6 +1,6 @@
 import { useState, type JSX } from 'react';
 import {
-  Search, Plus, Edit, Trash2, Filter, ChevronDown, ChevronUp, 
+  Search, Edit, Trash2, Filter, ChevronDown, ChevronUp, 
   MessageSquare, User, Users, Bell, X, CheckCircle, Send, Clock
 } from 'lucide-react';
 
@@ -276,9 +276,9 @@ const AnnouncementManagement = () => {
         <div className="flex space-x-3 w-full sm:w-auto">
           <button 
             onClick={() => setShowAddModal(true)}
-            className="btn-primary flex items-center"
+            className="bg-[#6339C0] text-white py-2 px-4 rounded-lg"
           >
-            <Plus className="w-4 h-4 mr-2" />
+            
             New Announcement
           </button>
         </div>
@@ -486,7 +486,7 @@ const AnnouncementManagement = () => {
 
       {/* Add Announcement Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
@@ -647,7 +647,7 @@ const AnnouncementManagement = () => {
 
       {/* Edit Announcement Modal */}
       {showEditModal && currentAnnouncement && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
@@ -807,7 +807,7 @@ const AnnouncementManagement = () => {
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && currentAnnouncement && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-lg max-w-md w-full">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
@@ -859,7 +859,7 @@ const AnnouncementManagement = () => {
 
       {/* Replies Modal */}
       {showRepliesModal && currentAnnouncement && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-lg max-w-lg w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
