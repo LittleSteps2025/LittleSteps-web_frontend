@@ -4,7 +4,38 @@ import { useState } from 'react';
 const Reports = () => {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isGenerateOpen, setIsGenerateOpen] = useState(false);
-  const [selectedReport, setSelectedReport] = useState(null);
+  type ReportContent = {
+    // All possible keys for all report types, all optional
+    totalStudents?: number;
+    averageAttendance?: string;
+    mostAbsentStudent?: string;
+    bestAttender?: string;
+    studentsScreened?: number;
+    followUpsRequired?: number;
+    commonIssues?: string;
+    nextCheckup?: string;
+    totalActivities?: number;
+    mostPopular?: string;
+    leastPopular?: string;
+    participationRate?: string;
+    // For generated reports
+    format?: string;
+    detailLevel?: string;
+    includesCharts?: boolean;
+  };
+
+  type Report = {
+    id: number;
+    name: string;
+    type: string;
+    date: string;
+    size: string;
+    description: string;
+    generatedBy: string;
+    content: ReportContent;
+  };
+
+  const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [newReport, setNewReport] = useState({
     name: '',
@@ -17,7 +48,7 @@ const Reports = () => {
   });
 
   // Sample report data
-  const [reports, setReports] = useState([
+  const [reports, setReports] = useState<Report[]>([
     { 
       id: 1,
       name: 'Monthly Attendance Summary',
@@ -70,7 +101,7 @@ const Reports = () => {
   const detailLevels = ['Summary', 'Detailed', 'Comprehensive'];
 
   // Open report details modal
-  const openDetails = (report) => {
+  const openDetails = (report: Report) => {
     setSelectedReport(report);
     setIsDetailOpen(true);
   };
@@ -101,16 +132,16 @@ const Reports = () => {
   };
 
   // Handle form input changes
-  const handleGenerateChange = (e) => {
-    const { name, value, type, checked } = e.target;
+  const handleGenerateChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target;
     setNewReport(prev => ({ 
       ...prev, 
-      [name]: type === 'checkbox' ? checked : value 
+      [name]: type === 'checkbox' && e.target instanceof HTMLInputElement ? e.target.checked : value 
     }));
   };
 
   // Generate new report
-  const generateReport = (e) => {
+  const generateReport = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
     // Create new report object
@@ -233,7 +264,7 @@ const Reports = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="5" className="px-6 py-4 text-center text-sm text-gray-500">
+                  <td colSpan={5} className="px-6 py-4 text-center text-sm text-gray-500">
                     No reports found matching your search criteria.
                   </td>
                 </tr>
@@ -245,7 +276,7 @@ const Reports = () => {
 
       {/* Report Details Modal */}
       {isDetailOpen && selectedReport && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
@@ -323,7 +354,7 @@ const Reports = () => {
 
       {/* Generate Report Modal */}
       {isGenerateOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
