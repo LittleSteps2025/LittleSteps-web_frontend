@@ -1,9 +1,17 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Search, Plus, Clock, Edit, Trash2, X, Calendar } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, X, Calendar } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext'; // Assuming you have an auth context
 
+interface AuthUser {
+  id: string | number;
+  session_id?: string | number;
+  role?: string;
+  email?: string;
+  name?: string;
+}
+
 type Announcement = {
-  ann_id: string;
+   ann_id: string;
   title: string;
   details: string;
   date: string;
@@ -11,7 +19,7 @@ type Announcement = {
   audience: 'All' | 'Teachers' | 'Parents';
   created_at: string;
   attachment?: string;
-  session_id?: string;
+  session_id?: string | number;
   user_id: string;
   updated_at?: string;
 };
@@ -51,7 +59,8 @@ const Toast = ({ message, type, onClose }: { message: string; type: 'success' | 
 };
 
 const Announcements = () => {
-  const { user } = useAuth(); // Get current user from auth context
+  const { user } = useAuth() as { user: AuthUser | null };
+   // Get current user from auth context
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [filteredAnnouncements, setFilteredAnnouncements] = useState<Announcement[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -64,9 +73,9 @@ const Announcements = () => {
     title: '',
     details: '',
     date: new Date().toISOString().split('T')[0],
-    time: new Date().toTimeString().split(' ')[0],
+    time: new Date().toTimeString().slice(0, 5), // Fix time format
     audience: 'All',
-    user_id: user?.id ? String(user.id) : '',
+    user_id: '',
     attachment: '',
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -74,7 +83,7 @@ const Announcements = () => {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   // API base URL
-  const API_BASE_URL = '/api/announcements';
+ const API_BASE_URL = 'http://localhost:5001/api/announcement';
 
   // Format date and time for display
   const formatDateTime = (dateString: string) => {
@@ -101,19 +110,35 @@ const Announcements = () => {
   const fetchAnnouncements = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(API_BASE_URL);
+      const response = await fetch(API_BASE_URL, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      console.log('Fetching announcements from:', API_BASE_URL);
       if (!response.ok) throw new Error('Failed to fetch announcements');
-      let data = await response.json();
+      const responseData = await response.json();
+      console.log('API Response:', responseData);
+      
+      // Extract data array from response object
+      let data = responseData.data || responseData;
+      
       // Map audience integer to string
       data = data.map((a: { audience: string | number; }) => ({
         ...a,
         audience: audienceMap[Number(a.audience)] || 'All',
       }));
+      console.log('Processed announcements:', data);
       setAnnouncements(data);
       setFilteredAnnouncements(data);
     } catch (error) {
-      showToast('Failed to load announcements', 'error');
       console.error('Error fetching announcements:', error);
+      if (error instanceof Error) {
+        showToast(`Failed to load announcements: ${error.message}`, 'error');
+      } else {
+        showToast('Failed to load announcements', 'error');
+      }
     } finally {
       setIsLoading(false);
       setIsSearching(false);
@@ -153,34 +178,33 @@ const Announcements = () => {
   // Create announcement
   // Create announcement
 const createAnnouncement = async (announcement: Omit<Announcement, 'ann_id' | 'created_at'>) => {
-  try {
-    const response = await fetch(API_BASE_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      },
-      body: JSON.stringify({
-        ...announcement,
-        audience: audienceReverseMap[announcement.audience] || 1,
-        // Don't explicitly send session_id - let backend handle it
-      })
-    });
-    
-    if (!response.ok) {
-      throw new Error('Failed to create announcement');
-    }
-    
-    return await response.json();
-  } catch (error) {
-    throw error;
+  const response = await fetch(API_BASE_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${localStorage.getItem('token')}`
+    },
+    body: JSON.stringify({
+      ...announcement,
+      audience: audienceReverseMap[announcement.audience] || 1,
+      // Don't explicitly send session_id - let backend handle it
+    })
+  });
+  
+  if (!response.ok) {
+    throw new Error('Failed to create announcement');
   }
+  
+  return await response.json();
 };
 
   // Update announcement
   const updateAnnouncement = async (id: string, announcement: Partial<Announcement>) => {
-    const sessionId = typeof (user as any)?.session_id === 'number' ? (user as any).session_id : ((user as any)?.session_id ? Number((user as any).session_id) : null);
-    const payload: any = {
+    const sessionId = user?.session_id ? 
+      (typeof user.session_id === 'number' ? user.session_id : Number(user.session_id)) 
+      : null;
+      
+    const payload = {
       ...announcement,
       audience: audienceReverseMap[announcement.audience as 'All' | 'Teachers' | 'Parents'] || 1,
       session_id: sessionId,
@@ -197,33 +221,31 @@ const createAnnouncement = async (announcement: Omit<Announcement, 'ann_id' | 'c
       });
       
       if (!response.ok) {
-        throw new Error('Failed to update announcement');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to update announcement');
       }
       
       return await response.json();
     } catch (error) {
+      console.error('Update announcement error:', error);
       throw error;
     }
   };
 
   // Delete announcement
   const deleteAnnouncement = async (id: string) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to delete announcement');
+    const response = await fetch(`${API_BASE_URL}/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
       }
-      
-      return await response.json();
-    } catch (error) {
-      throw error;
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to delete announcement');
     }
+    
+    return await response.json();
   };
 
   // Effect to fetch announcements on component mount
@@ -235,6 +257,16 @@ const createAnnouncement = async (announcement: Omit<Announcement, 'ann_id' | 'c
   useEffect(() => {
     searchAnnouncements();
   }, [searchTerm, searchDate, searchAnnouncements]);
+
+  // Update formData when user changes
+  useEffect(() => {
+    if (user?.id) {
+      setFormData(prev => ({
+        ...prev,
+        user_id: String(user.id)
+      }));
+    }
+  }, [user]);
 
   // Handle input changes for form
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -253,7 +285,7 @@ const createAnnouncement = async (announcement: Omit<Announcement, 'ann_id' | 'c
       title: '',
       details: '',
       date: new Date().toISOString().split('T')[0],
-      time: new Date().toTimeString().split(' ')[0],
+      time: new Date().toTimeString().slice(0, 5), // Fix time format
       audience: 'All',
       user_id: user?.id ? String(user.id) : '',
       attachment: '',
@@ -327,8 +359,9 @@ const createAnnouncement = async (announcement: Omit<Announcement, 'ann_id' | 'c
       showToast('Announcement deleted successfully!', 'success');
       closeModal();
       fetchAnnouncements();
-    } catch (error) {
-      showToast('Failed to delete announcement', 'error');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete announcement';
+      showToast(errorMessage, 'error');
     }
   };
 
@@ -364,9 +397,9 @@ const createAnnouncement = async (announcement: Omit<Announcement, 'ann_id' | 'c
             Announcements
           </span>
         </h1>
-        {(user as any).session_id && (
+        {user?.session_id && (
           <span className="text-sm text-gray-500">
-            Session: {(user as any).session_id}
+            Session: {user.session_id}
           </span>
         )}
       </div>
@@ -435,8 +468,6 @@ const createAnnouncement = async (announcement: Omit<Announcement, 'ann_id' | 'c
         {filteredAnnouncements.length > 0 ? (
           <div className="space-y-4">
             {filteredAnnouncements.map((announcement) => {
-              const createdDateTime = formatDateTime(announcement.created_at);
-              
               return (
                 <div key={announcement.ann_id} className="p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
                   <div className="flex justify-between items-start">
