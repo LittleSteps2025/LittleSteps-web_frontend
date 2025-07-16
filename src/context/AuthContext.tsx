@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 
 interface User {
   id: number;
+  user_id: number; // Added for backend compatibility
   firebaseUid: string;
   name: string;
   email: string;
@@ -64,3 +65,5 @@ export function useAuth() {
   }
   return context;
 }
+
+export { AuthContext };
