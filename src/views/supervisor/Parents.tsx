@@ -24,6 +24,105 @@ type ValidationErrors = {
   profile_image?: string;
 };
 
+// Mock data for parents
+const mockParents: Parent[] = [
+  {
+    id: 'parent-001',
+    name: 'John Smith',
+    email: 'john.smith@example.com',
+    phone: '555-123-4567',
+    children: 2
+  },
+  {
+    id: 'parent-002',
+    name: 'Emily Johnson',
+    email: 'emily.j@example.com',
+    phone: '555-987-6543',
+    children: 1
+  },
+  {
+    id: 'parent-003',
+    name: 'Michael Brown',
+    email: 'michael.b@example.com',
+    phone: '555-456-7890',
+    children: 3
+  },
+  {
+    id: 'parent-004',
+    name: 'Sarah Davis',
+    email: 'sarah.d@example.com',
+    phone: '555-789-0123',
+    children: 2
+  },
+  {
+    id: 'parent-005',
+    name: 'Robert Wilson',
+    email: 'robert.w@example.com',
+    phone: '555-234-5678',
+    children: 1
+  }
+];
+
+// Mock API functions
+const fetchMockParents = async (): Promise<Parent[]> => {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      resolve([...mockParents]);
+    }, 500);
+  });
+};
+
+const searchMockParents = async (term: string): Promise<Parent[]> => {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      if (!term.trim()) {
+        resolve([...mockParents]);
+        return;
+      }
+      const filtered = mockParents.filter(parent => 
+        parent.name.toLowerCase().includes(term.toLowerCase()) ||
+        parent.email.toLowerCase().includes(term.toLowerCase()) ||
+        parent.phone.includes(term) ||
+        parent.id.toLowerCase().includes(term.toLowerCase())
+      );
+      resolve(filtered);
+    }, 300); // Shorter delay for better UX
+  });
+};
+
+const createMockParent = async (parent: Parent): Promise<Parent> => {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      mockParents.push(parent);
+      resolve(parent);
+    }, 500);
+  });
+};
+
+const updateMockParent = async (parent: Parent): Promise<Parent> => {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      const index = mockParents.findIndex(p => p.id === parent.id);
+      if (index !== -1) {
+        mockParents[index] = parent;
+      }
+      resolve(parent);
+    }, 500);
+  });
+};
+
+const deleteMockParent = async (id: string): Promise<void> => {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      const index = mockParents.findIndex(p => p.id === id);
+      if (index !== -1) {
+        mockParents.splice(index, 1);
+      }
+      resolve();
+    }, 500);
+  });
+};
+
 const Parents = () => {
   // Sample data for demonstration
   const sampleParents: Parent[] = [
@@ -82,6 +181,19 @@ const Parents = () => {
   useEffect(() => {
     fetchParents();
   }, []);
+
+  // Search effect with debounce
+  useEffect(() => {
+    const timerId = setTimeout(() => {
+      if (searchTerm.trim() || isSearching) {
+        handleSearch();
+      }
+    }, 500);
+
+    return () => {
+      clearTimeout(timerId);
+    };
+  }, [searchTerm]);
 
   const fetchParents = async () => {
     setIsLoading(true);
@@ -201,6 +313,7 @@ const Parents = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
+    
     try {
       // In a real app, you would submit to your API
       // const token = localStorage.getItem('token');

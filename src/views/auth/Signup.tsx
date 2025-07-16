@@ -67,7 +67,13 @@ const Signup: React.FC = () => {
         }),
       });
 
-      const data = await response.json();
+      const contentType = response.headers.get('content-type');
+      let data;
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        throw new Error('Server returned an unexpected response');
+      }
 
       if (!response.ok) {
         throw new Error(data.message || 'Signup failed');

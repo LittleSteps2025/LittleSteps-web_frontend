@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { 
-  Plus, Calendar, Clock, Package, Trash2, Edit, Download 
+ Calendar, Clock, Package, Trash2, Edit
 } from 'lucide-react';
 
 const SubscriptionManagement = () => {
@@ -156,15 +156,14 @@ const SubscriptionManagement = () => {
         <div className="flex space-x-3 w-full sm:w-auto">
           <button 
             onClick={() => setShowCreateModal(true)}
-            className="btn-primary flex items-center"
+            className="bg-[#6339C0] text-white py-2 px-4 rounded-lg "
           >
-            <Plus className="w-4 h-4 mr-2" />
             Create New Plan
           </button>
-          <button className="btn-secondary flex flex-wrap items-center">
+          {/* <button className="btn-secondary flex flex-wrap items-center">
             <Download className="w-4 h-4 mr-2" />
             Export Plans
-          </button>
+          </button> */}
         </div>
       </div>
 
@@ -278,7 +277,7 @@ const SubscriptionManagement = () => {
 
       {/* Create New Plan Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black/60 bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <h2 className="text-xl font-bold text-gray-800 mb-6">Create New Subscription Plan</h2>

@@ -1,4 +1,4 @@
-import { Users, Baby, DollarSign, TrendingUp, CheckCircle } from 'lucide-react';
+import { Users, Baby, DollarSign, CheckCircle } from 'lucide-react';
 
 interface Stats {
   totalChildren: number;
@@ -51,7 +51,7 @@ const StatsCards = ({ stats }: { stats: Stats }) => {
     { 
       icon: DollarSign, 
       title: 'Monthly Revenue', 
-      value: `$${stats.monthlyRevenue.toLocaleString()}`, 
+      value: stats.monthlyRevenue.toLocaleString('en-LK', { style: 'currency', currency: 'LKR' }), 
       trend: '+15%',
       color: 'bg-emerald-100 text-emerald-800'
     },
@@ -70,7 +70,7 @@ const StatsCards = ({ stats }: { stats: Stats }) => {
               <card.icon className="w-5 h-5" />
             </div>
           </div>
-          <div className={`mt-3 text-xs font-medium flex items-center ${
+          {/* <div className={`mt-3 text-xs font-medium flex items-center ${
             card.trend.startsWith('+') ? 'text-green-500' : 
             card.trend.startsWith('-') ? 'text-red-500' : 'text-gray-500'
           }`}>
@@ -79,7 +79,7 @@ const StatsCards = ({ stats }: { stats: Stats }) => {
               card.trend.startsWith('-') ? 'text-red-500' : 'text-gray-500'
             }`} />
             {card.trend} from last month
-          </div>
+          </div> */}
         </div>
       ))}
     </div>

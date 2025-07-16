@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import {
-  Search, Plus, Edit, Trash2, Filter, ChevronDown, ChevronUp, X, CheckCircle, Clock
+
+  Search, Plus, Edit, Trash2, Filter, ChevronDown, ChevronUp, X, CheckCircle, Clock, 
+  MessageSquare, User, Users, Bell, Send
+
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -231,9 +234,9 @@ const AnnouncementManagement = () => {
         <div className="flex space-x-3 w-full sm:w-auto">
           <button 
             onClick={() => setShowAddModal(true)}
-            className="btn-primary flex items-center"
+            className="bg-[#6339C0] text-white py-2 px-4 rounded-lg"
           >
-            <Plus className="w-4 h-4 mr-2" />
+            
             New Announcement
           </button>
         </div>
@@ -430,7 +433,7 @@ const AnnouncementManagement = () => {
 
       {/* Add Announcement Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
@@ -541,7 +544,7 @@ const AnnouncementManagement = () => {
 
       {/* Edit Announcement Modal */}
       {showEditModal && currentAnnouncement && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
@@ -653,7 +656,7 @@ const AnnouncementManagement = () => {
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && currentAnnouncement && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-lg max-w-md w-full">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
@@ -713,6 +716,56 @@ const AnnouncementManagement = () => {
         <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-red-100 text-red-700 px-4 py-2 rounded shadow z-50">
           {error}
           <button className="ml-2 text-red-500" onClick={() => setError('')}>x</button>
+
+      {/* Replies Modal */}
+<!--       {showRepliesModal && currentAnnouncement && (
+        <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-lg max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold text-gray-800">Replies to "{currentAnnouncement.title}"</h2>
+                <button onClick={() => setShowRepliesModal(false)} className="text-gray-400 hover:text-gray-500">
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+              <div className="space-y-4 max-h-60 overflow-y-auto">
+                {currentAnnouncement.replies.length > 0 ? (
+                  currentAnnouncement.replies.map(reply => (
+                    <div key={reply.id} className="bg-gray-50 rounded-lg p-3 flex items-start gap-3">
+                      <User className="w-5 h-5 text-gray-400 mt-1" />
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-gray-800 text-sm">{reply.user}</span>
+                          <span className="text-xs text-gray-400">{reply.date}</span>
+                        </div>
+                        <div className="text-gray-700 text-sm mt-1">{reply.comment}</div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-gray-500 text-sm">No replies yet.</div>
+                )}
+              </div>
+              <form onSubmit={handleAddReply} className="mt-6">
+                <label htmlFor="reply" className="block text-sm font-medium text-gray-700 mb-1">Add a reply</label>
+                <textarea
+                  id="reply"
+                  name="reply"
+                  rows={2}
+                  value={replyText}
+                  onChange={e => setReplyText(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6339C0] focus:border-transparent"
+                  required
+                />
+                <div className="mt-3 flex justify-end">
+                  <button type="submit" className="btn-primary flex items-center">
+                    <Send className="w-4 h-4 mr-2" /> Send
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div> -->
+
         </div>
       )}
     </div>
