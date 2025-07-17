@@ -33,7 +33,7 @@ interface ApiStudent {
   image?: string;
 }
 
-const API_URL = 'http://localhost:5001/api/child/';
+const API_URL = 'http://localhost:5001/api/supervisors/child/';
 
 const fetchStudents = async (): Promise<Student[]> => {
   const res = await fetch(API_URL);
