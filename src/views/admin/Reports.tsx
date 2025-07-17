@@ -73,14 +73,11 @@ const ReportsPage = () => {
   };
 
   return (
-    <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">Reports Center</h1>
-          <p className="text-sm text-gray-500">Generate and download system reports</p>
-        </div>
-        <div className="flex space-x-3">
-          <button className="btn-secondary bg-white border border-gray-200 hover:border-purple-500 text-purple-700 hover:text-purple-800 hover:bg-purple-50 transition-colors">
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h1 className="text-2xl font-bold text-gray-800">Reports Center</h1>
+        <div className="flex space-x-3 w-full sm:w-auto">
+          <button className="btn-secondary flex items-center bg-white border border-gray-200 hover:border-purple-500 text-purple-700 hover:text-purple-800 hover:bg-purple-50 transition-colors">
             <Download className="w-4 h-4 mr-2" />
             Export All Data
           </button>
@@ -89,7 +86,7 @@ const ReportsPage = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
             <h2 className="text-lg font-semibold text-gray-800 mb-4">Select Report Type</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {reportTypes.map(report => (
@@ -111,7 +108,7 @@ const ReportsPage = () => {
           </div>
 
           {selectedReport && (
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-6">
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-gray-800">
                   {reportTypes.find(r => r.id === selectedReport)?.name} Configuration
@@ -208,7 +205,7 @@ const ReportsPage = () => {
         </div>
 
         <div className="space-y-6">
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-gray-800">Recent Reports</h2>
               <button className="text-sm text-purple-600 hover:text-purple-800 hover:underline">View All</button>
@@ -238,7 +235,7 @@ const ReportsPage = () => {
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-gray-800">MIS Quick Stats</h2>
               <button className="text-sm text-purple-600 hover:text-purple-800 hover:underline">Refresh</button>
