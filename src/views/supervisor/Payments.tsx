@@ -28,21 +28,21 @@ const Payments = () => {
               <DollarSign className="text-indigo-600 mr-2" />
               <h3 className="font-medium">Total Revenue</h3>
             </div>
-            <p className="text-2xl font-bold mt-2">$1,250.00</p>
+            <p className="text-2xl font-bold mt-2">LKR 100,000.00</p>
           </div>
           <div className="bg-green-50 p-4 rounded-lg">
             <div className="flex items-center">
               <CheckCircle className="text-green-600 mr-2" />
               <h3 className="font-medium">Paid</h3>
             </div>
-            <p className="text-2xl font-bold mt-2">$750.00</p>
+            <p className="text-2xl font-bold mt-2">LKR 75,000.00</p>
           </div>
           <div className="bg-yellow-50 p-4 rounded-lg">
             <div className="flex items-center">
               <Clock className="text-yellow-600 mr-2" />
               <h3 className="font-medium">Pending</h3>
             </div>
-            <p className="text-2xl font-bold mt-2">$500.00</p>
+            <p className="text-2xl font-bold mt-2">LKR 25,000</p>
           </div>
         </div>
 
@@ -66,7 +66,6 @@ const Payments = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -79,7 +78,7 @@ const Payments = () => {
                     {payment.parent}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    ${payment.amount}
+                    LKR {payment.amount}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {payment.date}
@@ -92,18 +91,6 @@ const Payments = () => {
                     }`}>
                       {payment.status}
                     </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button className="text-indigo-600 hover:text-indigo-900 mr-3 flex items-center">
-                      <FileText className="w-4 h-4 mr-1" />
-                      Receipt
-                    </button>
-                    {payment.status === 'Pending' && (
-                      <button className="text-green-600 hover:text-green-900 flex items-center">
-                        <CheckCircle className="w-4 h-4 mr-1" />
-                        Mark Paid
-                      </button>
-                    )}
                   </td>
                 </tr>
               ))}

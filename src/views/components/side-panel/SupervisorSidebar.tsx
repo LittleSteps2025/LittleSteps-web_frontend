@@ -1,4 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
+import logo from '../../../assets/logo.png';
+
 import {
   LayoutDashboard,
   Users,
@@ -34,8 +36,9 @@ const SupervisorSidebar = () => {
   return (
     <div className="w-64 bg-gradient-to-b from-[#4f46e5] to-[#7c73e6] text-white flex flex-col border-r border-[#7c73e6]">
       <div className="p-6 border-b border-[#7c73e6] flex items-center space-x-3">
-        <img src="/logo-white.png" alt="Logo" className="h-8" />
-        <h1 className="text-xl font-bold">LittleSteps</h1>
+        <img src={logo} alt="Logo" className="h-15 w-auto"
+ />
+        
       </div>
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
         {navItems.map((item) => (

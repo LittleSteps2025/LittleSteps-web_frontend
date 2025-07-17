@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Lock, Mail, Eye, EyeOff } from 'lucide-react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import {  useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 
@@ -10,7 +10,7 @@ const Login: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
+  // const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -108,7 +108,7 @@ const Login: React.FC = () => {
               </button>
             </div>
           </div>
-          <div className="flex items-center justify-between">
+          {/* <div className="flex items-center justify-between">
             <label className="flex items-center gap-2 text-sm">
               <input
                 type="checkbox"
@@ -119,7 +119,7 @@ const Login: React.FC = () => {
               Remember me
             </label>
             <Link to="/forgot" className="text-[#6339C0] text-sm hover:underline">Forgot password?</Link>
-          </div>
+          </div> */}
           <button
             type="submit"
             className="w-full bg-gradient-to-r from-[#6339C0] to-[#9F66FF] text-white py-3 rounded-lg font-semibold hover:shadow-lg transition flex justify-center items-center"
@@ -137,8 +137,8 @@ const Login: React.FC = () => {
           </button>
         </form>
         <div className="mt-6 text-center text-sm text-gray-600">
-          Don't have an account?{' '}
-          <Link to="/signup" className="text-[#6339C0] font-semibold hover:underline">Sign Up</Link>
+          {/* Don't have an account?{' '} */}
+          {/* <Link to="/signup" className="text-[#6339C0] font-semibold hover:underline">Sign Up</Link> */}
         </div>
       </div>
     </div>

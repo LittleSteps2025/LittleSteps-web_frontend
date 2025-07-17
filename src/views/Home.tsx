@@ -1,11 +1,7 @@
 import React from 'react';
 import { 
   BookOpen,
-  Apple,
-  Gamepad2,
-  Music,
   Paintbrush,
-  Leaf,
   Heart,
   ChevronRight,
   Check,
@@ -23,6 +19,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Header from './components/header/Header';
+import heroImage from '../assets/hero-image.jpg';
 
 const Home: React.FC = () => {
   const stats = [
@@ -79,14 +76,14 @@ const Home: React.FC = () => {
       <Header />
       
       {/* Hero Section */}
-      <section className="relative pt-32 pb-20 px-6 max-w-7xl mx-auto w-full">
-        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+      <section className="relative pt-28 pb-16 px-6 max-w-7xl mx-auto w-full">
+        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div>
             <div className="inline-flex items-center bg-[#f3eeff] text-[#6339C0] px-4 py-2 rounded-full font-medium mb-6">
               <Shield className="mr-2" size={18} />
               <span>Licensed & Accredited</span>
             </div>
-            <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
+            <h1 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">
               <span className="bg-gradient-to-r from-[#6339C0] to-[#9F66FF] bg-clip-text text-transparent">
                 Little Steps
               </span><br />
@@ -95,7 +92,7 @@ const Home: React.FC = () => {
             <p className="text-xl text-gray-600 mb-10 max-w-lg leading-relaxed">
               Comprehensive care and education for children ages 3 to 16. From preschool play to teen development, we support every stage of growth.
             </p>
-            <div className="flex flex-wrap gap-4 mb-12">
+            <div className="flex flex-wrap gap-4 mb-8">
               <Link 
                 to="/contact" 
                 className="bg-gradient-to-r from-[#6339C0] to-[#9F66FF] text-white px-8 py-4 rounded-xl hover:shadow-lg transition-all font-semibold text-lg flex items-center group"
@@ -108,8 +105,8 @@ const Home: React.FC = () => {
           
           <div className="relative">
             <div className="relative bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
-              <img 
-                src="../assets/hero-image.jpg" // Replace with your image path
+              <img
+                src={heroImage}
                 alt="Multi-age group of children learning together" 
                 className="w-full h-auto max-h-[400px] object-cover"
               />
@@ -220,7 +217,8 @@ const Home: React.FC = () => {
               "https://images.unsplash.com/photo-1577896851231-70ef18881754?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80",
               "https://images.unsplash.com/photo-1541178735493-479c1a27ed24?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80",
               "https://images.unsplash.com/photo-1588072432904-843af37f03ed?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80",
-              "https://images.unsplash.com/photo-1542816417-0983675099c4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80",
+              // "https://images.unsplash.com/photo-1542816417324-0983675099c4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80",
+              "https://go.skimresources.com/?id=201523X1680086&isjs=1&jv=15.7.1&sref=https%3A%2F%2Fmilk-drunk.com%2Fwhat-to-pack-for-daycare-12-daycare-essentials-baby-toddler%2F&url=https%3A%2F%2Femh5334n65w.exactdn.com%2Fwp-content%2Fuploads%2F2023%2F03%2FiStock-1356126124.jpg%3Fstrip%3Dall%26lossy%3D1%26ssl%3D1&xs=1&xtz=-330&xuuid=391cbf9ca4a86ff58685036f716a5b53&cci=913bede46d25edf296d89cced7e2be2e",
               "https://images.unsplash.com/photo-1588072432836-e10032774350?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80"
             ].map((imgSrc, index) => (
               <div key={index} className="aspect-square overflow-hidden rounded-xl hover:shadow-lg transition-all">
