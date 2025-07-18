@@ -8,7 +8,7 @@ interface Student {
   name: string;
   age: number;
   classroom: string;
-  birthday: string;
+  dob: string;
   gender: string;
   parentName: string;
   parentNIC: string;
@@ -33,18 +33,19 @@ interface ApiStudent {
   image?: string;
 }
 
-const API_URL = 'http://localhost:5001/api/child/';
+const API_URL = 'http://localhost:5001/api/supervisors/child/';
 
 const fetchStudents = async (): Promise<Student[]> => {
   const res = await fetch(API_URL);
   if (!res.ok) throw new Error('Failed to fetch students');
   const data: ApiStudent[] = await res.json();
+  console.log('Students fetched successfully', data);
   return data.map((item: ApiStudent) => ({
     id: item.child_id,
     name: item.name,
     age: item.age,
     classroom: item.group_id,
-    birthday: item.dob,
+    dob: item.dob,
     gender: item.gender,
     parentName: item.parent_name,
     parentNIC: item.nic || '',
@@ -63,9 +64,9 @@ const createStudent = async (student: Omit<Student, 'id'>): Promise<Student> => 
       name: student.name,
       age: student.age,
       gender: student.gender,
-      dob: student.birthday,
+      dob: student.dob,
       group_id: null,
-      image: student.profileImage ? student.profileImage : null,
+      image: null,
       bc: null,
       blood_type: null,
       mr: null,
@@ -86,7 +87,7 @@ const createStudent = async (student: Omit<Student, 'id'>): Promise<Student> => 
     name: item.name,
     age: item.age,
     classroom: item.group_id,
-    birthday: item.dob,
+    dob: item.dob,
     gender: item.gender,
     parentName: student.parentName,
     parentNIC: student.parentNIC,
@@ -105,9 +106,9 @@ const updateStudent = async (student: Student): Promise<Student> => {
       name: student.name,
       age: student.age,
       gender: student.gender,
-      dob: student.birthday,
+      dob: student.dob,
       group_id: null,
-      image: student.profileImage ? student.profileImage : null,
+      image: null,
       bc: null,
       blood_type: null,
       mr: null,
@@ -123,7 +124,7 @@ const updateStudent = async (student: Student): Promise<Student> => {
     name: item.name,
     age: item.age,
     classroom: item.group_id,
-    birthday: item.dob,
+    dob: item.dob,
     gender: item.gender,
     parentName: student.parentName,
     parentNIC: student.parentNIC,
@@ -142,8 +143,8 @@ const deleteStudentApi = async (id: string): Promise<void> => {
 export default function Childrens() {
   const [students, setStudents] = useState<Student[]>([]);
   const [form, setForm] = useState<Omit<Student, 'id'>>({
-    name: '', age: 1, classroom: '', birthday: '', gender: '',
-    parentName: '', parentNIC: '', parentEmail: '', parentAddress: '', parentContact: '', profileImage: ''
+    name: '', age: 1, classroom: '', dob: '', gender: '',
+    parentName: '', parentNIC: '', parentEmail: '', parentAddress: '', parentContact: '', 
   });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -160,7 +161,7 @@ export default function Childrens() {
 
   useEffect(() => { loadStudents(); }, []);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: name === 'age' ? Number(value) : value }));
   };
@@ -175,7 +176,7 @@ export default function Childrens() {
         await createStudent(form);
         toast.success('Created successfully');
       }
-      setForm({ name: '', age: 1, classroom: '', birthday: '', gender: '', parentName: '', parentNIC: '', parentEmail: '', parentAddress: '', parentContact: '', profileImage: '' });
+      setForm({ name: '', age: 1, classroom: '', dob: '', gender: '', parentName: '', parentNIC: '', parentEmail: '', parentAddress: '', parentContact: '',  });
       setEditingId(null);
       setShowAddForm(false);
       await loadStudents();
@@ -206,13 +207,13 @@ export default function Childrens() {
 
   const openAddModal = () => {
     setShowAddForm(true);
-    setForm({ name: '', age: 1, classroom: '', birthday: '', gender: '', parentName: '', parentNIC: '', parentEmail: '', parentAddress: '', parentContact: '', profileImage: '' });
+    setForm({ name: '', age: 1, classroom: '', dob: '', gender: '', parentName: '', parentNIC: '', parentEmail: '', parentAddress: '', parentContact: '',  });
     setEditingId(null);
   };
 
   const closeModal = () => {
     setShowAddForm(false);
-    setForm({ name: '', age: 1, classroom: '', birthday: '', gender: '', parentName: '', parentNIC: '', parentEmail: '', parentAddress: '', parentContact: '', profileImage: '' });
+    setForm({ name: '', age: 1, classroom: '', dob: '', gender: '', parentName: '', parentNIC: '', parentEmail: '', parentAddress: '', parentContact: '',  });
     setEditingId(null);
   };
 
@@ -249,24 +250,174 @@ export default function Childrens() {
             </button> */}
           </div>
           
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {Object.entries(form).map(([key, value]) => (
-                <div key={key} className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700 capitalize">
-                    {key.replace(/([A-Z])/g, ' $1').trim()}
+          <form onSubmit={handleSubmit} className="space-y-8">
+            {/* Child Information Section */}
+            <div className="bg-blue-50 p-6 rounded-lg">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                <User className="mr-2 text-blue-600" size={20} />
+                Child Information
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Child Name *
                   </label>
                   <input
-                    name={key}
-                    value={value as string}
+                    name="name"
+                    value={form.name}
                     onChange={handleChange}
                     className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    type={key === 'age' ? 'number' : key === 'birthday' ? 'date' : 'text'}
-                    min={key === 'age' ? 1 : undefined}
+                    type="text"
+                    required
+                    placeholder="Enter child's name"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Age *
+                  </label>
+                  <input
+                    name="age"
+                    value={form.age}
+                    onChange={handleChange}
+                    className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    type="number"
+                    min={1}
+                    max={18}
+                    required
+                    placeholder="Enter child's age"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Gender *
+                  </label>
+                  <select
+                    name="gender"
+                    value={form.gender}
+                    onChange={handleChange}
+                    className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    required
+                  >
+                    <option value="">Select gender</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                  </select>
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    dob *
+                  </label>
+                  <input
+                    name="dob"
+                    value={form.dob}
+                    onChange={handleChange}
+                    className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    type="date"
                     required
                   />
                 </div>
-              ))}
+                
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Classroom
+                  </label>
+                  <input
+                    name="classroom"
+                    value={form.classroom}
+                    onChange={handleChange}
+                    className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    type="text"
+                    placeholder="Enter classroom (optional)"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Parent Information Section */}
+            <div className="bg-green-50 p-6 rounded-lg">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                <User className="mr-2 text-green-600" size={20} />
+                Parent Information
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Parent Name *
+                  </label>
+                  <input
+                    name="parentName"
+                    value={form.parentName}
+                    onChange={handleChange}
+                    className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    type="text"
+                    required
+                    placeholder="Enter parent's name"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Parent NIC
+                  </label>
+                  <input
+                    name="parentNIC"
+                    value={form.parentNIC}
+                    onChange={handleChange}
+                    className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    type="text"
+                    placeholder="Enter parent's NIC"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Parent Email *
+                  </label>
+                  <input
+                    name="parentEmail"
+                    value={form.parentEmail}
+                    onChange={handleChange}
+                    className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    type="email"
+                    required
+                    placeholder="Enter parent's email"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Parent Contact *
+                  </label>
+                  <input
+                    name="parentContact"
+                    value={form.parentContact}
+                    onChange={handleChange}
+                    className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    type="tel"
+                    required
+                    placeholder="Enter parent's contact number"
+                  />
+                </div>
+                
+                <div className="space-y-2 md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Parent Address *
+                  </label>
+                  <textarea
+                    name="parentAddress"
+                    value={form.parentAddress}
+                    onChange={handleChange}
+                    className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    rows={3}
+                    required
+                    placeholder="Enter parent's address"
+                  />
+                </div>
+              </div>
             </div>
             
             <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
@@ -305,7 +456,7 @@ export default function Childrens() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Age</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Classroom</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Birthday</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">dob</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gender</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Parent</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
@@ -339,7 +490,7 @@ export default function Childrens() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <div className="flex items-center">
                         <Calendar className="mr-2 text-gray-400" size={14} />
-                        {student.birthday}
+                        {student.dob}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{student.gender}</td>

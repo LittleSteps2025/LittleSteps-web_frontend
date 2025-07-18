@@ -36,7 +36,7 @@ const Toast = ({ message, type, onClose }: { message: string; type: 'success' | 
   );
 };
 
-const API_BASE_URL = 'http://localhost:5001/api/events';
+const API_BASE_URL = 'http://localhost:5001/api/supervisor/events';
 
 const Events = () => {
   const [events, setEvents] = useState<Event[]>([]);

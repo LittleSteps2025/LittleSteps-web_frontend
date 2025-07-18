@@ -16,8 +16,10 @@ const UsersManagement = () => {
   };
 
   const [users, setUsers] = useState<UserType[]>([]);
+
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [usersError, setUsersError] = useState("");
+
   type NewUserType = {
     name: string;
     email: string;
@@ -38,6 +40,7 @@ const UsersManagement = () => {
     address: "",
   });
   const [loading, setLoading] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [error, setError] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [success, setSuccess] = useState("");
@@ -241,7 +244,32 @@ const UsersManagement = () => {
     }
   };
 
-  if (user?.role !== "admin") {
+
+  React.useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        setError('');
+        const response = await fetch('http://localhost:5001/api/getEveryone', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        if (!response.ok) {
+          throw new Error('Failed to fetch users');
+        }
+        const data = await response.json();
+        setUsers(data.data || []);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch users');
+      }
+    };
+    fetchUsers();
+  }, [success]);
+
+  if (user?.role !== 'admin') {
+
+
+
     return <div>Unauthorized access</div>;
   }
 
@@ -251,16 +279,7 @@ const UsersManagement = () => {
         <h1 className="text-2xl font-bold">Users Management</h1>
 
         <div className=" p-6 rounded-xl shadow-sm ">
-          {error && (
-            <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg">
-              {error}
-            </div>
-          )}
-          {success && (
-            <div className="mb-4 p-3 bg-green-100 text-green-700 rounded-lg">
-              {success}
-            </div>
-          )}
+
 
           <div className="flex gap-3">
             <button

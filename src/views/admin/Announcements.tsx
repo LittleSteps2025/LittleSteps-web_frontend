@@ -1,140 +1,108 @@
-import { useState, type JSX } from 'react';
+import { useState, useEffect } from 'react';
 import {
-  Search, Edit, Trash2, Filter, ChevronDown, ChevronUp, 
-  MessageSquare, User, Users, Bell, X, CheckCircle, Send, Clock
-} from 'lucide-react';
 
-type AudienceType = 'all' | 'parents' | 'staff' | 'classroom' | 'specific';
+  Search,  Edit, Trash2, Filter, ChevronDown, ChevronUp, X, CheckCircle, Clock, 
+
+
+} from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+
+type AudienceType = 1 | 2 | 3 | 4 | 5;
+// 1: supervisor, 2: teacher, 3: parent, 4: supervisor & teacher, 5: teacher & parent
+const audienceMap: Record<AudienceType, string> = {
+  1: 'Supervisor',
+  2: 'Teacher',
+  3: 'Parent',
+  4: 'Supervisor & Teacher',
+  5: 'Teacher & Parent',
+};
+
 type AnnouncementStatus = 'draft' | 'published' | 'archived';
 
 type AnnouncementType = {
-  id: string;
+  ann_id: string;
   title: string;
-  content: string;
-  author: string;
+  details: string;
+  author_name: string;
   date: string;
   status: AnnouncementStatus;
-  audience: {
-    type: AudienceType;
-    classrooms?: string[];
-    specificUsers?: string[];
-  };
-  replies: {
-    id: string;
-    user: string;
-    comment: string;
-    date: string;
-  }[];
+  audience: AudienceType;
 };
 
-const announcements: AnnouncementType[] = [
-  { 
-    id: '1', 
-    title: 'Parent-Teacher Meeting', 
-    content: 'We will be having our quarterly parent-teacher meetings next week. Please sign up for a time slot.', 
-    author: 'Admin User', 
-    date: '2023-06-10 09:30', 
-    status: 'published',
-    audience: {
-      type: 'parents'
-    },
-    replies: [
-      {
-        id: '1-1',
-        user: 'Sarah Johnson',
-        comment: 'Looking forward to it!',
-        date: '2023-06-10 11:45'
-      },
-      {
-        id: '1-2',
-        user: 'Michael Smith',
-        comment: 'Will there be virtual options?',
-        date: '2023-06-10 14:20'
-      }
-    ]
-  },
-  { 
-    id: '2', 
-    title: 'Staff Training Day', 
-    content: 'Reminder: Mandatory staff training this Friday from 9am-12pm in the conference room.', 
-    author: 'Lisa Chen', 
-    date: '2023-06-05 14:00', 
-    status: 'published',
-    audience: {
-      type: 'staff'
-    },
-    replies: [
-      {
-        id: '2-1',
-        user: 'James Wilson',
-        comment: 'I have a conflict, who should I contact?',
-        date: '2023-06-05 15:30'
-      }
-    ]
-  },
-  { 
-    id: '3', 
-    title: 'Field Trip Permission Slips', 
-    content: 'Permission slips for the museum field trip are due by Friday. Please return them to your child\'s teacher.', 
-    author: 'Emma Davis', 
-    date: '2023-06-01 10:15', 
-    status: 'published',
-    audience: {
-      type: 'classroom',
-      classrooms: ['Sunflowers', 'Butterflies']
-    },
-    replies: []
-  },
-  { 
-    id: '4', 
-    title: 'Summer Program Draft', 
-    content: 'Draft of our summer program schedule. Please review and provide feedback.', 
-    author: 'Admin User', 
-    date: '2023-05-28 16:45', 
-    status: 'draft',
-    audience: {
-      type: 'staff'
-    },
-    replies: []
-  },
-];
-
-const classrooms = ['Sunflowers', 'Butterflies', 'Caterpillars'];
-const staffUsers = ['Admin User', 'Lisa Chen', 'Emma Davis', 'James Wilson'];
-const parentUsers = ['Sarah Johnson', 'Michael Smith', 'Jessica Brown'];
-
 const AnnouncementManagement = () => {
+  const { user } = useAuth(); // user: User | null
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilter, setActiveFilter] = useState<AnnouncementStatus | 'all'>('all');
   const [selectedAnnouncements, setSelectedAnnouncements] = useState<string[]>([]);
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
-  
+  const [announcements, setAnnouncements] = useState<AnnouncementType[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
   // Modal states
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showRepliesModal, setShowRepliesModal] = useState(false);
   const [currentAnnouncement, setCurrentAnnouncement] = useState<AnnouncementType | null>(null);
-  
-  // Form state
+
+  // Form state (only fields user can edit)
   const [formData, setFormData] = useState({
-    title: '',
-    content: '',
-    status: 'draft' as AnnouncementStatus,
-    audienceType: 'all' as AudienceType,
-    selectedClassrooms: [] as string[],
-    selectedUsers: [] as string[],
+    title: '', // required
+    details: '', // required
+    status: 'draft' as AnnouncementStatus, // draft or published
+    audience: 1 as AudienceType, // 1-5
+    attachment: null as File | null, // optional
   });
 
-  // Reply state
-  const [replyText, setReplyText] = useState('');
+  // Helper to get status label for button
+  const getStatusButtonLabel = () => {
+    if (formData.status === 'draft') return 'Save Draft';
+    if (formData.status === 'published') return 'Publish Announcement';
+    return 'Save';
+  };
+
+  // Helper to handle status change for Add modal
+  const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value as AnnouncementStatus;
+    setFormData(prev => ({ ...prev, status: value }));
+  };
+
+  // Helper to handle status change for Edit modal
+  const handleEditStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value as AnnouncementStatus;
+    setFormData(prev => ({ ...prev, status: value }));
+  };
+
+  // Fetch announcements from backend
+  useEffect(() => {
+    const fetchAnnouncements = async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const response = await fetch('http://localhost:5001/api/announcement');
+        if (!response.ok) throw new Error('Failed to fetch announcements');
+        const data = await response.json();
+        console.log('Admin API Response:', data);
+        setAnnouncements(data.data || []);
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          setError(err.message || 'Failed to fetch announcements');
+        } else {
+          setError('Failed to fetch announcements');
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAnnouncements();
+  }, []);
 
   // Filter announcements
   const filteredAnnouncements = announcements
     .filter((announcement) => 
       announcement.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      announcement.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      announcement.author.toLowerCase().includes(searchTerm.toLowerCase())
+      (announcement.details || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (announcement.author_name || '').toLowerCase().includes(searchTerm.toLowerCase())
     )
     .filter((announcement) => activeFilter === 'all' || announcement.status === activeFilter);
 
@@ -150,7 +118,7 @@ const AnnouncementManagement = () => {
     if (selectedAnnouncements.length === filteredAnnouncements.length) {
       setSelectedAnnouncements([]);
     } else {
-      setSelectedAnnouncements(filteredAnnouncements.map(announcement => announcement.id));
+      setSelectedAnnouncements(filteredAnnouncements.map(announcement => announcement.ann_id));
     }
   };
 
@@ -167,35 +135,10 @@ const AnnouncementManagement = () => {
     );
   };
 
-  const getAudienceBadge = (audience: AnnouncementType['audience']) => {
-    const audienceClasses: Record<AudienceType, string> = {
-      all: 'bg-purple-100 text-purple-800',
-      parents: 'bg-pink-100 text-pink-800',
-      staff: 'bg-amber-100 text-amber-800',
-      classroom: 'bg-indigo-100 text-indigo-800',
-      specific: 'bg-teal-100 text-teal-800',
-    };
-    const audienceIcons: Record<AudienceType, JSX.Element> = {
-      all: <Users className="w-3 h-3 mr-1" />,
-      parents: <User className="w-3 h-3 mr-1" />,
-      staff: <User className="w-3 h-3 mr-1" />,
-      classroom: <Bell className="w-3 h-3 mr-1" />,
-      specific: <User className="w-3 h-3 mr-1" />,
-    };
-
-    let audienceText = '';
-    if (audience.type === 'classroom' && audience.classrooms) {
-      audienceText = `${audience.classrooms.join(', ')} classes`;
-    } else if (audience.type === 'specific' && audience.specificUsers) {
-      audienceText = `${audience.specificUsers.length} users`;
-    } else {
-      audienceText = audience.type;
-    }
-
+  const getAudienceBadge = (audience: AudienceType) => {
     return (
-      <span className={`px-2 py-1 text-xs rounded-full ${audienceClasses[audience.type]} flex items-center`}>
-        {audienceIcons[audience.type]}
-        {audienceText}
+      <span className="px-2 py-1 text-xs rounded-full bg-indigo-100 text-indigo-800 flex items-center">
+        {audienceMap[audience]}
       </span>
     );
   };
@@ -204,11 +147,10 @@ const AnnouncementManagement = () => {
     setCurrentAnnouncement(announcement);
     setFormData({
       title: announcement.title,
-      content: announcement.content,
+      details: announcement.details,
       status: announcement.status,
-      audienceType: announcement.audience.type,
-      selectedClassrooms: announcement.audience.classrooms || [],
-      selectedUsers: announcement.audience.specificUsers || [],
+      audience: announcement.audience,
+      attachment: null, // Reset attachment on edit
     });
     setShowEditModal(true);
   };
@@ -218,54 +160,85 @@ const AnnouncementManagement = () => {
     setShowDeleteModal(true);
   };
 
-  const openRepliesModal = (announcement: AnnouncementType) => {
-    setCurrentAnnouncement(announcement);
-    setShowRepliesModal(true);
-  };
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const handleCheckboxChange = (type: 'classroom' | 'user', value: string) => {
-    if (type === 'classroom') {
-      setFormData(prev => ({
-        ...prev,
-        selectedClassrooms: prev.selectedClassrooms.includes(value)
-          ? prev.selectedClassrooms.filter(c => c !== value)
-          : [...prev.selectedClassrooms, value]
-      }));
+    const target = e.target as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+    const { name, value, type } = target;
+    const files = (target as HTMLInputElement).files;
+    if (type === 'file') {
+      setFormData(prev => ({ ...prev, [name]: files && files[0] ? files[0] : null }));
     } else {
       setFormData(prev => ({
         ...prev,
-        selectedUsers: prev.selectedUsers.includes(value)
-          ? prev.selectedUsers.filter(u => u !== value)
-          : [...prev.selectedUsers, value]
+        [name]: name === 'audience' ? Number(value) : value
       }));
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // CRUD handlers
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Announcement submitted:', formData);
-    setShowAddModal(false);
-    setShowEditModal(false);
+    setLoading(true);
+    setError('');
+    try {
+      const method = showEditModal ? 'PUT' : 'POST';
+      const url = showEditModal && currentAnnouncement
+        ? `http://localhost:5001/api/announcement/${currentAnnouncement.ann_id}`
+        : 'http://localhost:5001/api/announcement';
+      // Only send fields required by backend
+      const payload = {
+        title: formData.title,
+        details: formData.details,
+        status: formData.status,
+        audience: Number(formData.audience),
+        user_id: user?.user_id ? user.user_id : user?.id // fallback to id if user_id missing
+      };
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) throw new Error('Failed to save announcement');
+      setShowAddModal(false);
+      setShowEditModal(false);
+      // Refresh list
+      const data = await response.json();
+      if (method === 'POST') {
+        setAnnouncements(prev => [data.data, ...prev]);
+      } else {
+        setAnnouncements(prev => prev.map(a => a.ann_id === data.data.ann_id ? data.data : a));
+      }
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message || 'Failed to save announcement');
+      } else {
+        setError('Failed to save announcement');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDelete = () => {
-    console.log('Deleting announcement:', currentAnnouncement?.id);
-    setShowDeleteModal(false);
-  };
-
-  const handleAddReply = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (replyText.trim() && currentAnnouncement) {
-      console.log('Adding reply:', replyText);
-      setReplyText('');
+  const handleDelete = async () => {
+    if (!currentAnnouncement) return;
+    setLoading(true);
+    setError('');
+    try {
+      const response = await fetch(`http://localhost:5001/api/announcement/${currentAnnouncement.ann_id}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error('Failed to delete announcement');
+      setAnnouncements(prev => prev.filter(a => a.ann_id !== currentAnnouncement.ann_id));
+      setShowDeleteModal(false);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message || 'Failed to delete announcement');
+      } else {
+        setError('Failed to delete announcement');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -413,12 +386,12 @@ const AnnouncementManagement = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredAnnouncements.length > 0 ? (
                 filteredAnnouncements.map((announcement) => (
-                  <tr key={announcement.id} className="hover:bg-gray-50">
+                  <tr key={announcement.ann_id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <input 
                         type="checkbox" 
-                        checked={selectedAnnouncements.includes(announcement.id)}
-                        onChange={() => toggleSelectAnnouncement(announcement.id)}
+                        checked={selectedAnnouncements.includes(announcement.ann_id)}
+                        onChange={() => toggleSelectAnnouncement(announcement.ann_id)}
                         className="h-4 w-4 text-[#6339C0] border-gray-300 rounded focus:ring-[#6339C0]"
                         title="Select announcement"
                       />
@@ -428,11 +401,11 @@ const AnnouncementManagement = () => {
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm text-gray-500 line-clamp-2 max-w-xs">
-                        {announcement.content}
+                        {announcement.details}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{announcement.author}</div>
+                      <div className="text-sm text-gray-900">{announcement.author_name}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {getAudienceBadge(announcement.audience)}
@@ -445,17 +418,6 @@ const AnnouncementManagement = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">
-                        <button
-                          onClick={() => openRepliesModal(announcement)}
-                          className="text-blue-500 hover:text-blue-700 relative"
-                        >
-                          <MessageSquare className="w-5 h-5" />
-                          {announcement.replies.length > 0 && (
-                            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
-                              {announcement.replies.length}
-                            </span>
-                          )}
-                        </button>
                         <button
                           onClick={() => openEditModal(announcement)}
                           className="text-[#6339C0] hover:text-[#7e57ff]"
@@ -512,14 +474,14 @@ const AnnouncementManagement = () => {
                     />
                   </div>
                   <div>
-                    <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="details" className="block text-sm font-medium text-gray-700 mb-1">
                       Content
                     </label>
                     <textarea
-                      id="content"
-                      name="content"
+                      id="details"
+                      name="details"
                       rows={5}
-                      value={formData.content}
+                      value={formData.details}
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6339C0] focus:border-transparent"
                       required
@@ -533,7 +495,7 @@ const AnnouncementManagement = () => {
                       id="status"
                       name="status"
                       value={formData.status}
-                      onChange={handleInputChange}
+                      onChange={handleStatusChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6339C0] focus:border-transparent"
                       required
                     >
@@ -542,87 +504,37 @@ const AnnouncementManagement = () => {
                     </select>
                   </div>
                   <div>
-                    <label htmlFor="audienceType" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="audience" className="block text-sm font-medium text-gray-700 mb-1">
                       Audience
                     </label>
                     <select
-                      id="audienceType"
-                      name="audienceType"
-                      value={formData.audienceType}
+                      id="audience"
+                      name="audience"
+                      value={formData.audience}
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6339C0] focus:border-transparent"
                       required
                     >
-                      <option value="all">Everyone</option>
-                      <option value="parents">All Parents</option>
-                      <option value="staff">All Staff</option>
-                      <option value="staff">All Supervisors</option>
-                      <option value="staff">All Teachers</option>
-                      <option value="classroom">Specific Classrooms</option>
-                      <option value="specific">Specific Users</option>
+                      <option value={1}>Supervisor</option>
+                      <option value={2}>Teacher</option>
+                      <option value={3}>Parent</option>
+                      <option value={4}>Supervisor & Teacher</option>
+                      <option value={5}>Teacher & Parent</option>
                     </select>
                   </div>
-                  {formData.audienceType === 'classroom' && (
-                    <div className="border border-gray-200 rounded-md p-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Select Classrooms
-                      </label>
-                      <div className="space-y-2">
-                        {classrooms.map(classroom => (
-                          <label key={classroom} className="flex items-center">
-                            <input
-                              type="checkbox"
-                              checked={formData.selectedClassrooms.includes(classroom)}
-                              onChange={() => handleCheckboxChange('classroom', classroom)}
-                              className="h-4 w-4 text-[#6339C0] focus:ring-[#6339C0] border-gray-300 rounded"
-                            />
-                            <span className="ml-2 text-sm text-gray-700">{classroom}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {formData.audienceType === 'specific' && (
-                    <div className="border border-gray-200 rounded-md p-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Select Users
-                      </label>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-700 mb-2">Staff</h4>
-                          <div className="space-y-2">
-                            {staffUsers.map(user => (
-                              <label key={user} className="flex items-center">
-                                <input
-                                  type="checkbox"
-                                  checked={formData.selectedUsers.includes(user)}
-                                  onChange={() => handleCheckboxChange('user', user)}
-                                  className="h-4 w-4 text-[#6339C0] focus:ring-[#6339C0] border-gray-300 rounded"
-                                />
-                                <span className="ml-2 text-sm text-gray-700">{user}</span>
-                              </label>
-                            ))}
-                          </div>
-                        </div>
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-700 mb-2">Parents</h4>
-                          <div className="space-y-2">
-                            {parentUsers.map(user => (
-                              <label key={user} className="flex items-center">
-                                <input
-                                  type="checkbox"
-                                  checked={formData.selectedUsers.includes(user)}
-                                  onChange={() => handleCheckboxChange('user', user)}
-                                  className="h-4 w-4 text-[#6339C0] focus:ring-[#6339C0] border-gray-300 rounded"
-                                />
-                                <span className="ml-2 text-sm text-gray-700">{user}</span>
-                              </label>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                  <div>
+                    <label htmlFor="attachment" className="block text-sm font-medium text-gray-700 mb-1">
+                      Attachment (optional)
+                    </label>
+                    <input
+                      type="file"
+                      id="attachment"
+                      name="attachment"
+                      accept="*"
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6339C0] focus:border-transparent"
+                    />
+                  </div>
                 </div>
                 <div className="mt-6 flex justify-end space-x-3">
                   <button
@@ -636,7 +548,7 @@ const AnnouncementManagement = () => {
                     type="submit"
                     className="btn-primary"
                   >
-                    {formData.status === 'draft' ? 'Save Draft' : 'Publish Announcement'}
+                    {getStatusButtonLabel()}
                   </button>
                 </div>
               </form>
@@ -673,14 +585,14 @@ const AnnouncementManagement = () => {
                     />
                   </div>
                   <div>
-                    <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="details" className="block text-sm font-medium text-gray-700 mb-1">
                       Content
                     </label>
                     <textarea
-                      id="content"
-                      name="content"
+                      id="details"
+                      name="details"
                       rows={5}
-                      value={formData.content}
+                      value={formData.details}
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6339C0] focus:border-transparent"
                       required
@@ -694,7 +606,7 @@ const AnnouncementManagement = () => {
                       id="status"
                       name="status"
                       value={formData.status}
-                      onChange={handleInputChange}
+                      onChange={handleEditStatusChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6339C0] focus:border-transparent"
                       required
                     >
@@ -704,85 +616,37 @@ const AnnouncementManagement = () => {
                     </select>
                   </div>
                   <div>
-                    <label htmlFor="audienceType" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="audience" className="block text-sm font-medium text-gray-700 mb-1">
                       Audience
                     </label>
                     <select
-                      id="audienceType"
-                      name="audienceType"
-                      value={formData.audienceType}
+                      id="audience"
+                      name="audience"
+                      value={formData.audience}
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6339C0] focus:border-transparent"
                       required
                     >
-                      <option value="all">Everyone</option>
-                      <option value="parents">All Parents</option>
-                      <option value="staff">All Staff</option>
-                      <option value="classroom">Specific Classrooms</option>
-                      <option value="specific">Specific Users</option>
+                      <option value={1}>Supervisor</option>
+                      <option value={2}>Teacher</option>
+                      <option value={3}>Parent</option>
+                      <option value={4}>Supervisor & Teacher</option>
+                      <option value={5}>Teacher & Parent</option>
                     </select>
                   </div>
-                  {formData.audienceType === 'classroom' && (
-                    <div className="border border-gray-200 rounded-md p-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Select Classrooms
-                      </label>
-                      <div className="space-y-2">
-                        {classrooms.map(classroom => (
-                          <label key={classroom} className="flex items-center">
-                            <input
-                              type="checkbox"
-                              checked={formData.selectedClassrooms.includes(classroom)}
-                              onChange={() => handleCheckboxChange('classroom', classroom)}
-                              className="h-4 w-4 text-[#6339C0] focus:ring-[#6339C0] border-gray-300 rounded"
-                            />
-                            <span className="ml-2 text-sm text-gray-700">{classroom}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {formData.audienceType === 'specific' && (
-                    <div className="border border-gray-200 rounded-md p-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Select Users
-                      </label>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-700 mb-2">Staff</h4>
-                          <div className="space-y-2">
-                            {staffUsers.map(user => (
-                              <label key={user} className="flex items-center">
-                                <input
-                                  type="checkbox"
-                                  checked={formData.selectedUsers.includes(user)}
-                                  onChange={() => handleCheckboxChange('user', user)}
-                                  className="h-4 w-4 text-[#6339C0] focus:ring-[#6339C0] border-gray-300 rounded"
-                                />
-                                <span className="ml-2 text-sm text-gray-700">{user}</span>
-                              </label>
-                            ))}
-                          </div>
-                        </div>
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-700 mb-2">Parents</h4>
-                          <div className="space-y-2">
-                            {parentUsers.map(user => (
-                              <label key={user} className="flex items-center">
-                                <input
-                                  type="checkbox"
-                                  checked={formData.selectedUsers.includes(user)}
-                                  onChange={() => handleCheckboxChange('user', user)}
-                                  className="h-4 w-4 text-[#6339C0] focus:ring-[#6339C0] border-gray-300 rounded"
-                                />
-                                <span className="ml-2 text-sm text-gray-700">{user}</span>
-                              </label>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                  <div>
+                    <label htmlFor="attachment" className="block text-sm font-medium text-gray-700 mb-1">
+                      Attachment (optional)
+                    </label>
+                    <input
+                      type="file"
+                      id="attachment"
+                      name="attachment"
+                      accept="*"
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6339C0] focus:border-transparent"
+                    />
+                  </div>
                 </div>
                 <div className="mt-6 flex justify-end space-x-3">
                   <button
@@ -857,8 +721,21 @@ const AnnouncementManagement = () => {
         </div>
       )}
 
+      {/* Loading and Error UI */}
+      {loading && (
+        <div className="fixed inset-0 bg-black bg-opacity-20 flex items-center justify-center z-50">
+          <div className="bg-white px-6 py-4 rounded shadow text-lg font-semibold text-gray-700">Loading...</div>
+        </div>
+      )}
+      {error && (
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-red-100 text-red-700 px-4 py-2 rounded shadow z-50">
+          {error}
+          <button className="ml-2 text-red-500" onClick={() => setError('')}>x</button>
+        </div>
+      )}
+
       {/* Replies Modal */}
-      {showRepliesModal && currentAnnouncement && (
+      {/* {showRepliesModal && currentAnnouncement && (
         <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-lg max-w-lg w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
@@ -906,7 +783,8 @@ const AnnouncementManagement = () => {
             </div>
           </div>
         </div>
-      )}
+      )} */}
+
     </div>
   );
 };
