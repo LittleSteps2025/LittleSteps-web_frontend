@@ -3,16 +3,16 @@ import {
   Settings, 
   User, 
   Lock, 
-  Bell, 
-  Mail, 
-  Calendar, 
-  Clock, 
-  CreditCard, 
-  Shield,
-  Database,
-  Palette,
-  Globe,
-  HelpCircle
+  // Bell, 
+  
+  // Calendar, 
+  
+  // CreditCard, 
+  // Shield,
+  // Database,
+  // Palette,
+//  HelpCircle 
+  
 } from 'lucide-react';
 
 const SettingsPage = () => {
@@ -31,35 +31,35 @@ const SettingsPage = () => {
     twoFactorAuth: true,
     
     // Notifications
-    emailNotifications: true,
-    smsNotifications: false,
-    newEnrollmentAlerts: true,
-    paymentReminders: true,
-    incidentAlerts: true,
+    // emailNotifications: true,
+    // smsNotifications: false,
+    // newEnrollmentAlerts: true,
+    // paymentReminders: true,
+    // incidentAlerts: true,
     
     // System Preferences
-    timezone: 'America/New_York',
-    dateFormat: 'MM/DD/YYYY',
-    timeFormat: '12h',
-    language: 'en-US',
+    // timezone: 'America/New_York',
+    // dateFormat: 'MM/DD/YYYY',
+    // timeFormat: '12h',
+    // language: 'en-US',
     
     // Billing
-    plan: 'premium',
-    cardNumber: '•••• •••• •••• 4242',
-    cardExpiry: '12/25',
-    cardName: 'Admin User',
+    // plan: 'premium',
+    // cardNumber: '•••• •••• •••• 4242',
+    // cardExpiry: '12/25',
+    // cardName: 'Admin User',
     
     // Appearance
-    theme: 'light',
-    primaryColor: '#6339C0',
-    sidebarCollapsed: false,
-    density: 'comfortable'
+    // theme: 'light',
+    // primaryColor: '#6339C0',
+    // sidebarCollapsed: false,
+    // density: 'comfortable'
   });
 
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -67,7 +67,7 @@ const SettingsPage = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
     
@@ -82,12 +82,12 @@ const SettingsPage = () => {
   const tabs = [
     { id: 'account', name: 'Account', icon: <User size={18} /> },
     { id: 'security', name: 'Security', icon: <Lock size={18} /> },
-    { id: 'notifications', name: 'Notifications', icon: <Bell size={18} /> },
-    { id: 'preferences', name: 'System Preferences', icon: <Calendar size={18} /> },
-    { id: 'billing', name: 'Billing', icon: <CreditCard size={18} /> },
-    { id: 'appearance', name: 'Appearance', icon: <Palette size={18} /> },
-    { id: 'privacy', name: 'Privacy', icon: <Shield size={18} /> },
-    { id: 'backup', name: 'Backup', icon: <Database size={18} /> }
+    // { id: 'notifications', name: 'Notifications', icon: <Bell size={18} /> },
+    // { id: 'preferences', name: 'System Preferences', icon: <Calendar size={18} /> },
+    // { id: 'billing', name: 'Billing', icon: <CreditCard size={18} /> },
+    // { id: 'appearance', name: 'Appearance', icon: <Palette size={18} /> },
+    // { id: 'privacy', name: 'Privacy', icon: <Shield size={18} /> },
+    // { id: 'backup', name: 'Backup', icon: <Database size={18} /> }
   ];
 
   return (
@@ -114,12 +114,12 @@ const SettingsPage = () => {
           ))}
         </nav>
         
-        <div className="mt-8 pt-6 border-t border-gray-200">
+        {/* <div className="mt-8 pt-6 border-t border-gray-200">
           <button className="w-full flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg hover:bg-gray-100">
             <HelpCircle size={18} className="mr-3" />
             Help & Support
           </button>
-        </div>
+        </div> */}
       </div>
 
       {/* Main Content */}
@@ -257,7 +257,7 @@ const SettingsPage = () => {
                 </div>
               </div>
               
-              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+              {/* <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">Security Features</h3>
                 <div className="flex items-center justify-between py-3">
                   <div>
@@ -275,12 +275,12 @@ const SettingsPage = () => {
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
                   </label>
                 </div>
-              </div>
+              </div> */}
             </div>
           )}
 
           {/* Notification Settings */}
-          {activeTab === 'notifications' && (
+          {/* {activeTab === 'notifications' && (
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
               <h3 className="text-lg font-semibold text-gray-800 mb-4">Notification Preferences</h3>
               
@@ -373,10 +373,10 @@ const SettingsPage = () => {
                 </div>
               </div>
             </div>
-          )}
+          )} */}
 
           {/* System Preferences */}
-          {activeTab === 'preferences' && (
+          {/* {activeTab === 'preferences' && (
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
               <h3 className="text-lg font-semibold text-gray-800 mb-4">System Configuration</h3>
               
@@ -438,10 +438,10 @@ const SettingsPage = () => {
                 </div>
               </div>
             </div>
-          )}
+          )} */}
 
           {/* Billing Settings */}
-          {activeTab === 'billing' && (
+          {/* {activeTab === 'billing' && (
             <div className="space-y-6">
               <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">Subscription Plan</h3>
@@ -512,10 +512,10 @@ const SettingsPage = () => {
                 </button>
               </div>
             </div>
-          )}
+          )} */}
 
           {/* Appearance Settings */}
-          {activeTab === 'appearance' && (
+          {/* {activeTab === 'appearance' && (
             <div className="space-y-6">
               <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">Theme</h3>
@@ -624,10 +624,10 @@ const SettingsPage = () => {
                 </div>
               </div>
             </div>
-          )}
+          )} */}
 
           {/* Privacy Settings */}
-          {activeTab === 'privacy' && (
+          {/* {activeTab === 'privacy' && (
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
               <h3 className="text-lg font-semibold text-gray-800 mb-4">Privacy Settings</h3>
               
@@ -684,10 +684,10 @@ const SettingsPage = () => {
                 </div>
               </div>
             </div>
-          )}
+          )} */}
 
           {/* Backup Settings */}
-          {activeTab === 'backup' && (
+          {/* {activeTab === 'backup' && (
             <div className="space-y-6">
               <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">Data Backup</h3>
@@ -787,7 +787,7 @@ const SettingsPage = () => {
                 </div>
               </div>
             </div>
-          )}
+          )} */}
         </div>
       </div>
     </div>
