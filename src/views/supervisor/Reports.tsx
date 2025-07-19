@@ -1,5 +1,14 @@
-import { FileText, Download, Printer, Calendar, X, FileBarChart2, Plus, ChevronDown } from 'lucide-react';
-import { useState } from 'react';
+import {
+  FileText,
+  Download,
+  Printer,
+  Calendar,
+  X,
+  FileBarChart2,
+  Plus,
+  ChevronDown,
+} from "lucide-react";
+import { useState } from "react";
 
 const Reports = () => {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
@@ -36,69 +45,78 @@ const Reports = () => {
   };
 
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [newReport, setNewReport] = useState({
-    name: '',
-    type: 'Attendance',
-    startDate: '',
-    endDate: '',
-    format: 'PDF',
+    name: "",
+    type: "Attendance",
+    startDate: "",
+    endDate: "",
+    format: "PDF",
     includeCharts: true,
-    detailLevel: 'Summary'
+    detailLevel: "Summary",
   });
 
   // Sample report data
   const [reports, setReports] = useState<Report[]>([
-    { 
+    {
       id: 1,
-      name: 'Monthly Attendance Summary',
-      type: 'Attendance',
-      date: '2023-05-01',
-      size: '2.4 MB',
-      description: 'Comprehensive report showing daily attendance patterns, trends, and comparisons with previous months.',
-      generatedBy: 'System Auto-Generated',
+      name: "Monthly Attendance Summary",
+      type: "Attendance",
+      date: "2023-05-01",
+      size: "2.4 MB",
+      description:
+        "Comprehensive report showing daily attendance patterns, trends, and comparisons with previous months.",
+      generatedBy: "System Auto-Generated",
       content: {
         totalStudents: 24,
-        averageAttendance: '92%',
-        mostAbsentStudent: 'Liam Chen (3 days)',
-        bestAttender: 'Olivia Smith (100%)'
-      }
+        averageAttendance: "92%",
+        mostAbsentStudent: "Liam Chen (3 days)",
+        bestAttender: "Olivia Smith (100%)",
+      },
     },
-    { 
+    {
       id: 2,
-      name: 'Health Checkups Report',
-      type: 'Health',
-      date: '2023-04-28',
-      size: '1.8 MB',
-      description: 'Results from the quarterly health screenings including height, weight, vision, and hearing tests.',
-      generatedBy: 'Nurse Sarah Johnson',
+      name: "Health Checkups Report",
+      type: "Health",
+      date: "2023-04-28",
+      size: "1.8 MB",
+      description:
+        "Results from the quarterly health screenings including height, weight, vision, and hearing tests.",
+      generatedBy: "Nurse Sarah Johnson",
       content: {
         studentsScreened: 24,
         followUpsRequired: 3,
-        commonIssues: '2 vision concerns, 1 hearing concern',
-        nextCheckup: '2023-07-28'
-      }
+        commonIssues: "2 vision concerns, 1 hearing concern",
+        nextCheckup: "2023-07-28",
+      },
     },
-    { 
+    {
       id: 3,
-      name: 'Activities Participation',
-      type: 'Activities',
-      date: '2023-05-10',
-      size: '3.2 MB',
-      description: 'Participation metrics for all extracurricular activities offered this semester.',
-      generatedBy: 'Activity Coordinator',
+      name: "Activities Participation",
+      type: "Activities",
+      date: "2023-05-10",
+      size: "3.2 MB",
+      description:
+        "Participation metrics for all extracurricular activities offered this semester.",
+      generatedBy: "Activity Coordinator",
       content: {
         totalActivities: 8,
-        mostPopular: 'Arts & Crafts (18 participants)',
-        leastPopular: 'Gardening (6 participants)',
-        participationRate: '83%'
-      }
-    }
+        mostPopular: "Arts & Crafts (18 participants)",
+        leastPopular: "Gardening (6 participants)",
+        participationRate: "83%",
+      },
+    },
   ]);
 
-  const reportTypes = ['Attendance', 'Health', 'Activities', 'Performance', 'Financial'];
-  const reportFormats = ['PDF', 'Excel', 'CSV', 'HTML'];
-  const detailLevels = ['Summary', 'Detailed', 'Comprehensive'];
+  const reportTypes = [
+    "Attendance",
+    "Health",
+    "Activities",
+    "Performance",
+    "Financial",
+  ];
+  const reportFormats = ["PDF", "Excel", "CSV", "HTML"];
+  const detailLevels = ["Summary", "Detailed", "Comprehensive"];
 
   // Open report details modal
   const openDetails = (report: Report) => {
@@ -121,43 +139,52 @@ const Reports = () => {
   const closeGenerate = () => {
     setIsGenerateOpen(false);
     setNewReport({
-      name: '',
-      type: 'Attendance',
-      startDate: '',
-      endDate: '',
-      format: 'PDF',
+      name: "",
+      type: "Attendance",
+      startDate: "",
+      endDate: "",
+      format: "PDF",
       includeCharts: true,
-      detailLevel: 'Summary'
+      detailLevel: "Summary",
     });
   };
 
   // Handle form input changes
-  const handleGenerateChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleGenerateChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value, type } = e.target;
-    setNewReport(prev => ({ 
-      ...prev, 
-      [name]: type === 'checkbox' && e.target instanceof HTMLInputElement ? e.target.checked : value 
+    setNewReport((prev) => ({
+      ...prev,
+      [name]:
+        type === "checkbox" && e.target instanceof HTMLInputElement
+          ? e.target.checked
+          : value,
     }));
   };
 
   // Generate new report
   const generateReport = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+
     // Create new report object
     const generatedReport = {
       id: reports.length + 1,
-      name: newReport.name || `${newReport.type} Report - ${new Date().toLocaleDateString()}`,
+      name:
+        newReport.name ||
+        `${newReport.type} Report - ${new Date().toLocaleDateString()}`,
       type: newReport.type,
-      date: new Date().toISOString().split('T')[0],
-      size: '1.2 MB',
-      description: `Generated ${newReport.type} report for period ${newReport.startDate || 'N/A'} to ${newReport.endDate || 'N/A'}`,
-      generatedBy: 'Admin User',
+      date: new Date().toISOString().split("T")[0],
+      size: "1.2 MB",
+      description: `Generated ${newReport.type} report for period ${
+        newReport.startDate || "N/A"
+      } to ${newReport.endDate || "N/A"}`,
+      generatedBy: "Admin User",
       content: {
         format: newReport.format,
         detailLevel: newReport.detailLevel,
-        includesCharts: newReport.includeCharts
-      }
+        includesCharts: newReport.includeCharts,
+      },
     };
 
     // Add to reports list
@@ -166,112 +193,133 @@ const Reports = () => {
   };
 
   // Filter reports based on search term
-  const filteredReports = reports.filter(report => 
-    report.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    report.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    report.description.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredReports = reports.filter(
+    (report) =>
+      report.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      report.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      report.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
-         <h1 className="text-2xl font-bold text-gray-800 flex items-center">
+        <h1 className="text-2xl font-bold text-gray-800 flex items-center">
           <span className="bg-gradient-to-r from-[#4f46e5] to-[#7c73e6] bg-clip-text text-transparent">
             Reports
           </span>
         </h1>
-        <button 
-          onClick={openGenerate}
-          className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Generate Report
-        </button>
       </div>
 
       {/* Search */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-        <div className="relative max-w-md mb-6">
-          <input
-            type="text"
-            placeholder="Search reports by name, type or description..."
-            className="pl-4 pr-4 py-2 w-full border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+      <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
+            <input
+              type="text"
+              placeholder="Search reports by name, type or description..."
+              className="pl-4 pr-4 py-2 w-full border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <button
+            onClick={openGenerate}
+            className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Generate Report
+          </button>
         </div>
+      </div>
 
-        {/* Reports Table */}
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Report Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Size</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredReports.length > 0 ? (
-                filteredReports.map((report) => (
-                  <tr key={report.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <FileText className="flex-shrink-0 h-8 w-8 text-indigo-600" />
-                        <div className="ml-4">
-                          <div 
-                            className="text-sm font-medium text-gray-900 hover:text-indigo-600 cursor-pointer"
-                            onClick={() => openDetails(report)}
-                          >
-                            {report.name}
-                          </div>
+      {/* Reports Table */}
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Report Name
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Type
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Date
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Size
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {filteredReports.length > 0 ? (
+              filteredReports.map((report) => (
+                <tr key={report.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center">
+                      <FileText className="flex-shrink-0 h-8 w-8 text-indigo-600" />
+                      <div className="ml-4">
+                        <div
+                          className="text-sm font-medium text-gray-900 hover:text-indigo-600 cursor-pointer"
+                          onClick={() => openDetails(report)}
+                        >
+                          {report.name}
                         </div>
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 text-xs rounded-full ${
-                        report.type === 'Attendance' ? 'bg-blue-100 text-blue-800' :
-                        report.type === 'Health' ? 'bg-green-100 text-green-800' :
-                        report.type === 'Activities' ? 'bg-purple-100 text-purple-800' :
-                        'bg-amber-100 text-amber-800'
-                      }`}>
-                        {report.type}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {report.date}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {report.size}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button 
-                        className="text-indigo-600 hover:text-indigo-900 mr-3 flex items-center"
-                        onClick={() => openDetails(report)}
-                      >
-                        <FileBarChart2 className="w-4 h-4 mr-1" />
-                        View
-                      </button>
-                      <button className="text-gray-600 hover:text-gray-900 flex items-center">
-                        <Download className="w-4 h-4 mr-1" />
-                        Download
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={5} className="px-6 py-4 text-center text-sm text-gray-500">
-                    No reports found matching your search criteria.
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span
+                      className={`px-2 py-1 text-xs rounded-full ${
+                        report.type === "Attendance"
+                          ? "bg-blue-100 text-blue-800"
+                          : report.type === "Health"
+                          ? "bg-green-100 text-green-800"
+                          : report.type === "Activities"
+                          ? "bg-purple-100 text-purple-800"
+                          : "bg-amber-100 text-amber-800"
+                      }`}
+                    >
+                      {report.type}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {report.date}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {report.size}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <button
+                      className="text-indigo-600 hover:text-indigo-900 mr-3 flex items-center"
+                      onClick={() => openDetails(report)}
+                    >
+                      <FileBarChart2 className="w-4 h-4 mr-1" />
+                      View
+                    </button>
+                    <button className="text-gray-600 hover:text-gray-900 flex items-center">
+                      <Download className="w-4 h-4 mr-1" />
+                      Download
+                    </button>
                   </td>
                 </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              ))
+            ) : (
+              <tr>
+                <td
+                  colSpan={5}
+                  className="px-6 py-4 text-center text-sm text-gray-500"
+                >
+                  No reports found matching your search criteria.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
 
       {/* Report Details Modal */}
@@ -284,7 +332,7 @@ const Reports = () => {
                   <FileText className="mr-2 text-indigo-600" size={20} />
                   {selectedReport.name}
                 </h2>
-                <button 
+                <button
                   onClick={closeDetails}
                   className="text-gray-400 hover:text-gray-500"
                 >
@@ -295,45 +343,72 @@ const Reports = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div className="space-y-4">
                   <div>
-                    <h3 className="text-sm font-medium text-gray-500">Report Type</h3>
+                    <h3 className="text-sm font-medium text-gray-500">
+                      Report Type
+                    </h3>
                     <p className="mt-1 text-sm text-gray-900">
-                      <span className={`px-2 py-1 rounded-full ${
-                        selectedReport.type === 'Attendance' ? 'bg-blue-100 text-blue-800' :
-                        selectedReport.type === 'Health' ? 'bg-green-100 text-green-800' :
-                        selectedReport.type === 'Activities' ? 'bg-purple-100 text-purple-800' :
-                        'bg-amber-100 text-amber-800'
-                      }`}>
+                      <span
+                        className={`px-2 py-1 rounded-full ${
+                          selectedReport.type === "Attendance"
+                            ? "bg-blue-100 text-blue-800"
+                            : selectedReport.type === "Health"
+                            ? "bg-green-100 text-green-800"
+                            : selectedReport.type === "Activities"
+                            ? "bg-purple-100 text-purple-800"
+                            : "bg-amber-100 text-amber-800"
+                        }`}
+                      >
                         {selectedReport.type}
                       </span>
                     </p>
                   </div>
-                  
+
                   <div>
-                    <h3 className="text-sm font-medium text-gray-500">Generated On</h3>
-                    <p className="mt-1 text-sm text-gray-900">{selectedReport.date}</p>
+                    <h3 className="text-sm font-medium text-gray-500">
+                      Generated On
+                    </h3>
+                    <p className="mt-1 text-sm text-gray-900">
+                      {selectedReport.date}
+                    </p>
                   </div>
-                  
+
                   <div>
-                    <h3 className="text-sm font-medium text-gray-500">Generated By</h3>
-                    <p className="mt-1 text-sm text-gray-900">{selectedReport.generatedBy}</p>
+                    <h3 className="text-sm font-medium text-gray-500">
+                      Generated By
+                    </h3>
+                    <p className="mt-1 text-sm text-gray-900">
+                      {selectedReport.generatedBy}
+                    </p>
                   </div>
                 </div>
-                
+
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500">Description</h3>
-                  <p className="mt-1 text-sm text-gray-900">{selectedReport.description}</p>
+                  <h3 className="text-sm font-medium text-gray-500">
+                    Description
+                  </h3>
+                  <p className="mt-1 text-sm text-gray-900">
+                    {selectedReport.description}
+                  </p>
                 </div>
               </div>
 
               <div className="border-t border-gray-200 pt-4 mb-6">
-                <h3 className="text-lg font-medium text-gray-800 mb-4">Key Metrics</h3>
+                <h3 className="text-lg font-medium text-gray-800 mb-4">
+                  Key Metrics
+                </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {Object.entries(selectedReport.content).map(([key, value]) => (
-                    <div key={key} className="bg-gray-50 p-4 rounded-lg">
-                      <h4 className="text-sm font-medium text-gray-500 capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</h4>
-                      <p className="mt-1 text-lg font-medium text-gray-900">{value}</p>
-                    </div>
-                  ))}
+                  {Object.entries(selectedReport.content).map(
+                    ([key, value]) => (
+                      <div key={key} className="bg-gray-50 p-4 rounded-lg">
+                        <h4 className="text-sm font-medium text-gray-500 capitalize">
+                          {key.replace(/([A-Z])/g, " $1").trim()}
+                        </h4>
+                        <p className="mt-1 text-lg font-medium text-gray-900">
+                          {value}
+                        </p>
+                      </div>
+                    )
+                  )}
                 </div>
               </div>
 
@@ -362,7 +437,7 @@ const Reports = () => {
                   <Plus className="mr-2 text-indigo-600" size={20} />
                   Generate New Report
                 </h2>
-                <button 
+                <button
                   onClick={closeGenerate}
                   className="text-gray-400 hover:text-gray-500"
                 >
@@ -373,7 +448,9 @@ const Reports = () => {
               <form onSubmit={generateReport}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Report Name</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Report Name
+                    </label>
                     <input
                       type="text"
                       name="name"
@@ -385,7 +462,9 @@ const Reports = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Report Type</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Report Type
+                    </label>
                     <div className="relative">
                       <select
                         name="type"
@@ -393,8 +472,10 @@ const Reports = () => {
                         onChange={handleGenerateChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none"
                       >
-                        {reportTypes.map(type => (
-                          <option key={type} value={type}>{type}</option>
+                        {reportTypes.map((type) => (
+                          <option key={type} value={type}>
+                            {type}
+                          </option>
                         ))}
                       </select>
                       <ChevronDown className="absolute right-3 top-3 h-4 w-4 text-gray-400" />
@@ -402,7 +483,9 @@ const Reports = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Start Date
+                    </label>
                     <div className="relative">
                       <input
                         type="date"
@@ -416,7 +499,9 @@ const Reports = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      End Date
+                    </label>
                     <div className="relative">
                       <input
                         type="date"
@@ -430,7 +515,9 @@ const Reports = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Output Format</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Output Format
+                    </label>
                     <div className="relative">
                       <select
                         name="format"
@@ -438,8 +525,10 @@ const Reports = () => {
                         onChange={handleGenerateChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none"
                       >
-                        {reportFormats.map(format => (
-                          <option key={format} value={format}>{format}</option>
+                        {reportFormats.map((format) => (
+                          <option key={format} value={format}>
+                            {format}
+                          </option>
                         ))}
                       </select>
                       <ChevronDown className="absolute right-3 top-3 h-4 w-4 text-gray-400" />
@@ -447,7 +536,9 @@ const Reports = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Detail Level</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Detail Level
+                    </label>
                     <div className="relative">
                       <select
                         name="detailLevel"
@@ -455,8 +546,10 @@ const Reports = () => {
                         onChange={handleGenerateChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none"
                       >
-                        {detailLevels.map(level => (
-                          <option key={level} value={level}>{level}</option>
+                        {detailLevels.map((level) => (
+                          <option key={level} value={level}>
+                            {level}
+                          </option>
                         ))}
                       </select>
                       <ChevronDown className="absolute right-3 top-3 h-4 w-4 text-gray-400" />
