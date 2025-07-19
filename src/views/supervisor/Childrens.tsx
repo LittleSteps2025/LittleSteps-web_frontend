@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import { User, Calendar, Edit, Trash2, Plus } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { User, Calendar, Edit, Trash2, Plus, Search, X } from "lucide-react";
 
 interface Student {
   id: string;
@@ -33,13 +33,13 @@ interface ApiStudent {
   image?: string;
 }
 
-const API_URL = 'http://localhost:5001/api/supervisors/child/';
+const API_URL = "http://localhost:5001/api/supervisors/child/";
 
 const fetchStudents = async (): Promise<Student[]> => {
   const res = await fetch(API_URL);
-  if (!res.ok) throw new Error('Failed to fetch students');
+  if (!res.ok) throw new Error("Failed to fetch students");
   const data: ApiStudent[] = await res.json();
-  console.log('Students fetched successfully', data);
+  console.log("Students fetched successfully", data);
   return data.map((item: ApiStudent) => ({
     id: item.child_id,
     name: item.name,
@@ -48,7 +48,7 @@ const fetchStudents = async (): Promise<Student[]> => {
     dob: item.dob,
     gender: item.gender,
     parentName: item.parent_name,
-    parentNIC: item.nic || '',
+    parentNIC: item.nic || "",
     parentEmail: item.parent_email,
     parentAddress: item.parent_address,
     parentContact: item.parent_phone,
@@ -56,10 +56,12 @@ const fetchStudents = async (): Promise<Student[]> => {
   }));
 };
 
-const createStudent = async (student: Omit<Student, 'id'>): Promise<Student> => {
+const createStudent = async (
+  student: Omit<Student, "id">
+): Promise<Student> => {
   const res = await fetch(API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       name: student.name,
       age: student.age,
@@ -80,7 +82,7 @@ const createStudent = async (student: Omit<Student, 'id'>): Promise<Student> => 
       parentContact: student.parentContact,
     }),
   });
-  if (!res.ok) throw new Error('Failed to create student');
+  if (!res.ok) throw new Error("Failed to create student");
   const item = await res.json();
   return {
     id: item.child_id,
@@ -100,8 +102,8 @@ const createStudent = async (student: Omit<Student, 'id'>): Promise<Student> => 
 
 const updateStudent = async (student: Student): Promise<Student> => {
   const res = await fetch(`${API_URL}${student.id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       name: student.name,
       age: student.age,
@@ -115,9 +117,9 @@ const updateStudent = async (student: Student): Promise<Student> => {
       allergies: null,
       created_at: new Date().toISOString(),
       package_id: null,
-    })
+    }),
   });
-  if (!res.ok) throw new Error('Failed to update student');
+  if (!res.ok) throw new Error("Failed to update student");
   const item = await res.json();
   return {
     id: item.child_id,
@@ -136,34 +138,56 @@ const updateStudent = async (student: Student): Promise<Student> => {
 };
 
 const deleteStudentApi = async (id: string): Promise<void> => {
-  const res = await fetch(`${API_URL}${id}`, { method: 'DELETE' });
-  if (!res.ok) throw new Error('Failed to delete student');
+  const res = await fetch(`${API_URL}${id}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("Failed to delete student");
 };
 
 export default function Childrens() {
+  
+  const [searchTerm, setSearchTerm] = useState("");
   const [students, setStudents] = useState<Student[]>([]);
-  const [form, setForm] = useState<Omit<Student, 'id'>>({
-    name: '', age: 1, classroom: '', dob: '', gender: '',
-    parentName: '', parentNIC: '', parentEmail: '', parentAddress: '', parentContact: '', 
+  const [form, setForm] = useState<Omit<Student, "id">>({
+    name: "",
+    age: 1,
+    classroom: "",
+    dob: "",
+    gender: "",
+    parentName: "",
+    parentNIC: "",
+    parentEmail: "",
+    parentAddress: "",
+    parentContact: "",
   });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [currentChild, setCurrentChild] = useState<Student | null>(null);
 
   const loadStudents = async () => {
     try {
       const data = await fetchStudents();
       setStudents(data);
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+      const errorMessage =
+        err instanceof Error ? err.message : "An unknown error occurred";
       toast.error(errorMessage);
     }
   };
 
-  useEffect(() => { loadStudents(); }, []);
+  useEffect(() => {
+    loadStudents();
+  }, []);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
+  ) => {
     const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: name === 'age' ? Number(value) : value }));
+    setForm((prev) => ({
+      ...prev,
+      [name]: name === "age" ? Number(value) : value,
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -171,17 +195,29 @@ export default function Childrens() {
     try {
       if (editingId) {
         await updateStudent({ ...form, id: editingId });
-        toast.success('Updated successfully');
+        toast.success("Updated successfully");
       } else {
         await createStudent(form);
-        toast.success('Created successfully');
+        toast.success("Created successfully");
       }
-      setForm({ name: '', age: 1, classroom: '', dob: '', gender: '', parentName: '', parentNIC: '', parentEmail: '', parentAddress: '', parentContact: '',  });
+      setForm({
+        name: "",
+        age: 1,
+        classroom: "",
+        dob: "",
+        gender: "",
+        parentName: "",
+        parentNIC: "",
+        parentEmail: "",
+        parentAddress: "",
+        parentContact: "",
+      });
       setEditingId(null);
       setShowAddForm(false);
       await loadStudents();
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+      const errorMessage =
+        err instanceof Error ? err.message : "An unknown error occurred";
       toast.error(errorMessage);
     }
   };
@@ -193,27 +229,59 @@ export default function Childrens() {
     setShowAddForm(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this student?')) return;
+  const handleDelete = (student: Student) => {
+    setCurrentChild(student);
+    setIsDeleteModalOpen(true);
+  };
+
+  const deleteChild = async () => {
+    if (!currentChild) return;
     try {
-      await deleteStudentApi(id);
-      toast.success('Deleted successfully');
+      await deleteStudentApi(currentChild.id);
+      toast.success("Deleted successfully");
+      setIsDeleteModalOpen(false);
+      setCurrentChild(null);
       await loadStudents();
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+      const errorMessage =
+        err instanceof Error ? err.message : "An unknown error occurred";
       toast.error(errorMessage);
     }
   };
 
   const openAddModal = () => {
     setShowAddForm(true);
-    setForm({ name: '', age: 1, classroom: '', dob: '', gender: '', parentName: '', parentNIC: '', parentEmail: '', parentAddress: '', parentContact: '',  });
+    setForm({
+      name: "",
+      age: 1,
+      classroom: "",
+      dob: "",
+      gender: "",
+      parentName: "",
+      parentNIC: "",
+      parentEmail: "",
+      parentAddress: "",
+      parentContact: "",
+    });
     setEditingId(null);
   };
 
   const closeModal = () => {
     setShowAddForm(false);
-    setForm({ name: '', age: 1, classroom: '', dob: '', gender: '', parentName: '', parentNIC: '', parentEmail: '', parentAddress: '', parentContact: '',  });
+    setIsDeleteModalOpen(false);
+    setCurrentChild(null);
+    setForm({
+      name: "",
+      age: 1,
+      classroom: "",
+      dob: "",
+      gender: "",
+      parentName: "",
+      parentNIC: "",
+      parentEmail: "",
+      parentAddress: "",
+      parentContact: "",
+    });
     setEditingId(null);
   };
 
@@ -224,22 +292,36 @@ export default function Childrens() {
           <User className="mr-2 text-[#4f46e5]" size={24} />
           Children Management
         </h1>
-        {!showAddForm && (
-          <button
-            onClick={openAddModal}
-            className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Add New Child
-          </button>
-        )}
+      </div>
+      <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-3 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search students by name, classroom, parent or ID..."
+              className="pl-10 pr-4 py-2 w-full border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          {!showAddForm && (
+            <button
+              onClick={openAddModal}
+              className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add New Child
+            </button>
+          )}
+        </div>
       </div>
 
       {showAddForm ? (
         <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-bold text-gray-800">
-              {editingId ? 'Edit Child' : 'Add New Child'}
+              {editingId ? "Edit Child" : "Add New Child"}
             </h2>
             {/* <button
               onClick={closeModal}
@@ -249,7 +331,7 @@ export default function Childrens() {
               Back to List
             </button> */}
           </div>
-          
+
           <form onSubmit={handleSubmit} className="space-y-8">
             {/* Child Information Section */}
             <div className="bg-blue-50 p-6 rounded-lg">
@@ -272,7 +354,7 @@ export default function Childrens() {
                     placeholder="Enter child's name"
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700">
                     Age *
@@ -289,7 +371,7 @@ export default function Childrens() {
                     placeholder="Enter child's age"
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700">
                     Gender *
@@ -306,7 +388,7 @@ export default function Childrens() {
                     <option value="female">Female</option>
                   </select>
                 </div>
-                
+
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700">
                     dob *
@@ -320,7 +402,7 @@ export default function Childrens() {
                     required
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700">
                     Classroom
@@ -358,7 +440,7 @@ export default function Childrens() {
                     placeholder="Enter parent's name"
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700">
                     Parent NIC
@@ -372,7 +454,7 @@ export default function Childrens() {
                     placeholder="Enter parent's NIC"
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700">
                     Parent Email *
@@ -387,7 +469,7 @@ export default function Childrens() {
                     placeholder="Enter parent's email"
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700">
                     Parent Contact *
@@ -402,7 +484,7 @@ export default function Childrens() {
                     placeholder="Enter parent's contact number"
                   />
                 </div>
-                
+
                 <div className="space-y-2 md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700">
                     Parent Address *
@@ -419,7 +501,7 @@ export default function Childrens() {
                 </div>
               </div>
             </div>
-            
+
             <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
               <button
                 type="button"
@@ -453,23 +535,37 @@ export default function Childrens() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Age</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Classroom</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">dob</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gender</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Parent</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Name
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Age
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Classroom
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Date of Birth
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Gender
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Parent
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {students.map(student => (
+                {students.map((student) => (
                   <tr key={student.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         {student.profileImage ? (
-                          <img 
-                            src={student.profileImage} 
+                          <img
+                            src={student.profileImage}
                             alt={student.name}
                             className="flex-shrink-0 h-10 w-10 rounded-full object-cover"
                           />
@@ -479,13 +575,17 @@ export default function Childrens() {
                           </div>
                         )}
                         <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">{student.name}</div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {student.name}
+                          </div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{student.age}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {student.classroom || 'Not assigned'}
+                      {student.age}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {student.classroom || "Not assigned"}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <div className="flex items-center">
@@ -493,18 +593,22 @@ export default function Childrens() {
                         {student.dob}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{student.gender}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{student.parentName}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {student.gender}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {student.parentName}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button 
+                      <button
                         onClick={() => handleEdit(student)}
                         className="text-indigo-600 hover:text-indigo-900 mr-4 flex items-center"
                       >
                         <Edit className="w-4 h-4 mr-1" />
                         Edit
                       </button>
-                      <button 
-                        onClick={() => handleDelete(student.id)}
+                      <button
+                        onClick={() => handleDelete(student)}
                         className="text-red-600 hover:text-red-900 flex items-center"
                       >
                         <Trash2 className="w-4 h-4 mr-1" />
@@ -515,6 +619,51 @@ export default function Childrens() {
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold text-gray-800">
+                  Confirm Deletion
+                </h2>
+                <button
+                  onClick={closeModal}
+                  className="text-gray-400 hover:text-gray-500 rounded-full p-1 hover:bg-gray-100"
+                  title="Close"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <p className="mb-6 text-gray-600">
+                Are you sure you want to delete child{" "}
+                <span className="font-semibold text-gray-800">
+                  {currentChild?.name}
+                </span>
+                ? This action cannot be undone.
+              </p>
+
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={closeModal}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={deleteChild}
+                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
