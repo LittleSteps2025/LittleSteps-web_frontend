@@ -81,7 +81,7 @@ const SupervisorDashboard = () => {
             <Calendar className="mr-2 text-[#4f46e5]" size={20} />
             Upcoming Events
           </h2>
-          <button className="text-sm text-[#4f46e5] hover:underline">View Calendar</button>
+          {/* <button className="text-sm text-[#4f46e5] hover:underline">View Calendar</button> */}
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
@@ -94,9 +94,12 @@ const SupervisorDashboard = () => {
               <h3 className="font-medium text-gray-900">{event.title}</h3>
               <p className="text-sm text-gray-600 mt-1">{event.date}</p>
               <p className="text-xs text-gray-500 mt-2">{event.location}</p>
-              <button className="mt-3 text-xs text-[#4f46e5] hover:underline">
+                <button
+                className="mt-3 text-xs text-[#4f46e5] hover:underline"
+                onClick={() => window.location.href = '/supervisor/events'}
+                >
                 View Details
-              </button>
+                </button>
             </div>
           ))}
         </div>
