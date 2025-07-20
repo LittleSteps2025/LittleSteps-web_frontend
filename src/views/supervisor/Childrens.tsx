@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { User, Calendar, Edit, Trash2, Plus, Search, X } from "lucide-react";
+import { User, Edit, Trash2, Plus, Search, X } from "lucide-react";
 
 interface Student {
   id: string;
@@ -16,13 +16,14 @@ interface Student {
   parentAddress: string;
   parentContact: string;
   profileImage?: string;
+  packageName?: string;
 }
 
 interface ApiStudent {
   child_id: string;
   name: string;
   age: number;
-  group_id: string;
+  group_name: string;
   dob: string;
   gender: string;
   parent_name: string;
@@ -31,50 +32,155 @@ interface ApiStudent {
   parent_address: string;
   parent_phone: string;
   image?: string;
+  package_name?: string;
+}
+
+interface ClassGroup {
+  group_name: string;
 }
 
 const API_URL = "http://localhost:5001/api/supervisors/child/";
+const GROUPS_API_URL = "http://localhost:5001/api/supervisors/child/groups"; // Correct groups endpoint
+const PACKAGES_API_URL = "http://localhost:5001/api/supervisors/child/packages"; // Placeholder for future packages API
+
+// Utility function to calculate age from date of birth
+const calculateAge = (dob: string): number => {
+  if (!dob) return 0;
+  
+  const birthDate = new Date(dob);
+  const today = new Date();
+  
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  
+  return Math.max(0, age); // Ensure age is never negative
+};
+// Fetch groups from API
+const fetchGroups = async (): Promise<ClassGroup[]> => {
+  try {
+    const res = await fetch(GROUPS_API_URL);
+    if (!res.ok) {
+      // Fallback to extracting from students if API doesn't exist
+      console.warn("Groups API not available, will extract from students data");
+      return [];
+    }
+    const data = await res.json();
+    console.log("Groups fetched from API:", data);
+    
+    // Transform API response to match ClassGroup interface
+    return data.map((item: { name: string }, index: number) => ({
+      group_id: index + 1,
+      group_name: item.name
+    }));
+  } catch (error) {
+    console.error("Error fetching groups:", error);
+    return [];
+  }
+};
+
+// Fetch packages from API (if needed in the future)
+const fetchPackages = async (): Promise<{ name: string }[]> => {
+  try {
+    const res = await fetch(PACKAGES_API_URL);
+    if (!res.ok) {
+      // Fallback to static packages if API doesn't exist
+      console.warn("Packages API not available, using fallback packages");
+      throw new Error("Packages API not available");
+    }
+    const data = await res.json();
+    console.log("Packages fetched from API:", data);
+    
+    // Transform API response to match expected format
+    return data.map((item: { name: string }) => ({
+      name: item.name
+    }));
+  } catch (error) {
+    console.error("Error fetching packages:", error);
+    // Return fallback packages on error
+    throw new Error("Failed to fetch packages");
+  }
+};
+
+// Extract unique groups from students data (fallback method)
+const extractGroupsFromStudents = (students: Student[]): ClassGroup[] => {
+  const uniqueGroups = new Set<string>();
+  const groups: ClassGroup[] = [];
+
+  students.forEach((student) => {
+    if (student.classroom && !uniqueGroups.has(student.classroom)) {
+      uniqueGroups.add(student.classroom);
+      groups.push({
+        group_name: student.classroom,
+      });
+    }
+  });
+
+  return groups.sort((a, b) => a.group_name.localeCompare(b.group_name));
+};
 
 const fetchStudents = async (): Promise<Student[]> => {
   const res = await fetch(API_URL);
   if (!res.ok) throw new Error("Failed to fetch students");
   const data: ApiStudent[] = await res.json();
-  console.log("Students fetched successfully", data);
-  return data.map((item: ApiStudent) => ({
-    id: item.child_id,
-    name: item.name,
-    age: item.age,
-    classroom: item.group_id,
-    dob: item.dob,
-    gender: item.gender,
-    parentName: item.parent_name,
-    parentNIC: item.nic || "",
-    parentEmail: item.parent_email,
-    parentAddress: item.parent_address,
-    parentContact: item.parent_phone,
-    profileImage: item.image,
-  }));
+  console.log("Raw API response:", data);
+
+  return data.map((item: ApiStudent) => {
+    const dobFormatted = item.dob ? new Date(item.dob).toISOString().split("T")[0] : "";
+    const calculatedAge = dobFormatted ? calculateAge(dobFormatted) : (item.age || 0);
+    
+    const mappedStudent = {
+      id: item.child_id,
+      name: item.name || "",
+      age: calculatedAge, // Use calculated age based on DOB
+      classroom: item.group_name || "",
+      dob: dobFormatted,
+      gender: item.gender || "",
+      parentName: item.parent_name || "",
+      parentNIC: item.nic || "", // This field might not exist in API response
+      parentEmail: item.parent_email || "",
+      parentAddress: item.parent_address || "",
+      parentContact: item.parent_phone || "",
+      profileImage: item.image || "",
+      packageName: item.package_name || "",
+    };
+    console.log("Mapped student:", mappedStudent);
+    return mappedStudent;
+  });
 };
 
 const createStudent = async (
   student: Omit<Student, "id">
 ): Promise<Student> => {
+  // Ensure age is calculated from DOB if available
+  const ageFromDob = student.dob ? calculateAge(student.dob) : student.age;
+  
   const res = await fetch(API_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       name: student.name,
-      age: student.age,
+      age: ageFromDob, // Use calculated age
       gender: student.gender,
       dob: student.dob,
-      group_id: null,
+      group_name: student.classroom || null,
       image: null,
       bc: null,
       blood_type: null,
       mr: null,
       allergies: null,
       created_at: new Date().toISOString(),
-      package_id: null,
+      package_name: student.packageName || null,
+      // Backend database field names
+      parent_name: student.parentName,
+      nic: student.parentNIC,
+      parent_email: student.parentEmail,
+      parent_address: student.parentAddress,
+      parent_phone: student.parentContact,
+      // Frontend form field names (also required)
       parentName: student.parentName,
       parentNIC: student.parentNIC,
       parentEmail: student.parentEmail,
@@ -82,14 +188,21 @@ const createStudent = async (
       parentContact: student.parentContact,
     }),
   });
-  if (!res.ok) throw new Error("Failed to create student");
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({ message: "Failed to create student" }));
+    throw new Error(errorData.message || `Failed to create student: ${res.statusText}`);
+  }
   const item = await res.json();
+  
+  const dobFromResponse = item.dob ? new Date(item.dob).toISOString().split("T")[0] : "";
+  const ageForStudent = dobFromResponse ? calculateAge(dobFromResponse) : (item.age || student.age);
+  
   return {
     id: item.child_id,
     name: item.name,
-    age: item.age,
-    classroom: item.group_id,
-    dob: item.dob,
+    age: ageForStudent, // Use calculated age based on DOB
+    classroom: item.group_name,
+    dob: dobFromResponse,
     gender: item.gender,
     parentName: student.parentName,
     parentNIC: student.parentNIC,
@@ -97,43 +210,70 @@ const createStudent = async (
     parentAddress: student.parentAddress,
     parentContact: student.parentContact,
     profileImage: item.image,
+    packageName: item.package_name || student.packageName,
   };
 };
 
 const updateStudent = async (student: Student): Promise<Student> => {
+  console.log("Updating student with data:", student);
+  
+  // Ensure age is calculated from DOB if available
+  const ageFromDob = student.dob ? calculateAge(student.dob) : student.age;
+  
   const res = await fetch(`${API_URL}${student.id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       name: student.name,
-      age: student.age,
+      age: ageFromDob, // Use calculated age
       gender: student.gender,
       dob: student.dob,
-      group_id: null,
+      group_name: student.classroom, // Send the actual classroom value
       image: null,
       bc: null,
       blood_type: null,
       mr: null,
       allergies: null,
       created_at: new Date().toISOString(),
-      package_id: null,
+      package_name: student.packageName || null,
+      // Backend database field names
+      parent_name: student.parentName,
+      parent_email: student.parentEmail,
+      parent_phone: student.parentContact,
+      parent_address: student.parentAddress,
+      nic: student.parentNIC,
+      // Frontend form field names (also required)
+      parentContact: student.parentContact,
+      parentAddress: student.parentAddress,
     }),
   });
-  if (!res.ok) throw new Error("Failed to update student");
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({ message: "Failed to update student" }));
+    console.error("Update failed:", errorData);
+    throw new Error(errorData.message || `Failed to update student: ${res.statusText}`);
+  }
+
   const item = await res.json();
+  console.log("Update response:", item);
+
+  const dobFormatted = item.dob ? new Date(item.dob).toISOString().split("T")[0] : "";
+  const finalAge = dobFormatted ? calculateAge(dobFormatted) : (item.age || student.age);
+
   return {
     id: item.child_id,
     name: item.name,
-    age: item.age,
-    classroom: item.group_id,
-    dob: item.dob,
+    age: finalAge, // Use calculated age based on DOB
+    classroom: item.group_name || "",
+    dob: dobFormatted,
     gender: item.gender,
-    parentName: student.parentName,
-    parentNIC: student.parentNIC,
-    parentEmail: student.parentEmail,
-    parentAddress: student.parentAddress,
-    parentContact: student.parentContact,
+    parentName: item.parent_name || student.parentName,
+    parentNIC: item.nic || student.parentNIC,
+    parentEmail: item.parent_email || student.parentEmail,
+    parentAddress: item.parent_address || student.parentAddress,
+    parentContact: item.parent_phone || student.parentContact,
     profileImage: item.image,
+    packageName: item.package_name || student.packageName,
   };
 };
 
@@ -143,9 +283,10 @@ const deleteStudentApi = async (id: string): Promise<void> => {
 };
 
 export default function Childrens() {
-  
   const [searchTerm, setSearchTerm] = useState("");
   const [students, setStudents] = useState<Student[]>([]);
+  const [groups, setGroups] = useState<ClassGroup[]>([]);
+  const [packages, setPackages] = useState<{ name: string }[]>([]);
   const [form, setForm] = useState<Omit<Student, "id">>({
     name: "",
     age: 1,
@@ -157,6 +298,7 @@ export default function Childrens() {
     parentEmail: "",
     parentAddress: "",
     parentContact: "",
+    packageName: "",
   });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -165,8 +307,24 @@ export default function Childrens() {
 
   const loadStudents = async () => {
     try {
-      const data = await fetchStudents();
-      setStudents(data);
+      const studentsData = await fetchStudents();
+      setStudents(studentsData);
+
+      // Try to fetch groups from API first
+      let groupsData = await fetchGroups();
+
+      // If API doesn't return groups, extract from students data
+      if (groupsData.length === 0) {
+        console.log("Fallback: extracting groups from students data");
+        groupsData = extractGroupsFromStudents(studentsData);
+      }
+
+      setGroups(groupsData);
+      console.log("Final groups data:", groupsData);
+
+      // Load packages
+      const packagesData = await fetchPackages();
+      setPackages(packagesData);
     } catch (err: unknown) {
       const errorMessage =
         err instanceof Error ? err.message : "An unknown error occurred";
@@ -184,10 +342,20 @@ export default function Childrens() {
     >
   ) => {
     const { name, value } = e.target;
-    setForm((prev) => ({
-      ...prev,
-      [name]: name === "age" ? Number(value) : value,
-    }));
+    
+    setForm((prev) => {
+      const updatedForm = {
+        ...prev,
+        [name]: name === "age" ? Number(value) : value,
+      };
+      
+      // Auto-calculate age when DOB changes
+      if (name === "dob" && value) {
+        updatedForm.age = calculateAge(value);
+      }
+      
+      return updatedForm;
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -211,6 +379,7 @@ export default function Childrens() {
         parentEmail: "",
         parentAddress: "",
         parentContact: "",
+        packageName: "",
       });
       setEditingId(null);
       setShowAddForm(false);
@@ -223,9 +392,32 @@ export default function Childrens() {
   };
 
   const handleEdit = (student: Student) => {
-    const { id, ...rest } = student;
-    setForm(rest);
-    setEditingId(id);
+    console.log("Editing student:", student); // Debug log
+
+    // Format date for HTML date input (YYYY-MM-DD)
+    const formatDateForInput = (dateString: string) => {
+      if (!dateString) return "";
+      const date = new Date(dateString);
+      return date.toISOString().split("T")[0];
+    };
+
+    const formattedDob = formatDateForInput(student.dob);
+    const calculatedAge = formattedDob ? calculateAge(formattedDob) : (student.age || 1);
+
+    setForm({
+      name: student.name || "",
+      age: calculatedAge, // Use calculated age based on DOB
+      classroom: student.classroom || "",
+      dob: formattedDob,
+      gender: student.gender || "",
+      parentName: student.parentName || "",
+      parentNIC: student.parentNIC || "",
+      parentEmail: student.parentEmail || "",
+      parentAddress: student.parentAddress || "",
+      parentContact: student.parentContact || "",
+      packageName: student.packageName || "",
+    });
+    setEditingId(student.id);
     setShowAddForm(true);
   };
 
@@ -262,6 +454,7 @@ export default function Childrens() {
       parentEmail: "",
       parentAddress: "",
       parentContact: "",
+      packageName: "",
     });
     setEditingId(null);
   };
@@ -281,6 +474,7 @@ export default function Childrens() {
       parentEmail: "",
       parentAddress: "",
       parentContact: "",
+      packageName: "",
     });
     setEditingId(null);
   };
@@ -293,19 +487,19 @@ export default function Childrens() {
           Children Management
         </h1>
       </div>
-      <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-3 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search students by name, classroom, parent or ID..."
-              className="pl-10 pr-4 py-2 w-full border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          {!showAddForm && (
+      {!showAddForm && (
+        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-3 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search students by name, classroom, parent or ID..."
+                className="pl-10 pr-4 py-2 w-full border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
             <button
               onClick={openAddModal}
               className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
@@ -313,16 +507,23 @@ export default function Childrens() {
               <Plus className="w-4 h-4 mr-2" />
               Add New Child
             </button>
-          )}
+          </div>
         </div>
-      </div>
+      )}
 
       {showAddForm ? (
         <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold text-gray-800">
-              {editingId ? "Edit Child" : "Add New Child"}
-            </h2>
+            <div>
+              <h2 className="text-xl font-bold text-gray-800">
+                {editingId ? "Edit Child" : "Add New Child"}
+              </h2>
+              {editingId && (
+                <p className="text-sm text-gray-600 mt-1">
+                  Only child name, package, parent contact, and parent address can be updated
+                </p>
+              )}
+            </div>
             {/* <button
               onClick={closeModal}
               className="flex items-center px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
@@ -357,18 +558,36 @@ export default function Childrens() {
 
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700">
-                    Age *
+                    Date of Birth *
+                  </label>
+                  <input
+                    name="dob"
+                    value={form.dob}
+                    onChange={handleChange}
+                    className={`block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${editingId ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                    type="date"
+                    required
+                    disabled={!!editingId}
+                  />
+                  {editingId && (
+                    <p className="text-xs text-gray-500">Date of birth cannot be changed when editing</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Age * 
                   </label>
                   <input
                     name="age"
                     value={form.age}
-                    onChange={handleChange}
-                    className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="block w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                     type="number"
-                    min={1}
-                    max={18}
+                    min={0}
+                    max={15}
                     required
-                    placeholder="Enter child's age"
+                    readOnly
+                    placeholder="Calculated from date of birth"
                   />
                 </div>
 
@@ -380,41 +599,58 @@ export default function Childrens() {
                     name="gender"
                     value={form.gender}
                     onChange={handleChange}
-                    className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className={`block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${editingId ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                     required
+                    disabled={!!editingId}
                   >
                     <option value="">Select gender</option>
                     <option value="male">Male</option>
                     <option value="female">Female</option>
                   </select>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">
-                    dob *
-                  </label>
-                  <input
-                    name="dob"
-                    value={form.dob}
-                    onChange={handleChange}
-                    className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    type="date"
-                    required
-                  />
+                  {editingId && (
+                    <p className="text-xs text-gray-500">Gender cannot be changed when editing</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700">
                     Classroom
                   </label>
-                  <input
+                  <select
                     name="classroom"
                     value={form.classroom}
                     onChange={handleChange}
+                    className={`block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${editingId ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                    disabled={!!editingId}
+                  >
+                    <option value="">Select a classroom (optional)</option>
+                    {groups.map((group, index) => (
+                      <option key={index} value={group.group_name}>
+                        {group.group_name}
+                      </option>
+                    ))}
+                  </select>
+                  {editingId && (
+                    <p className="text-xs text-gray-500">Classroom cannot be changed when editing</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Package *
+                  </label>
+                  <select
+                    name="packageName"
+                    value={form.packageName}
+                    onChange={handleChange}
                     className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    type="text"
-                    placeholder="Enter classroom (optional)"
-                  />
+                  >
+                    <option value="">Select a package (optional)</option>
+                    {packages.map((pkg, index) => (
+                      <option key={index} value={pkg.name}>
+                        {pkg.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </div>
@@ -434,11 +670,15 @@ export default function Childrens() {
                     name="parentName"
                     value={form.parentName}
                     onChange={handleChange}
-                    className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className={`block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${editingId ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                     type="text"
                     required
+                    disabled={!!editingId}
                     placeholder="Enter parent's name"
                   />
+                  {editingId && (
+                    <p className="text-xs text-gray-500">Parent name cannot be changed when editing</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -449,10 +689,14 @@ export default function Childrens() {
                     name="parentNIC"
                     value={form.parentNIC}
                     onChange={handleChange}
-                    className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className={`block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${editingId ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                     type="text"
+                    disabled={!!editingId}
                     placeholder="Enter parent's NIC"
                   />
+                  {editingId && (
+                    <p className="text-xs text-gray-500">Parent NIC cannot be changed when editing</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -463,11 +707,15 @@ export default function Childrens() {
                     name="parentEmail"
                     value={form.parentEmail}
                     onChange={handleChange}
-                    className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className={`block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${editingId ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                     type="email"
                     required
+                    disabled={!!editingId}
                     placeholder="Enter parent's email"
                   />
+                  {editingId && (
+                    <p className="text-xs text-gray-500">Parent email cannot be changed when editing</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -545,7 +793,7 @@ export default function Childrens() {
                     Classroom
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Date of Birth
+                    Package
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Gender
@@ -559,64 +807,76 @@ export default function Childrens() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {students.map((student) => (
-                  <tr key={student.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        {student.profileImage ? (
-                          <img
-                            src={student.profileImage}
-                            alt={student.name}
-                            className="flex-shrink-0 h-10 w-10 rounded-full object-cover"
-                          />
-                        ) : (
-                          <div className="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
-                            <User className="h-5 w-5 text-indigo-600" />
-                          </div>
-                        )}
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
-                            {student.name}
+                {students
+                  .filter((student) => {
+                    if (!searchTerm) return true;
+                    const searchLower = searchTerm.toLowerCase();
+                    return (
+                      student.name.toLowerCase().includes(searchLower) ||
+                      student.classroom.toLowerCase().includes(searchLower) ||
+                      student.parentName.toLowerCase().includes(searchLower) ||
+                      student.id.toLowerCase().includes(searchLower) ||
+                      student.gender.toLowerCase().includes(searchLower) ||
+                      student.parentEmail.toLowerCase().includes(searchLower)
+                    );
+                  })
+                  .map((student) => (
+                    <tr key={student.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          {student.profileImage ? (
+                            <img
+                              src={student.profileImage}
+                              alt={student.name}
+                              className="flex-shrink-0 h-10 w-10 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
+                              <User className="h-5 w-5 text-indigo-600" />
+                            </div>
+                          )}
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900">
+                              {student.name}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {student.age}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {student.classroom || "Not assigned"}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      <div className="flex items-center">
-                        <Calendar className="mr-2 text-gray-400" size={14} />
-                        {student.dob}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {student.gender}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {student.parentName}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button
-                        onClick={() => handleEdit(student)}
-                        className="text-indigo-600 hover:text-indigo-900 mr-4 flex items-center"
-                      >
-                        <Edit className="w-4 h-4 mr-1" />
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(student)}
-                        className="text-red-600 hover:text-red-900 flex items-center"
-                      >
-                        <Trash2 className="w-4 h-4 mr-1" />
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {student.age}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {student.classroom || "Not assigned"}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <div className="flex items-center">
+                          {student.packageName}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {student.gender}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {student.parentName}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button
+                          onClick={() => handleEdit(student)}
+                          className="text-indigo-600 hover:text-indigo-900 mr-4 flex items-center"
+                        >
+                          <Edit className="w-4 h-4 mr-1" />
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(student)}
+                          className="text-red-600 hover:text-red-900 flex items-center"
+                        >
+                          <Trash2 className="w-4 h-4 mr-1" />
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
               </tbody>
             </table>
           </div>
