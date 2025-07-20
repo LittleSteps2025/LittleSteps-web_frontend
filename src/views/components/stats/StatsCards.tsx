@@ -4,7 +4,6 @@ interface Stats {
   totalChildren: number;
   activeParents: number;
   activeTeachers: number;
-  activeSupervisors: number;
   todayCheckIns: number;
   monthlyRevenue: number;
 }
@@ -15,36 +14,28 @@ const StatsCards = ({ stats }: { stats: Stats }) => {
       icon: Baby, 
       title: 'Total Children', 
       value: stats.totalChildren, 
-      trend: '+12%',
+
       color: 'bg-purple-100 text-purple-800'
     },
     { 
       icon: Users, 
       title: 'Active Parents', 
       value: stats.activeParents, 
-      trend: '+5%',
+
       color: 'bg-blue-100 text-blue-800'
     },
     { 
       icon: Users, 
       title: 'Teachers', 
       value: stats.activeTeachers, 
-      trend: '0%',
-      color: 'bg-amber-100 text-amber-800'
-    },
 
-    { 
-      icon: Users, 
-      title: 'Supervisors', 
-      value: stats.activeSupervisors, 
-      trend: '+2%',
-      color: 'bg-pink-100 text-pink-800'
+      color: 'bg-amber-100 text-amber-800'
     },
     { 
       icon: CheckCircle, 
       title: "Today's Check-ins", 
       value: stats.todayCheckIns, 
-      trend: '+8%',
+
       color: 'bg-cyan-100 text-cyan-800'
     },
 
@@ -52,7 +43,7 @@ const StatsCards = ({ stats }: { stats: Stats }) => {
       icon: DollarSign, 
       title: 'Monthly Revenue', 
       value: stats.monthlyRevenue.toLocaleString('en-LK', { style: 'currency', currency: 'LKR' }), 
-      trend: '+15%',
+
       color: 'bg-emerald-100 text-emerald-800'
     },
   ];
@@ -70,16 +61,6 @@ const StatsCards = ({ stats }: { stats: Stats }) => {
               <card.icon className="w-5 h-5" />
             </div>
           </div>
-          {/* <div className={`mt-3 text-xs font-medium flex items-center ${
-            card.trend.startsWith('+') ? 'text-green-500' : 
-            card.trend.startsWith('-') ? 'text-red-500' : 'text-gray-500'
-          }`}>
-            <TrendingUp className={`w-4 h-4 mr-1 ${
-              card.trend.startsWith('+') ? 'text-green-500' : 
-              card.trend.startsWith('-') ? 'text-red-500' : 'text-gray-500'
-            }`} />
-            {card.trend} from last month
-          </div> */}
         </div>
       ))}
     </div>

@@ -491,7 +491,7 @@ const UsersManagement = () => {
           <h2 className="text-lg font-semibold">Supervisors & Teachers</h2>
           <div className="text-sm text-gray-500">
             <div>Total: {users.length} users</div>
-            <div className="text-xs">Debug: {JSON.stringify(users.length > 0 ? "Has data" : "No data")}</div>
+            
           </div>
         </div>
         
