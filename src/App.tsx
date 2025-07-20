@@ -33,7 +33,6 @@ import SupervisorPayments from './views/supervisor/Payments';
 import SupervisorAnnouncements from './views/supervisor/Announcements';
 import SupervisorAppointments from './views/supervisor/Appointments';
 import SupervisorHealthRecords from './views/supervisor/HealthRecords';
-import SupervisorAttendance from './views/supervisor/Attendance';
 import SupervisorActivities from './views/supervisor/Activities';
 import SupervisorReports from './views/supervisor/Reports';
 import SupervisorEvents from './views/supervisor/Events';
@@ -93,7 +92,7 @@ function App() {
             <Route path="announcements" element={<SupervisorAnnouncements />} />
             <Route path="appointments" element={<SupervisorAppointments />} />
             <Route path="health-records" element={<SupervisorHealthRecords />} />
-            <Route path="attendance" element={<SupervisorAttendance />} />
+            
             <Route path="activities" element={<SupervisorActivities />} />
             <Route path="reports" element={<SupervisorReports />} />
             <Route path="events" element={<SupervisorEvents />} />
