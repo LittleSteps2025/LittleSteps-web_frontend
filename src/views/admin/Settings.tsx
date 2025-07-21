@@ -20,8 +20,8 @@ const SettingsPage = () => {
   const [formData, setFormData] = useState({
     // Account Settings
     name: 'LittleSteps Daycare',
-    email: 'admin@littlesteps.com',
-    phone: '(555) 123-4567',
+    email: 'nimantha@gmail.com',
+    phone: '766804944',
     address: '123 Preschool Lane, Education City',
     
     // Security Settings

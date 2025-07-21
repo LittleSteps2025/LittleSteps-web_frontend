@@ -5,20 +5,20 @@ import QuickActions from '../components/actions/QuickActions';
 
 const Dashboard = () => {
   const stats = {
-    totalChildren: 245,
-    activeParents: 180,
-    activeTeachers: 25,
-    activeSupervisors: 8,
-    todayCheckIns: 120,
-    monthlyRevenue: 12500,
+    totalChildren: 5,
+    activeParents: 5,
+    activeTeachers: 3,
+    activeSupervisors: 1,
+    todayCheckIns: 5,
+    monthlyRevenue: 27500,
    
   };
 
   const recentActivities = [
-    { id: 1, user: 'Sarah Johnson', action: 'checked in', time: '10 min ago' },
-    { id: 2, user: 'Michael Chen', action: 'made payment', time: '25 min ago' },
-    { id: 3, user: 'Emily Rodriguez', action: 'submitted complaint', time: '1 hour ago' },
-    { id: 4, user: 'David Wilson', action: 'registered child', time: '2 hours ago' }
+    { id: 1, user: 'Nimna Pathum', action: 'checked in', time: '10 min ago' },
+    { id: 2, user: 'Irumi Theekshana', action: 'made payment', time: '25 min ago' },
+    { id: 3, user: 'Nuwan Kumara', action: 'submitted complaint', time: '1 hour ago' },
+    { id: 4, user: 'Devinda Perera', action: 'registered child', time: '2 hours ago' }
   ];
 
   return (

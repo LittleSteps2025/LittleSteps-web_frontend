@@ -4,14 +4,14 @@ import StatsCards from '../components/stats/StatsCards';
 
 const SupervisorDashboard = () => {
   const stats = {
-    totalChildren: 120,
+    totalChildren: 5,
     attendanceRate: '94%',
-    activeParents: 90,
+    activeParents: 5,
     pendingTasks: 8,
     upcomingEvents: 5,
     healthChecks: 12,
-    activeTeachers: 15,
-    todayCheckIns: 110,
+    activeTeachers: 3,
+    todayCheckIns: 5,
     pendingComplaints: 2,
     monthlyRevenue: 5000,
     immunizationDue: 3,
