@@ -4,7 +4,7 @@ import Home from './views/Home';
 import Login from './views/auth/Login';
 import Signup from './views/auth/Signup';
 import RequireAuth from './views/components/auth/RequireAuth';
-import Footer from './views/components/footer/Footer';
+// import Footer from './views/components/footer/Footer';
 import Layout from './views/layouts/Layout';
 import AdminLayout from './views/layouts/AdminLayout';
 import SupervisorLayout from './views/layouts/SupervisorLayout';
@@ -102,7 +102,7 @@ function App() {
           {/* 404 catch-all route */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-        <Footer />
+        {/* <Footer /> */}
       </BrowserRouter>
     </AuthProvider>
   );
