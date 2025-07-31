@@ -30,7 +30,7 @@ const Parents = () => {
   const sampleParents: Parent[] = [
     {
       id: "P1001",
-      nic: "3008227788995",
+      nic: "200822778823",
       name: "Amali Perera",
       email: "amali@gmail.com",
       phone: "0771234567",
@@ -50,7 +50,7 @@ const Parents = () => {
     },
     {
       id: "P1003",
-      nic: "2000123486",
+      nic: "200012342386",
       name: "Kavindu Dulmin",
       email: "kavindu@gmail.com",
       phone: "0773456789",
@@ -60,7 +60,7 @@ const Parents = () => {
     },
     {
       id: "P1003",
-      nic: "2000123486",
+      nic: "200012341386",
       name: "Saman Kumara",
       email: "lakshanra870@gmail.com",
       phone: "0773456789",
@@ -70,7 +70,7 @@ const Parents = () => {
     },
     {
       id: "P1003",
-      nic: "2000123486",
+      nic: "200012342386",
       name: "Ishadi Thashmika",
       email: "ishadi@gmail.com",
       phone: "0773456789",
