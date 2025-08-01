@@ -42,21 +42,25 @@ interface ClassGroup {
 const API_URL = "http://localhost:5001/api/supervisors/child/";
 const GROUPS_API_URL = "http://localhost:5001/api/supervisors/child/groups"; // Correct groups endpoint
 const PACKAGES_API_URL = "http://localhost:5001/api/supervisors/child/packages"; // Placeholder for future packages API
-
+const CHECK_NIC_API_URL =
+  "http://localhost:5001/api/supervisors/child/check-nic"; // Placeholder for NIC check API
 // Utility function to calculate age from date of birth
 const calculateAge = (dob: string): number => {
   if (!dob) return 0;
-  
+
   const birthDate = new Date(dob);
   const today = new Date();
-  
+
   let age = today.getFullYear() - birthDate.getFullYear();
   const monthDiff = today.getMonth() - birthDate.getMonth();
-  
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+
+  if (
+    monthDiff < 0 ||
+    (monthDiff === 0 && today.getDate() < birthDate.getDate())
+  ) {
     age--;
   }
-  
+
   return Math.max(0, age); // Ensure age is never negative
 };
 // Fetch groups from API
@@ -70,11 +74,11 @@ const fetchGroups = async (): Promise<ClassGroup[]> => {
     }
     const data = await res.json();
     console.log("Groups fetched from API:", data);
-    
+
     // Transform API response to match ClassGroup interface
     return data.map((item: { name: string }, index: number) => ({
       group_id: index + 1,
-      group_name: item.name
+      group_name: item.name,
     }));
   } catch (error) {
     console.error("Error fetching groups:", error);
@@ -93,10 +97,10 @@ const fetchPackages = async (): Promise<{ name: string }[]> => {
     }
     const data = await res.json();
     console.log("Packages fetched from API:", data);
-    
+
     // Transform API response to match expected format
     return data.map((item: { name: string }) => ({
-      name: item.name
+      name: item.name,
     }));
   } catch (error) {
     console.error("Error fetching packages:", error);
@@ -129,9 +133,13 @@ const fetchStudents = async (): Promise<Student[]> => {
   console.log("Raw API response:", data);
 
   return data.map((item: ApiStudent) => {
-    const dobFormatted = item.dob ? new Date(item.dob).toISOString().split("T")[0] : "";
-    const calculatedAge = dobFormatted ? calculateAge(dobFormatted) : (item.age || 0);
-    
+    const dobFormatted = item.dob
+      ? new Date(item.dob).toISOString().split("T")[0]
+      : "";
+    const calculatedAge = dobFormatted
+      ? calculateAge(dobFormatted)
+      : item.age || 0;
+
     const mappedStudent = {
       id: item.child_id,
       name: item.name || "",
@@ -157,7 +165,7 @@ const createStudent = async (
 ): Promise<Student> => {
   // Ensure age is calculated from DOB if available
   const ageFromDob = student.dob ? calculateAge(student.dob) : student.age;
-  
+
   const res = await fetch(API_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -189,14 +197,22 @@ const createStudent = async (
     }),
   });
   if (!res.ok) {
-    const errorData = await res.json().catch(() => ({ message: "Failed to create student" }));
-    throw new Error(errorData.message || `Failed to create student: ${res.statusText}`);
+    const errorData = await res
+      .json()
+      .catch(() => ({ message: "Failed to create student" }));
+    throw new Error(
+      errorData.message || `Failed to create student: ${res.statusText}`
+    );
   }
   const item = await res.json();
-  
-  const dobFromResponse = item.dob ? new Date(item.dob).toISOString().split("T")[0] : "";
-  const ageForStudent = dobFromResponse ? calculateAge(dobFromResponse) : (item.age || student.age);
-  
+
+  const dobFromResponse = item.dob
+    ? new Date(item.dob).toISOString().split("T")[0]
+    : "";
+  const ageForStudent = dobFromResponse
+    ? calculateAge(dobFromResponse)
+    : item.age || student.age;
+
   return {
     id: item.child_id,
     name: item.name,
@@ -216,10 +232,10 @@ const createStudent = async (
 
 const updateStudent = async (student: Student): Promise<Student> => {
   console.log("Updating student with data:", student);
-  
+
   // Ensure age is calculated from DOB if available
   const ageFromDob = student.dob ? calculateAge(student.dob) : student.age;
-  
+
   const res = await fetch(`${API_URL}${student.id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
@@ -249,16 +265,24 @@ const updateStudent = async (student: Student): Promise<Student> => {
   });
 
   if (!res.ok) {
-    const errorData = await res.json().catch(() => ({ message: "Failed to update student" }));
+    const errorData = await res
+      .json()
+      .catch(() => ({ message: "Failed to update student" }));
     console.error("Update failed:", errorData);
-    throw new Error(errorData.message || `Failed to update student: ${res.statusText}`);
+    throw new Error(
+      errorData.message || `Failed to update student: ${res.statusText}`
+    );
   }
 
   const item = await res.json();
   console.log("Update response:", item);
 
-  const dobFormatted = item.dob ? new Date(item.dob).toISOString().split("T")[0] : "";
-  const finalAge = dobFormatted ? calculateAge(dobFormatted) : (item.age || student.age);
+  const dobFormatted = item.dob
+    ? new Date(item.dob).toISOString().split("T")[0]
+    : "";
+  const finalAge = dobFormatted
+    ? calculateAge(dobFormatted)
+    : item.age || student.age;
 
   return {
     id: item.child_id,
@@ -304,6 +328,8 @@ export default function Childrens() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [currentChild, setCurrentChild] = useState<Student | null>(null);
+  const [isCheckingNIC, setIsCheckingNIC] = useState(false);
+  const [nicCheckMessage, setNicCheckMessage] = useState<string>("");
 
   const loadStudents = async () => {
     try {
@@ -336,24 +362,107 @@ export default function Childrens() {
     loadStudents();
   }, []);
 
+  // Function to check if NIC exists and auto-fill parent details
+  const checkNIC = async () => {
+    if (!form.parentNIC || form.parentNIC.trim() === "") {
+      setNicCheckMessage("Please enter a NIC number first");
+      toast.error("Please enter a NIC number first");
+      return;
+    }
+
+    setIsCheckingNIC(true);
+    setNicCheckMessage("");
+
+    try {
+      // Check if NIC exists in the current students data first (local check)
+      const existingParent = students.find(
+        (student) => student.parentNIC === form.parentNIC.trim()
+      );
+
+      if (existingParent) {
+        // Auto-fill parent details from existing data
+        setForm((prev) => ({
+          ...prev,
+          parentName: existingParent.parentName,
+          parentEmail: existingParent.parentEmail,
+          parentAddress: existingParent.parentAddress,
+          parentContact: existingParent.parentContact,
+        }));
+        setNicCheckMessage("Parent details found and auto-filled");
+        toast.success("Parent details found and auto-filled");
+      } else {
+        // Try API call to check NIC (if backend API exists)
+        try {
+          const res = await fetch(CHECK_NIC_API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ nic: form.parentNIC.trim() }),
+          });
+
+          if (res.ok) {
+            const parentData = await res.json();
+            // Auto-fill parent details from API response
+            setForm((prev) => ({
+              ...prev,
+              parentName: parentData.parent_name || parentData.name || "",
+              parentEmail: parentData.parent_email || parentData.email || "",
+              parentAddress:
+                parentData.parent_address || parentData.address || "",
+              parentContact:
+                parentData.parent_phone || parentData.contact || "",
+            }));
+            setNicCheckMessage("Parent details found and auto-filled");
+            toast.success("Parent details found and auto-filled");
+          } else {
+            setNicCheckMessage(
+              "This NIC does not exist in our records. Please enter parent details manually."
+            );
+            toast.info(
+              "This NIC does not exist in our records. Please enter parent details manually."
+            );
+          }
+        } catch {
+          // If API fails, show message that NIC doesn't exist
+          setNicCheckMessage(
+            "This NIC does not exist in our records. Please enter parent details manually."
+          );
+          toast.info(
+            "This NIC does not exist in our records. Please enter parent details manually."
+          );
+        }
+      }
+    } catch (error) {
+      console.error("Error checking NIC:", error);
+      setNicCheckMessage("Error checking NIC. Please try again.");
+      toast.error("Error checking NIC. Please try again.");
+    } finally {
+      setIsCheckingNIC(false);
+    }
+  };
+
   const handleChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
     >
   ) => {
     const { name, value } = e.target;
-    
+
+    // Clear NIC check message when NIC input changes
+    if (name === "parentNIC") {
+      setNicCheckMessage("");
+    }
+
     setForm((prev) => {
       const updatedForm = {
         ...prev,
         [name]: name === "age" ? Number(value) : value,
       };
-      
+
       // Auto-calculate age when DOB changes
       if (name === "dob" && value) {
         updatedForm.age = calculateAge(value);
       }
-      
+
       return updatedForm;
     });
   };
@@ -402,7 +511,9 @@ export default function Childrens() {
     };
 
     const formattedDob = formatDateForInput(student.dob);
-    const calculatedAge = formattedDob ? calculateAge(formattedDob) : (student.age || 1);
+    const calculatedAge = formattedDob
+      ? calculateAge(formattedDob)
+      : student.age || 1;
 
     setForm({
       name: student.name || "",
@@ -457,6 +568,7 @@ export default function Childrens() {
       packageName: "",
     });
     setEditingId(null);
+    setNicCheckMessage("");
   };
 
   const closeModal = () => {
@@ -477,6 +589,7 @@ export default function Childrens() {
       packageName: "",
     });
     setEditingId(null);
+    setNicCheckMessage("");
   };
 
   return (
@@ -520,7 +633,8 @@ export default function Childrens() {
               </h2>
               {editingId && (
                 <p className="text-sm text-gray-600 mt-1">
-                  Only child name, package, parent contact, and parent address can be updated
+                  Only child name, package, parent contact, and parent address
+                  can be updated
                 </p>
               )}
             </div>
@@ -564,19 +678,23 @@ export default function Childrens() {
                     name="dob"
                     value={form.dob}
                     onChange={handleChange}
-                    className={`block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${editingId ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                    className={`block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
+                      editingId ? "bg-gray-50 cursor-not-allowed" : ""
+                    }`}
                     type="date"
                     required
                     disabled={!!editingId}
                   />
                   {editingId && (
-                    <p className="text-xs text-gray-500">Date of birth cannot be changed when editing</p>
+                    <p className="text-xs text-gray-500">
+                      Date of birth cannot be changed when editing
+                    </p>
                   )}
                 </div>
 
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700">
-                    Age * 
+                    Age *
                   </label>
                   <input
                     name="age"
@@ -599,7 +717,9 @@ export default function Childrens() {
                     name="gender"
                     value={form.gender}
                     onChange={handleChange}
-                    className={`block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${editingId ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                    className={`block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
+                      editingId ? "bg-gray-50 cursor-not-allowed" : ""
+                    }`}
                     required
                     disabled={!!editingId}
                   >
@@ -608,7 +728,9 @@ export default function Childrens() {
                     <option value="female">Female</option>
                   </select>
                   {editingId && (
-                    <p className="text-xs text-gray-500">Gender cannot be changed when editing</p>
+                    <p className="text-xs text-gray-500">
+                      Gender cannot be changed when editing
+                    </p>
                   )}
                 </div>
 
@@ -620,7 +742,9 @@ export default function Childrens() {
                     name="classroom"
                     value={form.classroom}
                     onChange={handleChange}
-                    className={`block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${editingId ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                    className={`block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
+                      editingId ? "bg-gray-50 cursor-not-allowed" : ""
+                    }`}
                     disabled={!!editingId}
                   >
                     <option value="">Select a classroom (optional)</option>
@@ -631,7 +755,9 @@ export default function Childrens() {
                     ))}
                   </select>
                   {editingId && (
-                    <p className="text-xs text-gray-500">Classroom cannot be changed when editing</p>
+                    <p className="text-xs text-gray-500">
+                      Classroom cannot be changed when editing
+                    </p>
                   )}
                 </div>
                 <div className="space-y-2">
@@ -670,14 +796,19 @@ export default function Childrens() {
                     name="parentName"
                     value={form.parentName}
                     onChange={handleChange}
-                    className={`block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${editingId ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                    className={`block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
+                      editingId ? "bg-gray-50 cursor-not-allowed" : ""
+                    }`}
                     type="text"
                     required
                     disabled={!!editingId}
                     placeholder="Enter parent's name"
                   />
+
                   {editingId && (
-                    <p className="text-xs text-gray-500">Parent name cannot be changed when editing</p>
+                    <p className="text-xs text-gray-500">
+                      Parent name cannot be changed when editing
+                    </p>
                   )}
                 </div>
 
@@ -685,17 +816,51 @@ export default function Childrens() {
                   <label className="block text-sm font-medium text-gray-700">
                     Parent NIC
                   </label>
-                  <input
-                    name="parentNIC"
-                    value={form.parentNIC}
-                    onChange={handleChange}
-                    className={`block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${editingId ? 'bg-gray-50 cursor-not-allowed' : ''}`}
-                    type="text"
-                    disabled={!!editingId}
-                    placeholder="Enter parent's NIC"
-                  />
+                  <div className="flex gap-2">
+                    <input
+                      name="parentNIC"
+                      value={form.parentNIC}
+                      onChange={handleChange}
+                      className={`flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
+                        editingId ? "bg-gray-50 cursor-not-allowed" : ""
+                      }`}
+                      type="text"
+                      disabled={!!editingId}
+                      placeholder="Enter parent's NIC"
+                    />
+                    {!editingId && (
+                      <button
+                        type="button"
+                        onClick={checkNIC}
+                        disabled={isCheckingNIC || !form.parentNIC.trim()}
+                        className="px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
+                      >
+                        {isCheckingNIC ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            Checking...
+                          </>
+                        ) : (
+                          "Check"
+                        )}
+                      </button>
+                    )}
+                  </div>
+                  {nicCheckMessage && (
+                    <p
+                      className={`text-xs ${
+                        nicCheckMessage.includes("found")
+                          ? "text-green-600"
+                          : "text-red-600"
+                      }`}
+                    >
+                      {nicCheckMessage}
+                    </p>
+                  )}
                   {editingId && (
-                    <p className="text-xs text-gray-500">Parent NIC cannot be changed when editing</p>
+                    <p className="text-xs text-gray-500">
+                      Parent NIC cannot be changed when editing
+                    </p>
                   )}
                 </div>
 
@@ -707,14 +872,18 @@ export default function Childrens() {
                     name="parentEmail"
                     value={form.parentEmail}
                     onChange={handleChange}
-                    className={`block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${editingId ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                    className={`block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
+                      editingId ? "bg-gray-50 cursor-not-allowed" : ""
+                    }`}
                     type="email"
                     required
                     disabled={!!editingId}
                     placeholder="Enter parent's email"
                   />
                   {editingId && (
-                    <p className="text-xs text-gray-500">Parent email cannot be changed when editing</p>
+                    <p className="text-xs text-gray-500">
+                      Parent email cannot be changed when editing
+                    </p>
                   )}
                 </div>
 
