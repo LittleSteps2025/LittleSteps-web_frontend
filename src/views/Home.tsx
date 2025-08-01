@@ -1,11 +1,7 @@
 import React from 'react';
 import { 
   BookOpen,
-  Apple,
-  Gamepad2,
-  Music,
   Paintbrush,
-  Leaf,
   Heart,
   ChevronRight,
   Check,
@@ -23,6 +19,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Header from './components/header/Header';
+import heroImage from '../assets/hero-image.jpg';
 
 const Home: React.FC = () => {
   const stats = [
@@ -37,7 +34,7 @@ const Home: React.FC = () => {
       range: "3-5 Years",
       icon: <Paintbrush className="text-[#6339C0]" size={24} />,
       description: "Play-based learning with focus on social skills and creativity",
-      image: "https://images.unsplash.com/photo-1600046050370-4e64d1e902e0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80"
+
     },
     {
       range: "6-10 Years",
@@ -108,8 +105,8 @@ const Home: React.FC = () => {
           
           <div className="relative">
             <div className="relative bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
-              <img 
-                src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80" 
+              <img
+                src={heroImage}
                 alt="Multi-age group of children learning together" 
                 className="w-full h-auto max-h-[400px] object-cover"
               />
@@ -136,13 +133,7 @@ const Home: React.FC = () => {
           <div className="grid md:grid-cols-3 gap-8">
             {ageGroups.map((group, index) => (
               <div key={index} className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all overflow-hidden">
-                <div className="h-48 overflow-hidden">
-                  <img 
-                    src={group.image} 
-                    alt={`Children aged ${group.range}`}
-                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
+                
                 <div className="p-6">
                   <div className="flex items-center mb-4">
                     <div className="w-12 h-12 flex items-center justify-center bg-[#f3eeff] rounded-xl mr-4">
@@ -202,13 +193,7 @@ const Home: React.FC = () => {
                   </li>
                 ))}
               </ul>
-              <div className="h-40 overflow-hidden rounded-lg">
-                <img 
-                  src={`https://source.unsplash.com/random/300x200/?children,${program.name.toLowerCase().replace(' ', '')}`}
-                  alt={program.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
+              
             </div>
           ))}
         </div>
@@ -232,7 +217,8 @@ const Home: React.FC = () => {
               "https://images.unsplash.com/photo-1577896851231-70ef18881754?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80",
               "https://images.unsplash.com/photo-1541178735493-479c1a27ed24?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80",
               "https://images.unsplash.com/photo-1588072432904-843af37f03ed?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80",
-              "https://images.unsplash.com/photo-1542816417-0983675099c4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80",
+              // "https://images.unsplash.com/photo-1542816417324-0983675099c4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80",
+              "https://go.skimresources.com/?id=201523X1680086&isjs=1&jv=15.7.1&sref=https%3A%2F%2Fmilk-drunk.com%2Fwhat-to-pack-for-daycare-12-daycare-essentials-baby-toddler%2F&url=https%3A%2F%2Femh5334n65w.exactdn.com%2Fwp-content%2Fuploads%2F2023%2F03%2FiStock-1356126124.jpg%3Fstrip%3Dall%26lossy%3D1%26ssl%3D1&xs=1&xtz=-330&xuuid=391cbf9ca4a86ff58685036f716a5b53&cci=913bede46d25edf296d89cced7e2be2e",
               "https://images.unsplash.com/photo-1588072432836-e10032774350?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80"
             ].map((imgSrc, index) => (
               <div key={index} className="aspect-square overflow-hidden rounded-xl hover:shadow-lg transition-all">

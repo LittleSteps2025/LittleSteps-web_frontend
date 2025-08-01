@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  Search, Plus, Edit, Trash2, Filter, Download, ChevronDown, ChevronUp, Baby, Calendar, School, X, FileText, CheckCircle
+  Search, Edit, Trash2, Filter, Download, ChevronDown, ChevronUp, Baby, Calendar, School, X, FileText, CheckCircle
 } from 'lucide-react';
 import UserModals, { type UserType } from './UserModals';
 
@@ -21,67 +21,56 @@ type ChildType = {
 const children: ChildType[] = [
   { 
     id: '1', 
-    name: 'Emma Johnson', 
+    name: 'Pathum Nissanka', 
     birthDate: '2020-05-15', 
     age: '3 years', 
-    parentName: 'Sarah Johnson', 
-    parentContact: 'sarah@example.com', 
+    parentName: 'Saman Kumara', 
+    parentContact: 'lakshanra870@gmail.com', 
     classroom: 'Sunflowers', 
     allergies: ['Peanuts'], 
     status: 'active', 
     enrollmentDate: '2023-01-10',
-    lastCheckIn: '2023-06-15 08:30'
+    lastCheckIn: '2025-06-15 08:30'
   },
   { 
     id: '2', 
-    name: 'Liam Smith', 
+    name: 'Chamath Gunarathna', 
     birthDate: '2019-11-03', 
     age: '4 years', 
-    parentName: 'Michael Smith', 
-    parentContact: 'michael@example.com', 
+    parentName: 'Kavindu Dulmin', 
+    parentContact: 'lakshan2020kavindu@gmail.com', 
     classroom: 'Butterflies', 
     allergies: [], 
     status: 'active', 
     enrollmentDate: '2022-09-05',
-    lastCheckIn: '2023-06-15 08:45'
+    lastCheckIn: '2025-06-15 08:45'
   },
   { 
     id: '3', 
-    name: 'Olivia Williams', 
+    name: 'Pathum Silva', 
     birthDate: '2021-02-20', 
     age: '2 years', 
-    parentName: 'James Williams', 
-    parentContact: 'james@example.com', 
+    parentName: 'Amali Perera', 
+    parentContact: 'amali@gmail.com', 
     classroom: 'Caterpillars', 
-    allergies: ['Dairy', 'Eggs'], 
+    allergies: [], 
     status: 'active', 
     enrollmentDate: '2023-03-15',
-    lastCheckIn: '2023-06-14 09:15'
+    lastCheckIn: '2025-06-14 09:15'
   },
-  { 
-    id: '4', 
-    name: 'Noah Brown', 
-    birthDate: '2022-01-10', 
-    age: '1 year', 
-    parentName: 'Jessica Brown', 
-    parentContact: 'jessica@example.com', 
-    classroom: 'Waitlist', 
-    allergies: [], 
-    status: 'waitlist', 
-    enrollmentDate: '2023-05-01'
-  },
+  
   { 
     id: '5', 
-    name: 'Ava Jones', 
+    name: 'Kasun Mendis', 
     birthDate: '2020-08-25', 
     age: '2 years', 
-    parentName: 'David Jones', 
-    parentContact: 'david@example.com', 
+    parentName: 'Ishadi Thashmika', 
+    parentContact: 'ishadi@gmail.com', 
     classroom: 'Sunflowers', 
-    allergies: ['Tree nuts'], 
-    status: 'inactive', 
+    allergies: [], 
+    status: 'active', 
     enrollmentDate: '2022-11-18',
-    lastCheckIn: '2023-05-30 09:00'
+    lastCheckIn: '2025-05-30 09:00'
   },
 ];
 
@@ -275,15 +264,15 @@ const ChildManagement = () => {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-2xl font-bold text-gray-800">Child Management</h1>
+        <h1 className="text-2xl font-bold text-gray-800">Child Details</h1>
         <div className="flex space-x-3 w-full sm:w-auto">
-          <button 
+          {/* <button 
             onClick={() => setShowAddModal(true)}
             className="btn-primary flex items-center"
           >
             <Plus className="w-4 h-4 mr-2" />
             Add Child
-          </button>
+          </button> */}
           <button 
             onClick={() => setShowExportModal(true)} 
             className="btn-secondary"
@@ -558,7 +547,7 @@ const ChildManagement = () => {
 
       {/* Add Child Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
@@ -699,7 +688,7 @@ const ChildManagement = () => {
 
       {/* Edit Child Modal */}
       {showEditModal && currentChild && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
@@ -848,7 +837,7 @@ const ChildManagement = () => {
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && currentChild && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-lg max-w-md w-full">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
@@ -900,7 +889,7 @@ const ChildManagement = () => {
 
       {/* Export Modal */}
       {showExportModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-lg max-w-md w-full">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
