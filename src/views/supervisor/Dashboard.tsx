@@ -4,14 +4,14 @@ import StatsCards from '../components/stats/StatsCards';
 
 const SupervisorDashboard = () => {
   const stats = {
-    totalChildren: 120,
+    totalChildren: 5,
     attendanceRate: '94%',
-    activeParents: 90,
+    activeParents: 5,
     pendingTasks: 8,
     upcomingEvents: 5,
     healthChecks: 12,
-    activeTeachers: 15,
-    todayCheckIns: 110,
+    activeTeachers: 3,
+    todayCheckIns: 5,
     pendingComplaints: 2,
     monthlyRevenue: 5000,
     immunizationDue: 3,
@@ -81,7 +81,7 @@ const SupervisorDashboard = () => {
             <Calendar className="mr-2 text-[#4f46e5]" size={20} />
             Upcoming Events
           </h2>
-          <button className="text-sm text-[#4f46e5] hover:underline">View Calendar</button>
+          {/* <button className="text-sm text-[#4f46e5] hover:underline">View Calendar</button> */}
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
@@ -94,9 +94,12 @@ const SupervisorDashboard = () => {
               <h3 className="font-medium text-gray-900">{event.title}</h3>
               <p className="text-sm text-gray-600 mt-1">{event.date}</p>
               <p className="text-xs text-gray-500 mt-2">{event.location}</p>
-              <button className="mt-3 text-xs text-[#4f46e5] hover:underline">
+                <button
+                className="mt-3 text-xs text-[#4f46e5] hover:underline"
+                onClick={() => window.location.href = '/supervisor/events'}
+                >
                 View Details
-              </button>
+                </button>
             </div>
           ))}
         </div>

@@ -40,6 +40,7 @@ const UsersManagement = () => {
     address: "",
   });
   const [loading, setLoading] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [error, setError] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [success, setSuccess] = useState("");
@@ -267,7 +268,7 @@ const UsersManagement = () => {
 
   if (user?.role !== 'admin') {
 
-//   if (user?.role !== "admin") {
+
 
     return <div>Unauthorized access</div>;
   }
@@ -275,19 +276,10 @@ const UsersManagement = () => {
   return (
     <div className="space-y-6">
       <div className="flex flex-row justify-between">
-        <h1 className="text-2xl font-bold">Users Management</h1>
+        <h1 className="text-2xl font-bold">Supervisor and Teachers Details</h1>
 
         <div className=" p-6 rounded-xl shadow-sm ">
-          {error && (
-            <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg">
-              {error}
-            </div>
-          )}
-          {success && (
-            <div className="mb-4 p-3 bg-green-100 text-green-700 rounded-lg">
-              {success}
-            </div>
-          )}
+
 
           <div className="flex gap-3">
             <button
@@ -499,7 +491,7 @@ const UsersManagement = () => {
           <h2 className="text-lg font-semibold">Supervisors & Teachers</h2>
           <div className="text-sm text-gray-500">
             <div>Total: {users.length} users</div>
-            <div className="text-xs">Debug: {JSON.stringify(users.length > 0 ? "Has data" : "No data")}</div>
+            
           </div>
         </div>
         

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import {
 
-  Search, Plus, Edit, Trash2, Filter, ChevronDown, ChevronUp, X, CheckCircle, Clock, 
-  MessageSquare, User, Users, Bell, Send
+  Search,  Edit, Trash2, Filter, ChevronDown, ChevronUp, X, CheckCircle, Clock, 
+
 
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -79,12 +79,17 @@ const AnnouncementManagement = () => {
       setLoading(true);
       setError('');
       try {
-        const response = await fetch('http://localhost:5001/api/announcements');
+        const response = await fetch('http://localhost:5001/api/announcement');
         if (!response.ok) throw new Error('Failed to fetch announcements');
         const data = await response.json();
+        console.log('Admin API Response:', data);
         setAnnouncements(data.data || []);
-      } catch (err: any) {
-        setError(err.message || 'Failed to fetch announcements');
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          setError(err.message || 'Failed to fetch announcements');
+        } else {
+          setError('Failed to fetch announcements');
+        }
       } finally {
         setLoading(false);
       }
@@ -156,9 +161,11 @@ const AnnouncementManagement = () => {
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value, type, files } = e.target as any;
+    const target = e.target as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+    const { name, value, type } = target;
+    const files = (target as HTMLInputElement).files;
     if (type === 'file') {
-      setFormData(prev => ({ ...prev, [name]: files[0] }));
+      setFormData(prev => ({ ...prev, [name]: files && files[0] ? files[0] : null }));
     } else {
       setFormData(prev => ({
         ...prev,
@@ -175,8 +182,8 @@ const AnnouncementManagement = () => {
     try {
       const method = showEditModal ? 'PUT' : 'POST';
       const url = showEditModal && currentAnnouncement
-        ? `http://localhost:5001/api/announcements/${currentAnnouncement.ann_id}`
-        : 'http://localhost:5001/api/announcements';
+        ? `http://localhost:5001/api/announcement/${currentAnnouncement.ann_id}`
+        : 'http://localhost:5001/api/announcement';
       // Only send fields required by backend
       const payload = {
         title: formData.title,
@@ -202,8 +209,12 @@ const AnnouncementManagement = () => {
       } else {
         setAnnouncements(prev => prev.map(a => a.ann_id === data.data.ann_id ? data.data : a));
       }
-    } catch (err: any) {
-      setError(err.message || 'Failed to save announcement');
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message || 'Failed to save announcement');
+      } else {
+        setError('Failed to save announcement');
+      }
     } finally {
       setLoading(false);
     }
@@ -214,14 +225,18 @@ const AnnouncementManagement = () => {
     setLoading(true);
     setError('');
     try {
-      const response = await fetch(`http://localhost:5001/api/announcements/${currentAnnouncement.ann_id}`, {
+      const response = await fetch(`http://localhost:5001/api/announcement/${currentAnnouncement.ann_id}`, {
         method: 'DELETE',
       });
       if (!response.ok) throw new Error('Failed to delete announcement');
       setAnnouncements(prev => prev.filter(a => a.ann_id !== currentAnnouncement.ann_id));
       setShowDeleteModal(false);
-    } catch (err: any) {
-      setError(err.message || 'Failed to delete announcement');
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message || 'Failed to delete announcement');
+      } else {
+        setError('Failed to delete announcement');
+      }
     } finally {
       setLoading(false);
     }
@@ -708,7 +723,7 @@ const AnnouncementManagement = () => {
 
       {/* Loading and Error UI */}
       {loading && (
-        <div className="fixed inset-0 bg-black bg-opacity-20 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/60 bg-opacity-20 flex items-center justify-center z-50">
           <div className="bg-white px-6 py-4 rounded shadow text-lg font-semibold text-gray-700">Loading...</div>
         </div>
       )}
@@ -716,9 +731,11 @@ const AnnouncementManagement = () => {
         <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-red-100 text-red-700 px-4 py-2 rounded shadow z-50">
           {error}
           <button className="ml-2 text-red-500" onClick={() => setError('')}>x</button>
+        </div>
+      )}
 
       {/* Replies Modal */}
-<!--       {showRepliesModal && currentAnnouncement && (
+      {/* {showRepliesModal && currentAnnouncement && (
         <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-lg max-w-lg w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
@@ -764,10 +781,10 @@ const AnnouncementManagement = () => {
                 </div>
               </form>
             </div>
-          </div> -->
-
+          </div>
         </div>
-      )}
+      )} */}
+
     </div>
   );
 };

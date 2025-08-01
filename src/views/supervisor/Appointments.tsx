@@ -17,8 +17,8 @@ type Appointment = {
 const mockAppointments: Appointment[] = [
   {
     id: 'appointment-001',
-    parent: 'malith',
-    student: 'damsara',
+    parent: 'Amali Perera',
+    student: 'Pathum Nissanka',
     date: '2023-05-18',
     time: '10:00 AM',
     status: 'Confirmed',
@@ -26,16 +26,16 @@ const mockAppointments: Appointment[] = [
   },
   {
     id: 'appointment-002',
-    parent: 'farshad',
-    student: 'mohomad',
+    parent: 'Kavindu Dulmin',
+    student: 'Chamath gunarathna',
     date: '2023-05-19',
     time: '02:30 PM',
     status: 'Pending'
   },
   {
     id: 'appointment-003',
-    parent: 'chathumini',
-    student: 'silva',
+    parent: 'Tshadi Thashmika',
+    student: 'Kasun Mendis',
     date: '2023-05-20',
     time: '11:15 AM',
     status: 'Cancelled',
@@ -324,13 +324,13 @@ const Appointments = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <button
+          {/* <button
             onClick={openAddModal}
             className="btn-primary flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors whitespace-nowrap"
           >
             <Plus className="w-4 h-4 mr-2" />
             Schedule Appointment
-          </button>
+          </button> */}
         </div>
       </div>
 
@@ -455,7 +455,7 @@ const Appointments = () => {
 
       {/* Add/Edit Appointment Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
@@ -583,7 +583,7 @@ const Appointments = () => {
 
       {/* Delete Confirmation Modal */}
       {isDeleteModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">

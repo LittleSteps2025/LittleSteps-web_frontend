@@ -4,7 +4,7 @@ import Home from './views/Home';
 import Login from './views/auth/Login';
 import Signup from './views/auth/Signup';
 import RequireAuth from './views/components/auth/RequireAuth';
-import Footer from './views/components/footer/Footer';
+// import Footer from './views/components/footer/Footer';
 import Layout from './views/layouts/Layout';
 import AdminLayout from './views/layouts/AdminLayout';
 import SupervisorLayout from './views/layouts/SupervisorLayout';
@@ -33,7 +33,6 @@ import SupervisorPayments from './views/supervisor/Payments';
 import SupervisorAnnouncements from './views/supervisor/Announcements';
 import SupervisorAppointments from './views/supervisor/Appointments';
 import SupervisorHealthRecords from './views/supervisor/HealthRecords';
-import SupervisorAttendance from './views/supervisor/Attendance';
 import SupervisorActivities from './views/supervisor/Activities';
 import SupervisorReports from './views/supervisor/Reports';
 import SupervisorEvents from './views/supervisor/Events';
@@ -93,7 +92,7 @@ function App() {
             <Route path="announcements" element={<SupervisorAnnouncements />} />
             <Route path="appointments" element={<SupervisorAppointments />} />
             <Route path="health-records" element={<SupervisorHealthRecords />} />
-            <Route path="attendance" element={<SupervisorAttendance />} />
+            
             <Route path="activities" element={<SupervisorActivities />} />
             <Route path="reports" element={<SupervisorReports />} />
             <Route path="events" element={<SupervisorEvents />} />
@@ -103,7 +102,7 @@ function App() {
           {/* 404 catch-all route */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-        <Footer />
+        {/* <Footer /> */}
       </BrowserRouter>
     </AuthProvider>
   );
