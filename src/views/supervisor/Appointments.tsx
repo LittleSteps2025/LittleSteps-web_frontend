@@ -17,8 +17,8 @@ type Appointment = {
 const mockAppointments: Appointment[] = [
   {
     id: 'appointment-001',
-    parent: 'malith',
-    student: 'damsara',
+    parent: 'Amali Perera',
+    student: 'Pathum Nissanka',
     date: '2023-05-18',
     time: '10:00 AM',
     status: 'Confirmed',
@@ -26,16 +26,16 @@ const mockAppointments: Appointment[] = [
   },
   {
     id: 'appointment-002',
-    parent: 'farshad',
-    student: 'mohomad',
+    parent: 'Kavindu Dulmin',
+    student: 'Chamath gunarathna',
     date: '2023-05-19',
     time: '02:30 PM',
     status: 'Pending'
   },
   {
     id: 'appointment-003',
-    parent: 'chathumini',
-    student: 'silva',
+    parent: 'Tshadi Thashmika',
+    student: 'Kasun Mendis',
     date: '2023-05-20',
     time: '11:15 AM',
     status: 'Cancelled',

@@ -276,7 +276,7 @@ const UsersManagement = () => {
   return (
     <div className="space-y-6">
       <div className="flex flex-row justify-between">
-        <h1 className="text-2xl font-bold">Users Management</h1>
+        <h1 className="text-2xl font-bold">Supervisor and Teachers Details</h1>
 
         <div className=" p-6 rounded-xl shadow-sm ">
 

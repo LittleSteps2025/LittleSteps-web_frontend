@@ -1,4 +1,4 @@
-import { Download, FileText, BarChart2, Users, Calendar, DollarSign, ClipboardList, Shield } from 'lucide-react';
+import { Download, FileText, BarChart2, Users, DollarSign, ClipboardList, Shield } from 'lucide-react';
 import { useState } from 'react';
 
 const ReportsPage = () => {
@@ -195,7 +195,7 @@ const ReportsPage = () => {
                   ) : (
                     <>
                       <Download className="w-4 h-4 mr-2" />
-                      Generate Report
+                      Download Report
                     </>
                   )}
                 </button>

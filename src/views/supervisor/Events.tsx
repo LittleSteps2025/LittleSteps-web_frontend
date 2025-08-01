@@ -1,5 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useCallback } from 'react';
-import { Calendar, Search, Plus, X, Edit, Trash2, Clock } from 'lucide-react';
+import { Calendar, Search, Plus, X, Edit, Trash2 } from 'lucide-react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 
@@ -58,7 +59,7 @@ const Events = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
-  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [, setShowDatePicker] = useState(false);
 
   // Format date and time for display
   const formatDateTime = (dateString: string) => {
@@ -249,7 +250,7 @@ const Events = () => {
         date: formData.date,
         time: formData.time,
         image: formData.image ? formData.image : null,
-        user_id: isEditMode ? undefined : '1',
+        user_id: isEditMode ? undefined : '136',
       };
   
       let url = API_BASE_URL;
