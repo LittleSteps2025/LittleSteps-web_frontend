@@ -200,8 +200,36 @@ const createStudent = async (
     const errorData = await res
       .json()
       .catch(() => ({ message: "Failed to create student" }));
+
+    // Check if it's an email duplication error
+    if (res.status === 400 || res.status === 409) {
+      if (
+        errorData.message &&
+        errorData.message.toLowerCase().includes("email")
+      ) {
+        throw new Error(
+          "EMAIL_DUPLICATE: " + (errorData.message || "Email already exists")
+        );
+      }
+      if (errorData.error && errorData.error.toLowerCase().includes("email")) {
+        throw new Error(
+          "EMAIL_DUPLICATE: " + (errorData.error || "Email already exists")
+        );
+      }
+      if (
+        errorData.details &&
+        errorData.details.toLowerCase().includes("email")
+      ) {
+        throw new Error(
+          "EMAIL_DUPLICATE: " + (errorData.details || "Email already exists")
+        );
+      }
+    }
+
     throw new Error(
-      errorData.message || `Failed to create student: ${res.statusText}`
+      errorData.message ||
+        errorData.error ||
+        `Failed to create student: ${res.statusText}`
     );
   }
   const item = await res.json();
@@ -330,6 +358,8 @@ export default function Childrens() {
   const [currentChild, setCurrentChild] = useState<Student | null>(null);
   const [isCheckingNIC, setIsCheckingNIC] = useState(false);
   const [nicCheckMessage, setNicCheckMessage] = useState<string>("");
+  const [emailError, setEmailError] = useState<string>("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const loadStudents = async () => {
     try {
@@ -452,6 +482,11 @@ export default function Childrens() {
       setNicCheckMessage("");
     }
 
+    // Clear email error when email input changes
+    if (name === "parentEmail") {
+      setEmailError("");
+    }
+
     setForm((prev) => {
       const updatedForm = {
         ...prev,
@@ -469,6 +504,11 @@ export default function Childrens() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Clear previous errors
+    setEmailError("");
+    setIsSubmitting(true);
+
     try {
       if (editingId) {
         await updateStudent({ ...form, id: editingId });
@@ -492,11 +532,31 @@ export default function Childrens() {
       });
       setEditingId(null);
       setShowAddForm(false);
+      setEmailError("");
       await loadStudents();
     } catch (err: unknown) {
-      const errorMessage =
-        err instanceof Error ? err.message : "An unknown error occurred";
+      let errorMessage = "An unknown error occurred";
+
+      if (err instanceof Error) {
+        errorMessage = err.message;
+
+        // Handle email duplication error specifically
+        if (errorMessage.startsWith("EMAIL_DUPLICATE:")) {
+          const emailErrorMsg = errorMessage
+            .replace("EMAIL_DUPLICATE:", "")
+            .trim();
+          setEmailError(
+            emailErrorMsg ||
+              "This email is already registered. Please use a different email."
+          );
+          toast.error("Email already exists. Please use a different email.");
+          return; // Don't show the generic error toast
+        }
+      }
+
       toast.error(errorMessage);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -530,6 +590,9 @@ export default function Childrens() {
     });
     setEditingId(student.id);
     setShowAddForm(true);
+    // Clear error messages when editing
+    setEmailError("");
+    setNicCheckMessage("");
   };
 
   const handleDelete = (student: Student) => {
@@ -569,6 +632,7 @@ export default function Childrens() {
     });
     setEditingId(null);
     setNicCheckMessage("");
+    setEmailError("");
   };
 
   const closeModal = () => {
@@ -590,6 +654,7 @@ export default function Childrens() {
     });
     setEditingId(null);
     setNicCheckMessage("");
+    setEmailError("");
   };
 
   return (
@@ -872,14 +937,26 @@ export default function Childrens() {
                     name="parentEmail"
                     value={form.parentEmail}
                     onChange={handleChange}
-                    className={`block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
-                      editingId ? "bg-gray-50 cursor-not-allowed" : ""
+                    className={`block w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent ${
+                      editingId
+                        ? "bg-gray-50 cursor-not-allowed border-gray-300 focus:ring-indigo-500"
+                        : emailError
+                        ? "border-red-500 focus:ring-red-500"
+                        : "border-gray-300 focus:ring-indigo-500"
                     }`}
                     type="email"
                     required
                     disabled={!!editingId}
                     placeholder="Enter parent's email"
                   />
+                  {emailError && !editingId && (
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 rounded-full bg-red-100 flex items-center justify-center">
+                        <X className="w-3 h-3 text-red-600" />
+                      </div>
+                      <p className="text-xs text-red-600">{emailError}</p>
+                    </div>
+                  )}
                   {editingId && (
                     <p className="text-xs text-gray-500">
                       Parent email cannot be changed when editing
@@ -929,9 +1006,19 @@ export default function Childrens() {
               </button>
               <button
                 type="submit"
-                className="flex items-center px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                disabled={isSubmitting}
+                className={`flex items-center px-6 py-3 rounded-lg transition-colors ${
+                  isSubmitting
+                    ? "bg-gray-400 cursor-not-allowed text-white"
+                    : "bg-indigo-600 text-white hover:bg-indigo-700"
+                }`}
               >
-                {editingId ? (
+                {isSubmitting ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                    {editingId ? "Updating..." : "Creating..."}
+                  </>
+                ) : editingId ? (
                   <>
                     <Edit className="w-4 h-4 mr-2" />
                     Update Child
