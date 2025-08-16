@@ -37,6 +37,7 @@ import SupervisorAttendance from './views/supervisor/Attendance';
 import SupervisorActivities from './views/supervisor/Activities';
 import SupervisorReports from './views/supervisor/Reports';
 import SupervisorEvents from './views/supervisor/Events';
+import SupervisorProfile from './views/supervisor/Profile';
 
 
 function App() {
@@ -97,6 +98,7 @@ function App() {
             <Route path="activities" element={<SupervisorActivities />} />
             <Route path="reports" element={<SupervisorReports />} />
             <Route path="events" element={<SupervisorEvents />} />
+            <Route path="profile" element={<SupervisorProfile />} />
             
           </Route>
 

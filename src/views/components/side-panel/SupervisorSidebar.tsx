@@ -1,4 +1,5 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../../context/AuthContext';
 import logo from '../../../assets/logo.png';
 
 import {
@@ -9,6 +10,7 @@ import {
   FileText,
   CalendarDays,
   CreditCard,
+  LogOut,
   // ClipboardList
   // Heart,
   // Activity,
@@ -16,6 +18,13 @@ import {
 
 const SupervisorSidebar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+  
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
   
   const navItems = [
     { path: '/supervisor', icon: LayoutDashboard, label: 'Dashboard' },
@@ -55,7 +64,13 @@ const SupervisorSidebar = () => {
         ))}
       </nav>
       <div className="p-4 border-t border-[#7c73e6]">
-       
+        <button
+          onClick={handleLogout}
+          className="flex items-center p-3 rounded-lg transition-all w-full hover:bg-red-500/20 text-white hover:text-red-200 text-left"
+        >
+          <LogOut className="w-5 h-5 mr-3" />
+          <span>Logout</span>
+        </button>
       </div>
     </div>
   );
