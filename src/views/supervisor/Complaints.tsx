@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { 
-  Search, AlertCircle, User, Trash2, Filter, Plus, Eye, Edit, X
+  Search, AlertCircle, User, Trash2, Filter,Eye, X
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -118,21 +118,6 @@ const Complaints = () => {
     });
   };
 
-  // Open modal for adding new complaint
-  const openAddModal = () => {
-    setIsModalOpen(true);
-    setIsEditMode(false);
-    setCurrentComplaint(null);
-    setFormData({
-      date: new Date().toISOString().split('T')[0],
-      subject: '',
-      recipient: 'supervisor',
-      description: '',
-      status: 'Pending',
-      action: '',
-      child_id: 0
-    });
-  };
 
   // Open modal for editing complaint
   const openEditModal = (complaint: Complaint) => {
@@ -215,17 +200,6 @@ const Complaints = () => {
     }
   };
 
-  // // Update complaint status
-  // const updateStatus = async (complaintId: number, newStatus: string) => {
-  //   try {
-  //     const updatedComplaint = await complaintService.updateComplaintStatus(complaintId, newStatus);
-  //     setComplaints(complaints.map(c => c.complaint_id === complaintId ? updatedComplaint : c));
-  //     toast.success(`Complaint status updated to ${newStatus}!`);
-  //   } catch (error: any) {
-  //     console.error('Error updating complaint status:', error);
-  //     toast.error(error.response?.data?.message || 'Failed to update complaint status');
-  //   }
-  // };
 
   // Update complaint action
   const updateAction = async (complaintId: number, newAction: string) => {
@@ -297,19 +271,6 @@ const Complaints = () => {
               </select>
             </div>
 
-            {/* <div className="relative">
-              <Filter className="absolute left-3 top-3 text-gray-400 w-4 h-4" />
-              <select
-                value={recipientFilter}
-                onChange={(e) => setRecipientFilter(e.target.value)}
-                className="pl-10 pr-8 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none bg-white"
-              >
-                <option value="All Recipients">All Recipients</option>
-                <option value="supervisor">Supervisor</option>
-                <option value="teacher">Teacher</option>
-              </select>
-            </div> */}
-
             <button
               onClick={clearFilters}
               className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
@@ -353,7 +314,6 @@ const Complaints = () => {
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Complaint Details</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Child & Parent</th>
-                  {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recipient</th> */}
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
@@ -387,15 +347,6 @@ const Complaints = () => {
                       </div>
                     </td>
 
-                    {/* <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 text-xs rounded-full ${
-                        complaint.recipient === 'supervisor' 
-                          ? 'bg-purple-100 text-purple-800' 
-                          : 'bg-blue-100 text-blue-800'
-                      }`}>
-                        {complaint.recipient.charAt(0).toUpperCase() + complaint.recipient.slice(1)}
-                      </span>
-                    </td> */}
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 py-1 text-xs rounded-full ${complaint.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
                           complaint.status === 'In Progress' ? 'bg-blue-100 text-blue-800' :
@@ -414,16 +365,6 @@ const Complaints = () => {
                         <Eye className="w-4 h-4 mr-1" />
                         View
                       </button>
-
-                      {/* <button
-                        onClick={() => openEditModal(complaint)}
-                        className="text-indigo-600 hover:text-indigo-900 flex items-center"
-                        title="Edit Complaint"
-                      >
-                        <Edit className="w-4 h-4 mr-1" />
-                        Edit
-                      </button>
-                       */}
                       <button
                         onClick={() => openDeleteModal(complaint)}
                         className="text-gray-600 hover:text-gray-900 flex items-center"
@@ -465,59 +406,8 @@ const Complaints = () => {
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Date *</label>
-                    <input
-                      type="date"
-                      name="date"
-                      value={formData.date}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      required
-                    />
-                  </div> */}
-
-                  {/* <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Recipient *</label>
-                    <select
-                      name="recipient"
-                      value={formData.recipient}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      required
-                    >
-                      <option value="supervisor">Supervisor</option>
-                      <option value="teacher">Teacher</option>
-                    </select>
-                  </div> */}
-                </div>
-
-                {/* <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Subject *</label>
-                  <input
-                    type="text"
-                    name="subject"
-                    value={formData.subject}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    required
-                    placeholder="Enter complaint subject"
-                  />
-                </div> */}
-
-                {/* <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Description *</label>
-                  <textarea
-                    name="description"
-                    value={formData.description}
-                    onChange={handleInputChange}
-                    rows={4}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    required
-                    placeholder="Enter detailed description of the complaint"
-                  />
-                </div> */}
+              
+            
 
                 {!isEditMode && (
                   <div>

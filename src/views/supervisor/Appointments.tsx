@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Calendar, Search, Plus, User, Check, X, Trash2, Eye, Clock, Phone, MapPin, Filter } from 'lucide-react';
+import { Calendar, Search, User, Check, X, Trash2, Eye, Phone,  Filter } from 'lucide-react';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import meetingService from '../../services/meetingService';
@@ -112,20 +112,7 @@ const Appointments = () => {
     });
   };
 
-  // Open modal for editing meeting (supervisor can only edit date, time, and reason)
-  const openEditModal = (meeting: Meeting) => {
-    setIsModalOpen(true);
-    setIsEditMode(true);
-    setCurrentMeeting(meeting);
-    setFormData({
-      child_id: meeting.child_id,
-      recipient: meeting.recipient,
-      meeting_date: meeting.meeting_date,
-      meeting_time: meeting.meeting_time,
-      reason: meeting.reason,
-      response: meeting.response || ''
-    });
-  };
+  
 
   // Open modal for rescheduling meeting (supervisor can only edit date and time)
   const openRescheduleModal = (meeting: Meeting) => {
