@@ -372,7 +372,7 @@ const Appointments = () => {
                         {meeting.response ? meeting.response : 'Pending'}
                       </span>
                     </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                       <button
                         onClick={() => openViewModal(meeting)}
                         className="text-blue-600 hover:text-blue-900 flex items-center"
@@ -405,14 +405,14 @@ const Appointments = () => {
                       )}
                       
                       {/* Reschedule button for all meetings */}
-                      <button
+                        <button
                         onClick={() => openRescheduleModal(meeting)}
-                        className="text-indigo-600 hover:text-indigo-900 flex items-center"
+                          className="text-indigo-600 hover:text-indigo-900 flex items-center"
                         title="Reschedule Date & Time Only"
-                      >
-                        <Calendar className="w-4 h-4 mr-1" />
-                        Reschedule
-                      </button>
+                        >
+                          <Calendar className="w-4 h-4 mr-1" />
+                          Reschedule
+                        </button>
                       
                       <button
                         onClick={() => openDeleteModal(meeting)}
@@ -576,15 +576,15 @@ const Appointments = () => {
               <form onSubmit={handleSubmit} className="space-y-4">
                 {!isEditMode && (
                   <>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Child *</label>
                         <select
                           name="child_id"
                           value={formData.child_id}
-                          onChange={handleInputChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                          required
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      required
                         >
                           <option value={0}>Select a child</option>
                           {mockChildren.map(child => (
@@ -593,59 +593,59 @@ const Appointments = () => {
                             </option>
                           ))}
                         </select>
-                      </div>
+                  </div>
 
-                      <div>
+                  <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Recipient *</label>
                         <select
                           name="recipient"
                           value={formData.recipient}
-                          onChange={handleInputChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                          required
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      required
                         >
                           <option value="supervisor">Supervisor</option>
                           <option value="teacher">Teacher</option>
                         </select>
                       </div>
-                    </div>
+                  </div>
                   </>
                 )}
 
                 {/* Editable fields for both new and edit modes */}
                 {!isEditMode && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
+                  <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Date *</label>
-                      <input
-                        type="date"
+                    <input
+                      type="date"
                         name="meeting_date"
                         value={formData.meeting_date}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        required
-                        placeholder="Select date"
-                        title="Select appointment date"
-                      />
-                    </div>
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      required
+                      placeholder="Select date"
+                      title="Select appointment date"
+                    />
+                  </div>
 
-                    <div>
+                  <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Time *</label>
-                      <input
-                        type="time"
+                    <input
+                      type="time"
                         name="meeting_time"
                         value={formData.meeting_time}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        required
-                        placeholder="Select time"
-                        title="Select appointment time"
-                      />
-                    </div>
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      required
+                      placeholder="Select time"
+                      title="Select appointment time"
+                    />
+                  </div>
                   </div>
                 )}
 
-                {isEditMode && (
+                  {isEditMode && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Current Date</label>
@@ -665,8 +665,8 @@ const Appointments = () => {
                         readOnly
                       />
                     </div>
-                  </div>
-                )}
+                    </div>
+                  )}
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Reason *</label>
