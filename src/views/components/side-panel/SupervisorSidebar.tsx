@@ -38,7 +38,8 @@ const SupervisorSidebar = () => {
     // { path: '/supervisor/health-records', icon: Heart, label: 'Health Records' },
     // { path: '/supervisor/attendance', icon: ClipboardList, label: 'Attendance' },
         // { path: '/supervisor/activities', icon: Activity, label: 'Activities' },
-    { path: '/supervisor/reports', icon: FileText, label: 'Reports' }
+    { path: '/supervisor/reports', icon: FileText, label: 'Reports' },
+    { path: '/supervisor/complaints', icon: FileText, label: 'Complaints' }
     
   ];
 

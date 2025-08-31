@@ -11,6 +11,7 @@ const SupervisorDashboard = () => {
     upcomingEvents: 5,
     healthChecks: 12,
     activeTeachers: 15,
+    activeSupervisors: 3,
     todayCheckIns: 110,
     pendingComplaints: 2,
     monthlyRevenue: 5000,
