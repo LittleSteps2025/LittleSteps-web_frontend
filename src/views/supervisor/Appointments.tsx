@@ -46,7 +46,7 @@ const Appointments = () => {
     cancelled: meetings.filter(m => m.response && m.response.toLowerCase().includes('cancelled')).length
   };
 
-  // Fetch meetings from database
+  // Fetch meetings from database (only supervisor meetings)
   useEffect(() => {
     fetchMeetings();
   }, []);
@@ -67,19 +67,19 @@ const Appointments = () => {
   const fetchMeetings = async () => {
     setIsLoading(true);
     try {
-      // For supervisor, get meetings where recipient is 'supervisor'
+      // Get only supervisor meetings
       const data = await meetingService.getMeetingsByRecipient('supervisor');
       setMeetings(data);
     } catch (error) {
-      console.error('Error fetching meetings:', error);
-      toast.error('Failed to load meetings');
+      console.error('Error fetching supervisor meetings:', error);
+      toast.error('Failed to load supervisor meetings');
     } finally {
       setIsLoading(false);
       setIsSearching(false);
     }
   };
 
-  // Search meetings
+  // Search meetings (only supervisor meetings)
   const handleSearch = async () => {
     if (!searchTerm.trim() && statusFilter === 'All Status') {
       fetchMeetings();
@@ -92,10 +92,11 @@ const Appointments = () => {
       if (searchTerm.trim()) searchParams.searchTerm = searchTerm;
       if (statusFilter !== 'All Status') searchParams.response = statusFilter;
       
+      // Search only supervisor meetings
       const data = await meetingService.searchMeetings(searchParams);
       setMeetings(data);
     } catch (error) {
-      console.error('Error searching meetings:', error);
+      console.error('Error searching supervisor meetings:', error);
       toast.error('Search failed');
     } finally {
       setIsLoading(false);
@@ -110,8 +111,6 @@ const Appointments = () => {
       [name]: value
     });
   };
-
- 
 
   // Open modal for editing meeting (supervisor can only edit date, time, and reason)
   const openEditModal = (meeting: Meeting) => {
@@ -175,11 +174,12 @@ const Appointments = () => {
         };
         result = await meetingService.updateMeeting(currentMeeting.meeting_id, updateData);
         setMeetings(meetings.map(m => m.meeting_id === result.meeting_id ? result : m));
-        toast.success('Meeting updated successfully!');
+        toast.success('Supervisor meeting updated successfully!');
       } else {
+        // Only create supervisor meetings
         result = await meetingService.createMeeting(formData);
         setMeetings([result, ...meetings]);
-        toast.success('Meeting scheduled successfully!');
+        toast.success('Supervisor meeting scheduled successfully!');
       }
       closeModal();
     } catch (error: any) {
@@ -194,7 +194,7 @@ const Appointments = () => {
     try {
       await meetingService.deleteMeeting(currentMeeting.meeting_id);
       setMeetings(meetings.filter(m => m.meeting_id !== currentMeeting.meeting_id));
-      toast.success('Meeting deleted successfully!');
+      toast.success('Supervisor meeting deleted successfully!');
       closeModal();
     } catch (error: any) {
       console.error('Error deleting meeting:', error);
@@ -230,7 +230,7 @@ const Appointments = () => {
       
       const result = await meetingService.updateMeeting(currentMeeting.meeting_id, updateData);
       setMeetings(meetings.map(m => m.meeting_id === result.meeting_id ? result : m));
-      toast.success('Meeting rescheduled successfully!');
+      toast.success('Supervisor meeting rescheduled successfully!');
       closeModal();
     } catch (error: any) {
       console.error('Error rescheduling meeting:', error);
@@ -259,10 +259,9 @@ const Appointments = () => {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-800 flex items-center">
           <span className="bg-gradient-to-r from-[#4f46e5] to-[#7c73e6] bg-clip-text text-transparent">
-            Appointments
+            Supervisor Appointments
           </span>
         </h1>
-        
       </div>
 
       {/* Search and Filters */}
@@ -272,7 +271,7 @@ const Appointments = () => {
             <Search className="absolute left-3 top-3 text-gray-400" />
             <input
               type="text"
-              placeholder="Search appointments by child name, parent name, or reason..."
+              placeholder="Search supervisor appointments by child name, parent name, or reason..."
               className="pl-10 pr-4 py-2 w-full border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -405,14 +404,14 @@ const Appointments = () => {
                       )}
                       
                       {/* Reschedule button for all meetings */}
-                        <button
+                      <button
                         onClick={() => openRescheduleModal(meeting)}
-                          className="text-indigo-600 hover:text-indigo-900 flex items-center"
+                        className="text-indigo-600 hover:text-indigo-900 flex items-center"
                         title="Reschedule Date & Time Only"
-                        >
-                          <Calendar className="w-4 h-4 mr-1" />
-                          Reschedule
-                        </button>
+                      >
+                        <Calendar className="w-4 h-4 mr-1" />
+                        Reschedule
+                      </button>
                       
                       <button
                         onClick={() => openDeleteModal(meeting)}
@@ -430,9 +429,8 @@ const Appointments = () => {
         ) : (
           <div className="text-center py-10">
             <p className="text-gray-500">
-              {isSearching ? 'No matching appointments found' : 'No appointments found'}
+              {isSearching ? 'No matching supervisor appointments found' : 'No supervisor appointments found'}
             </p>
-            
           </div>
         )}
       </div>
@@ -443,7 +441,7 @@ const Appointments = () => {
           <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold text-gray-800">Appointment Details</h2>
+                <h2 className="text-xl font-bold text-gray-800">Supervisor Appointment Details</h2>
                 <button 
                   onClick={closeModal}
                   className="text-gray-400 hover:text-gray-500"
@@ -542,7 +540,6 @@ const Appointments = () => {
               </div>
 
               <div className="flex justify-end space-x-3 pt-6">
-               
                 <button
                   onClick={closeModal}
                   className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
@@ -562,7 +559,7 @@ const Appointments = () => {
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold text-gray-800">
-                  {isEditMode ? 'Edit Appointment (Reason Only)' : 'Schedule New Appointment'}
+                  {isEditMode ? 'Edit Supervisor Appointment (Reason Only)' : 'Schedule New Supervisor Appointment'}
                 </h2>
                 <button 
                   onClick={closeModal}
@@ -576,15 +573,15 @@ const Appointments = () => {
               <form onSubmit={handleSubmit} className="space-y-4">
                 {!isEditMode && (
                   <>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Child *</label>
                         <select
                           name="child_id"
                           value={formData.child_id}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      required
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          required
                         >
                           <option value={0}>Select a child</option>
                           {mockChildren.map(child => (
@@ -593,59 +590,58 @@ const Appointments = () => {
                             </option>
                           ))}
                         </select>
-                  </div>
+                      </div>
 
-                  <div>
+                      <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Recipient *</label>
                         <select
                           name="recipient"
                           value={formData.recipient}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      required
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          required
                         >
                           <option value="supervisor">Supervisor</option>
-                          <option value="teacher">Teacher</option>
                         </select>
                       </div>
-                  </div>
+                    </div>
                   </>
                 )}
 
                 {/* Editable fields for both new and edit modes */}
                 {!isEditMode && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
+                    <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Date *</label>
-                    <input
-                      type="date"
+                      <input
+                        type="date"
                         name="meeting_date"
                         value={formData.meeting_date}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      required
-                      placeholder="Select date"
-                      title="Select appointment date"
-                    />
-                  </div>
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        required
+                        placeholder="Select date"
+                        title="Select appointment date"
+                      />
+                    </div>
 
-                  <div>
+                    <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Time *</label>
-                    <input
-                      type="time"
+                      <input
+                        type="time"
                         name="meeting_time"
                         value={formData.meeting_time}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      required
-                      placeholder="Select time"
-                      title="Select appointment time"
-                    />
-                  </div>
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        required
+                        placeholder="Select time"
+                        title="Select appointment time"
+                      />
+                    </div>
                   </div>
                 )}
 
-                  {isEditMode && (
+                {isEditMode && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Current Date</label>
@@ -665,8 +661,8 @@ const Appointments = () => {
                         readOnly
                       />
                     </div>
-                    </div>
-                  )}
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Reason *</label>
@@ -724,7 +720,7 @@ const Appointments = () => {
           <div className="bg-white rounded-xl shadow-lg w-full max-w-md">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold text-gray-800">Reschedule Meeting</h2>
+                <h2 className="text-xl font-bold text-gray-800">Reschedule Supervisor Meeting</h2>
                 <button 
                   onClick={closeModal}
                   className="text-gray-400 hover:text-gray-500"
@@ -812,7 +808,7 @@ const Appointments = () => {
               </div>
 
               <p className="mb-6 text-gray-600">
-                Are you sure you want to delete the appointment with <span className="font-semibold">{currentMeeting?.parent_name}</span>? This action cannot be undone.
+                Are you sure you want to delete the supervisor appointment with <span className="font-semibold">{currentMeeting?.parent_name}</span>? This action cannot be undone.
               </p>
 
               <div className="flex justify-end space-x-3">
