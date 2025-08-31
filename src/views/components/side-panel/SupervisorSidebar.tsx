@@ -31,15 +31,16 @@ const SupervisorSidebar = () => {
     { path: '/supervisor/parents', icon: Users, label: 'Parents' },
     { path: '/supervisor/childrens', icon: Users, label: 'Childrens' },
     { path: '/supervisor/teachers', icon: Users, label: 'Teachers' },
-    { path: '/supervisor/payments', icon: CreditCard, label: 'Payments' },
+    { path: '/supervisor/complaints', icon: FileText, label: 'Complaints' },
     { path: '/supervisor/announcements', icon: Bell, label: 'Announcements' },
     { path: '/supervisor/events', icon: CalendarDays, label: 'Events' },
     { path: '/supervisor/appointments', icon: Calendar, label: 'Appointments' },
-    // { path: '/supervisor/health-records', icon: Heart, label: 'Health Records' },
+    { path: '/supervisor/reports', icon: FileText, label: 'Reports' },
+    { path: '/supervisor/payments', icon: CreditCard, label: 'Payments' },
+        // { path: '/supervisor/health-records', icon: Heart, label: 'Health Records' },
     // { path: '/supervisor/attendance', icon: ClipboardList, label: 'Attendance' },
         // { path: '/supervisor/activities', icon: Activity, label: 'Activities' },
-    { path: '/supervisor/reports', icon: FileText, label: 'Reports' },
-    { path: '/supervisor/complaints', icon: FileText, label: 'Complaints' }
+   
     
   ];
 
