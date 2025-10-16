@@ -21,7 +21,7 @@ type ComplaintType = {
   description: string;
   status: 'pending' | 'investigating' | 'resolved' | 'dismissed';
   resolution?: string;
-  priority: 'low' | 'medium' | 'high';
+  // priority: 'low' | 'medium' | 'high';
   lastUpdated: string;
 };
 
@@ -31,19 +31,19 @@ const complaints: ComplaintType[] = [
     date: '2023-06-10',
     complainant: {
       id: 'p1',
-      name: 'Sarah Johnson',
+      name: 'Amali Perera',
       type: 'parent',
-      email: 'sarah@example.com'
+      email: 'amali@gmail.com'
     },
     complainedAbout: {
       id: 'c1',
-      name: 'Emma Johnson',
+      name: 'Pathum Nissanka',
       type: 'child'
     },
     category: 'behavior',
     description: 'My child came home with bite marks from another child in the Sunflower class. This is the second time this has happened.',
     status: 'investigating',
-    priority: 'high',
+    // priority: 'high',
     lastUpdated: '2023-06-12'
   },
   {
@@ -51,9 +51,9 @@ const complaints: ComplaintType[] = [
     date: '2023-06-05',
     complainant: {
       id: 't1',
-      name: 'Michael Smith',
+      name: 'Ishadi Thashmika',
       type: 'teacher',
-      email: 'michael@example.com'
+      email: 'ishadi@gmail.com'
     },
     complainedAbout: {
       id: 'f1',
@@ -64,7 +64,7 @@ const complaints: ComplaintType[] = [
     description: 'The swing set in the outdoor play area has loose bolts that need immediate attention.',
     status: 'resolved',
     resolution: 'Maintenance team repaired the swing set on 2023-06-07',
-    priority: 'medium',
+    // priority: 'medium',
     lastUpdated: '2023-06-07'
   },
   {
@@ -72,66 +72,25 @@ const complaints: ComplaintType[] = [
     date: '2023-06-01',
     complainant: {
       id: 's1',
-      name: 'Jessica Brown',
+      name: 'Sakuna Sanka',
       type: 'supervisor',
-      email: 'jessica@example.com'
+      email: 'lakshan2725@gmail.com'
     },
     complainedAbout: {
       id: 't2',
-      name: 'David Wilson',
+      name: 'Nimna Pathum',
       type: 'teacher'
     },
     category: 'communication',
     description: 'Teacher consistently fails to complete daily reports for children in the Butterfly class.',
     status: 'pending',
-    priority: 'medium',
+    // priority: 'medium',
     lastUpdated: '2023-06-01'
-  },
-  {
-    id: '4',
-    date: '2023-05-28',
-    complainant: {
-      id: 'p2',
-      name: 'Robert Chen',
-      type: 'parent',
-      email: 'robert@example.com'
-    },
-    complainedAbout: {
-      id: 's2',
-      name: 'Cafeteria staff',
-      type: 'staff'
-    },
-    category: 'hygiene',
-    description: 'Noticed food handlers not wearing gloves during lunch preparation on multiple occasions.',
-    status: 'resolved',
-    resolution: 'Retraining conducted for all food service staff on 2023-05-30',
-    priority: 'high',
-    lastUpdated: '2023-05-30'
-  },
-  {
-    id: '5',
-    date: '2023-05-25',
-    complainant: {
-      id: 'p3',
-      name: 'Lisa Wong',
-      type: 'parent',
-      email: 'lisa@example.com'
-    },
-    complainedAbout: {
-      id: 'c2',
-      name: 'Liam Smith',
-      type: 'child'
-    },
-    category: 'behavior',
-    description: 'Another child has been consistently taking toys from my child during free play time.',
-    status: 'dismissed',
-    resolution: 'Behavior addressed through classroom management techniques',
-    priority: 'low',
-    lastUpdated: '2023-05-27'
   }
 ];
 
-const sortKeys = ['date', 'status', 'priority', 'complainant.name', 'lastUpdated'] as const;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const sortKeys = ['date', 'status', 'complainant.name', 'lastUpdated'] as const;
 type SortKey = typeof sortKeys[number];
 
 const ComplaintsManagement = () => {
@@ -158,22 +117,22 @@ const ComplaintsManagement = () => {
     )
     .sort((a, b) => {
       const key = sortConfig.key;
-      let aValue: any, bValue: any;
+      let aValue: unknown, bValue: unknown;
 
       if (key.includes('.')) {
         // Handle nested properties
         const keys = key.split('.');
-        aValue = keys.reduce((obj: any, k: string) => obj?.[k], a);
-        bValue = keys.reduce((obj: any, k: string) => obj?.[k], b);
+        aValue = keys.reduce((obj: unknown, k: string) => (obj as Record<string, unknown>)?.[k], a);
+        bValue = keys.reduce((obj: unknown, k: string) => (obj as Record<string, unknown>)?.[k], b);
       } else {
-        aValue = (a as any)[key];
-        bValue = (b as any)[key];
+        aValue = (a as ComplaintType)[key as keyof ComplaintType];
+        bValue = (b as ComplaintType)[key as keyof ComplaintType];
       }
 
-      if (aValue < bValue) {
+      if (String(aValue) < String(bValue)) {
         return sortConfig.direction === 'asc' ? -1 : 1;
       }
-      if (aValue > bValue) {
+      if (String(aValue) > String(bValue)) {
         return sortConfig.direction === 'asc' ? 1 : -1;
       }
       return 0;
@@ -265,18 +224,7 @@ const ComplaintsManagement = () => {
     );
   };
 
-  const getPriorityBadge = (priority: ComplaintType['priority']) => {
-    const priorityClasses: Record<ComplaintType['priority'], string> = {
-      low: 'bg-green-100 text-green-800',
-      medium: 'bg-amber-100 text-amber-800',
-      high: 'bg-red-100 text-red-800',
-    };
-    return (
-      <span className={`px-2 py-1 text-xs rounded-full ${priorityClasses[priority]}`}>
-        {priority}
-      </span>
-    );
-  };
+
 
   const openDeleteModal = (complaint: ComplaintType) => {
     setCurrentComplaint(complaint);
@@ -310,7 +258,7 @@ const ComplaintsManagement = () => {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-2xl font-bold text-gray-800">Complaints Management</h1>
+        <h1 className="text-2xl font-bold text-gray-800">Complaints </h1>
         <div className="flex space-x-3 w-full sm:w-auto">
           <button 
             onClick={() => setShowExportModal(true)} 
@@ -471,9 +419,7 @@ const ComplaintsManagement = () => {
                     )}
                   </div>
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Priority
-                </th>
+
                 <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
@@ -521,9 +467,7 @@ const ComplaintsManagement = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       {getStatusBadge(complaint.status)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {getPriorityBadge(complaint.priority)}
-                    </td>
+
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">
                         <button
@@ -624,7 +568,7 @@ const ComplaintsManagement = () => {
                 </div>
               )}
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <h4 className="text-sm font-medium text-gray-700">Status</h4>
                   <div className="mt-1">
@@ -632,12 +576,7 @@ const ComplaintsManagement = () => {
                   </div>
                 </div>
                 
-                <div>
-                  <h4 className="text-sm font-medium text-gray-700">Priority</h4>
-                  <div className="mt-1">
-                    {getPriorityBadge(currentComplaint.priority)}
-                  </div>
-                </div>
+
                 
                 <div>
                   <h4 className="text-sm font-medium text-gray-700">Last Updated</h4>
@@ -663,7 +602,7 @@ const ComplaintsManagement = () => {
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && currentComplaint && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-lg max-w-md w-full">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
@@ -713,7 +652,7 @@ const ComplaintsManagement = () => {
 
       {/* Resolve Complaint Modal */}
       {showResolveModal && currentComplaint && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
@@ -769,21 +708,7 @@ const ComplaintsManagement = () => {
                       <option value="dismissed">Dismissed</option>
                     </select>
                   </div>
-                  <div className="flex-1">
-                    <label htmlFor="priority" className="block text-sm font-medium text-gray-700 mb-1">
-                      Priority
-                    </label>
-                    <select
-                      id="priority"
-                      name="priority"
-                      defaultValue={currentComplaint.priority}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6339C0] focus:border-transparent"
-                    >
-                      <option value="low">Low</option>
-                      <option value="medium">Medium</option>
-                      <option value="high">High</option>
-                    </select>
-                  </div>
+
                 </div>
               </div>
               
@@ -810,7 +735,7 @@ const ComplaintsManagement = () => {
 
       {/* Export Modal */}
       {showExportModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-lg max-w-md w-full">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">

@@ -1,10 +1,12 @@
-import { CreditCard, Search, DollarSign, FileText, CheckCircle, Clock } from 'lucide-react';
+import { CreditCard, Search, DollarSign, CheckCircle, Clock } from 'lucide-react';
 
 const Payments = () => {
   const payments = [
-    { id: 1, parent: 'malith', amount: 250, date: '2023-05-15', status: 'Paid', invoice: '001' },
-    { id: 2, parent: 'farshad', amount: 250, date: '2023-05-10', status: 'Paid', invoice: '002' },
-    { id: 3, parent: 'chathumini', amount: 250, date: '2023-05-05', status: 'Pending', invoice: '003' }
+    { id: 1, parent: 'Amali Perera', amount: 12000, date: '2023-05-15', status: 'Paid', invoice: '001' },
+    { id: 2, parent: 'Kavindu Dulmin', amount: 8000, date: '2023-05-10', status: 'Paid', invoice: '002' },
+    { id: 3, parent: 'Saman Kumara', amount: 2500, date: '2023-05-05', status: 'Pending', invoice: '003' },
+    { id: 4, parent: 'Pramodi Peshila', amount: 2500, date: '2023-04-30', status: 'Paid', invoice: '004' },
+    { id: 5, parent: 'Ishadi Thashmika', amount: 2500, date: '2023-04-25', status: 'Pending', invoice: '005' }
   ];
 
   return (
@@ -28,21 +30,21 @@ const Payments = () => {
               <DollarSign className="text-indigo-600 mr-2" />
               <h3 className="font-medium">Total Revenue</h3>
             </div>
-            <p className="text-2xl font-bold mt-2">LKR 100,000.00</p>
+            <p className="text-2xl font-bold mt-2">LKR 27,500.00</p>
           </div>
           <div className="bg-green-50 p-4 rounded-lg">
             <div className="flex items-center">
               <CheckCircle className="text-green-600 mr-2" />
               <h3 className="font-medium">Paid</h3>
             </div>
-            <p className="text-2xl font-bold mt-2">LKR 75,000.00</p>
+            <p className="text-2xl font-bold mt-2">LKR 22,500.00</p>
           </div>
           <div className="bg-yellow-50 p-4 rounded-lg">
             <div className="flex items-center">
               <Clock className="text-yellow-600 mr-2" />
               <h3 className="font-medium">Pending</h3>
             </div>
-            <p className="text-2xl font-bold mt-2">LKR 25,000</p>
+            <p className="text-2xl font-bold mt-2">LKR 5,000</p>
           </div>
         </div>
 

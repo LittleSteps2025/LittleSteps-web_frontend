@@ -11,7 +11,8 @@ import {
   Settings,
   PieChart,
   Calendar,
-  LogOut
+  BookOpen,
+  LifeBuoy
 } from 'lucide-react';
 
 const AdminSidebar = () => {
@@ -26,11 +27,11 @@ const AdminSidebar = () => {
   
   const navItems = [
     { path: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
-    { path: '/admin/users', icon: Users, label: 'User Management' },
-    { path: '/admin/children', icon: Baby, label: 'Child Management' },
+    { path: '/admin/users', icon: Users, label: 'Supervisor and Teachers' },
+    { path: '/admin/children', icon: Baby, label: 'Child Details' },
     { path: '/admin/subscriptions', icon: CreditCard, label: 'Subscriptions' },
     { path: '/admin/complaints', icon: AlertCircle, label: 'Complaints' },
-    { path: '/admin/attendance', icon: Calendar, label: 'Attendance' },
+    // { path: '/admin/attendance', icon: Calendar, label: 'Attendance' },
     { path: '/admin/announcements', icon: Bell, label: 'Announcements' },
     { path: '/admin/reports', icon: PieChart, label: 'Reports' },
     { path: '/admin/settings', icon: Settings, label: 'Settings' }

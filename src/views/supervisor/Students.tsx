@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Baby, Search, Plus, X, ChevronDown, Calendar, Edit, Trash2 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -145,19 +145,6 @@ const Students = () => {
     fetchStudents();
   }, []);
 
-  // Search effect with debounce
-  useEffect(() => {
-    const timerId = setTimeout(() => {
-      if (searchTerm.trim() || isSearching) {
-        handleSearch();
-      }
-    }, 500);
-
-    return () => {
-      clearTimeout(timerId);
-    };
-  }, [searchTerm]);
-
   const fetchStudents = async () => {
     setIsLoading(true);
     try {
@@ -172,7 +159,7 @@ const Students = () => {
   };
 
   // Search students
-  const handleSearch = async () => {
+  const handleSearch = useCallback(async () => {
     if (!searchTerm.trim()) {
       fetchStudents();
       return;
@@ -187,7 +174,20 @@ const Students = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [searchTerm]);
+
+  // Search effect with debounce
+  useEffect(() => {
+    const timerId = setTimeout(() => {
+      if (searchTerm.trim() || isSearching) {
+        handleSearch();
+      }
+    }, 500);
+
+    return () => {
+      clearTimeout(timerId);
+    };
+  }, [searchTerm, isSearching, handleSearch]);
 
   // Handle input changes for form
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -253,7 +253,7 @@ const Students = () => {
     e.preventDefault();
     
     try {
-      let result;
+      let result: Student;
       if (isEditMode) {
         result = await updateMockStudent(formData);
         setStudents(students.map(student => student.id === formData.id ? result : student));

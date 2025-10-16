@@ -1,5 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useCallback } from 'react';
-import { Calendar, Search, Plus, X, Edit, Trash2, Clock } from 'lucide-react';
+import { Calendar, Search, Plus, X, Edit, Trash2 } from 'lucide-react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 
@@ -36,7 +37,7 @@ const Toast = ({ message, type, onClose }: { message: string; type: 'success' | 
   );
 };
 
-const API_BASE_URL = 'http://localhost:5001/api/events';
+const API_BASE_URL = 'http://localhost:5001/api/supervisor/events';
 
 const Events = () => {
   const [events, setEvents] = useState<Event[]>([]);
@@ -58,7 +59,7 @@ const Events = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
-  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [, setShowDatePicker] = useState(false);
 
   // Format date and time for display
   const formatDateTime = (dateString: string) => {
@@ -249,7 +250,7 @@ const Events = () => {
         date: formData.date,
         time: formData.time,
         image: formData.image ? formData.image : null,
-        user_id: isEditMode ? undefined : '1',
+        user_id: isEditMode ? undefined : '136',
       };
   
       let url = API_BASE_URL;
@@ -568,7 +569,7 @@ const Events = () => {
 
       {/* Add/Edit Event Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
@@ -725,7 +726,7 @@ const Events = () => {
 
       {/* Delete Confirmation Modal */}
       {isDeleteModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-bold text-gray-800">Delete Event</h2>

@@ -1,1012 +1,1155 @@
-import { useState } from 'react';
-import {
-  Search, Plus, Edit, Trash2, Filter, Download, ChevronDown, ChevronUp, Baby, Calendar, School, X, FileText, CheckCircle
-} from 'lucide-react';
-import UserModals, { type UserType } from './UserModals';
+import { useState, useEffect } from "react";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { User, Edit, Trash2, Plus, Search, X } from "lucide-react";
 
-type ChildType = {
+interface Student {
   id: string;
   name: string;
-  birthDate: string;
-  age: string;
-  parentName: string;
-  parentContact: string;
+  age: number;
   classroom: string;
-  allergies: string[];
-  status: 'active' | 'inactive' | 'waitlist';
-  enrollmentDate: string;
-  lastCheckIn?: string;
+  dob: string;
+  gender: string;
+  parentName: string;
+  parentNIC: string;
+  parentEmail: string;
+  parentAddress: string;
+  parentContact: string;
+  profileImage?: string;
+  packageName?: string;
+}
+
+interface ApiStudent {
+  child_id: string;
+  name: string;
+  age: number;
+  group_name: string;
+  dob: string;
+  gender: string;
+  parent_name: string;
+  nic?: string;
+  parent_email: string;
+  parent_address: string;
+  parent_phone: string;
+  image?: string;
+  package_name?: string;
+}
+
+interface ClassGroup {
+  group_name: string;
+}
+
+const API_URL = "http://localhost:5001/api/supervisors/child/";
+const GROUPS_API_URL = "http://localhost:5001/api/supervisors/child/groups"; // Correct groups endpoint
+const PACKAGES_API_URL = "http://localhost:5001/api/supervisors/child/packages"; // Placeholder for future packages API
+const CHECK_NIC_API_URL =
+  "http://localhost:5001/api/supervisors/child/check-nic"; // Placeholder for NIC check API
+// Utility function to calculate age from date of birth
+const calculateAge = (dob: string): number => {
+  if (!dob) return 0;
+
+  const birthDate = new Date(dob);
+  const today = new Date();
+
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+
+  if (
+    monthDiff < 0 ||
+    (monthDiff === 0 && today.getDate() < birthDate.getDate())
+  ) {
+    age--;
+  }
+
+  return Math.max(0, age); // Ensure age is never negative
+};
+// Fetch groups from API
+const fetchGroups = async (): Promise<ClassGroup[]> => {
+  try {
+    const res = await fetch(GROUPS_API_URL);
+    if (!res.ok) {
+      // Fallback to extracting from students if API doesn't exist
+      console.warn("Groups API not available, will extract from students data");
+      return [];
+    }
+    const data = await res.json();
+    console.log("Groups fetched from API:", data);
+
+    // Transform API response to match ClassGroup interface
+    return data.map((item: { name: string }, index: number) => ({
+      group_id: index + 1,
+      group_name: item.name,
+    }));
+  } catch (error) {
+    console.error("Error fetching groups:", error);
+    return [];
+  }
 };
 
-const children: ChildType[] = [
-  { 
-    id: '1', 
-    name: 'Emma Johnson', 
-    birthDate: '2020-05-15', 
-    age: '3 years', 
-    parentName: 'Sarah Johnson', 
-    parentContact: 'sarah@example.com', 
-    classroom: 'Sunflowers', 
-    allergies: ['Peanuts'], 
-    status: 'active', 
-    enrollmentDate: '2023-01-10',
-    lastCheckIn: '2023-06-15 08:30'
-  },
-  { 
-    id: '2', 
-    name: 'Liam Smith', 
-    birthDate: '2019-11-03', 
-    age: '4 years', 
-    parentName: 'Michael Smith', 
-    parentContact: 'michael@example.com', 
-    classroom: 'Butterflies', 
-    allergies: [], 
-    status: 'active', 
-    enrollmentDate: '2022-09-05',
-    lastCheckIn: '2023-06-15 08:45'
-  },
-  { 
-    id: '3', 
-    name: 'Olivia Williams', 
-    birthDate: '2021-02-20', 
-    age: '2 years', 
-    parentName: 'James Williams', 
-    parentContact: 'james@example.com', 
-    classroom: 'Caterpillars', 
-    allergies: ['Dairy', 'Eggs'], 
-    status: 'active', 
-    enrollmentDate: '2023-03-15',
-    lastCheckIn: '2023-06-14 09:15'
-  },
-  { 
-    id: '4', 
-    name: 'Noah Brown', 
-    birthDate: '2022-01-10', 
-    age: '1 year', 
-    parentName: 'Jessica Brown', 
-    parentContact: 'jessica@example.com', 
-    classroom: 'Waitlist', 
-    allergies: [], 
-    status: 'waitlist', 
-    enrollmentDate: '2023-05-01'
-  },
-  { 
-    id: '5', 
-    name: 'Ava Jones', 
-    birthDate: '2020-08-25', 
-    age: '2 years', 
-    parentName: 'David Jones', 
-    parentContact: 'david@example.com', 
-    classroom: 'Sunflowers', 
-    allergies: ['Tree nuts'], 
-    status: 'inactive', 
-    enrollmentDate: '2022-11-18',
-    lastCheckIn: '2023-05-30 09:00'
-  },
-];
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const sortKeys = ['name', 'classroom', 'status', 'enrollmentDate', 'lastCheckIn'] as const;
-type SortKey = typeof sortKeys[number];
-
-const ChildManagement = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [itemsPerPage] = useState(10);
-  const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: 'asc' | 'desc' }>({ key: 'name', direction: 'asc' });
-  const [activeFilter, setActiveFilter] = useState('all');
-  const [selectedChildren, setSelectedChildren] = useState<string[]>([]);
-  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
-  
-  // Modal states
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showExportModal, setShowExportModal] = useState(false);
-  const [currentChild, setCurrentChild] = useState<ChildType | null>(null);
-  
-  // Form state
-  const [formData, setFormData] = useState({
-    name: '',
-    birthDate: '',
-    parentName: '',
-    parentContact: '',
-    classroom: '',
-    allergies: '',
-    status: 'active' as ChildType['status']
-  });
-
-  // User modal state and handlers (minimal, only for modals)
-  const [showAddUserModal, setShowAddUserModal] = useState(false);
-  const [showEditUserModal, setShowEditUserModal] = useState(false);
-  const [showDeleteUserModal, setShowDeleteUserModal] = useState(false);
-  const [showExportUserModal, setShowExportUserModal] = useState(false);
-  const [userForm, setUserForm] = useState({
-    name: '',
-    email: '',
-    role: '' as UserType['role'],
-    status: 'active' as UserType['status'],
-  });
-  const [currentUser] = useState<UserType | null>(null);
-  const handleUserInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setUserForm(prev => ({ ...prev, [name]: value }));
-  };
-  const handleAddUserSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setShowAddUserModal(false);
-  };
-  const handleEditUserSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setShowEditUserModal(false);
-  };
-  const handleDeleteUser = () => {
-    setShowDeleteUserModal(false);
-  };
-  const handleExportUser = () => {
-    setShowExportUserModal(false);
-  };
-
-  // Filter and sort children
-  const filteredChildren = children
-    .filter((child: ChildType) => 
-      child.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      child.parentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      child.classroom.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    .filter((child: ChildType) => activeFilter === 'all' || child.status === activeFilter)
-    .sort((a: ChildType, b: ChildType) => {
-      const key = sortConfig.key;
-      const aValue = a[key] ?? '';
-      const bValue = b[key] ?? '';
-      if (aValue < bValue) {
-        return sortConfig.direction === 'asc' ? -1 : 1;
-      }
-      if (aValue > bValue) {
-        return sortConfig.direction === 'asc' ? 1 : -1;
-      }
-      return 0;
-    });
-
-  // Pagination
-  const indexOfLastChild = 1 * itemsPerPage;
-  const indexOfFirstChild = indexOfLastChild - itemsPerPage;
-  const currentChildren = filteredChildren.slice(indexOfFirstChild, indexOfLastChild);
-  const totalPages = Math.ceil(filteredChildren.length / itemsPerPage);
-
-  const requestSort = (key: SortKey) => {
-    let direction: 'asc' | 'desc' = 'asc';
-    if (sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
+// Fetch packages from API (if needed in the future)
+const fetchPackages = async (): Promise<{ name: string }[]> => {
+  try {
+    const res = await fetch(PACKAGES_API_URL);
+    if (!res.ok) {
+      // Fallback to static packages if API doesn't exist
+      console.warn("Packages API not available, using fallback packages");
+      throw new Error("Packages API not available");
     }
-    setSortConfig({ key, direction });
-  };
+    const data = await res.json();
+    console.log("Packages fetched from API:", data);
 
-  const toggleSelectChild = (childId: string) => {
-    setSelectedChildren(prev =>
-      prev.includes(childId) 
-        ? prev.filter(id => id !== childId) 
-        : [...prev, childId]
-    );
-  };
-
-  const toggleSelectAll = () => {
-    if (selectedChildren.length === currentChildren.length) {
-      setSelectedChildren([]);
-    } else {
-      setSelectedChildren(currentChildren.map(child => child.id));
-    }
-  };
-
-  const getStatusBadge = (status: ChildType['status']) => {
-    const statusClasses: Record<ChildType['status'], string> = {
-      active: 'bg-green-100 text-green-800',
-      inactive: 'bg-red-100 text-red-800',
-      waitlist: 'bg-yellow-100 text-yellow-800',
-    };
-    return (
-      <span className={`px-2 py-1 text-xs rounded-full ${statusClasses[status]}`}>
-        {status}
-      </span>
-    );
-  };
-
-  const getClassroomBadge = (classroom: string) => {
-    const classroomColors: Record<string, string> = {
-      'Sunflowers': 'bg-amber-100 text-amber-800',
-      'Butterflies': 'bg-blue-100 text-blue-800',
-      'Caterpillars': 'bg-green-100 text-green-800',
-      'Waitlist': 'bg-gray-100 text-gray-800',
-    };
-    return (
-      <span className={`px-2 py-1 text-xs rounded-full ${classroomColors[classroom] || 'bg-purple-100 text-purple-800'}`}>
-        {classroom}
-      </span>
-    );
-  };
-
-  const openEditModal = (child: ChildType) => {
-    setCurrentChild(child);
-    setFormData({
-      name: child.name,
-      birthDate: child.birthDate,
-      parentName: child.parentName,
-      parentContact: child.parentContact,
-      classroom: child.classroom,
-      allergies: child.allergies.join(', '),
-      status: child.status
-    });
-    setShowEditModal(true);
-  };
-
-  const openDeleteModal = (child: ChildType) => {
-    setCurrentChild(child);
-    setShowDeleteModal(true);
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
+    // Transform API response to match expected format
+    return data.map((item: { name: string }) => ({
+      name: item.name,
     }));
+  } catch (error) {
+    console.error("Error fetching packages:", error);
+    // Return fallback packages on error
+    throw new Error("Failed to fetch packages");
+  }
+};
+
+// Extract unique groups from students data (fallback method)
+const extractGroupsFromStudents = (students: Student[]): ClassGroup[] => {
+  const uniqueGroups = new Set<string>();
+  const groups: ClassGroup[] = [];
+
+  students.forEach((student) => {
+    if (student.classroom && !uniqueGroups.has(student.classroom)) {
+      uniqueGroups.add(student.classroom);
+      groups.push({
+        group_name: student.classroom,
+      });
+    }
+  });
+
+  return groups.sort((a, b) => a.group_name.localeCompare(b.group_name));
+};
+
+const fetchStudents = async (): Promise<Student[]> => {
+  const res = await fetch(API_URL);
+  if (!res.ok) throw new Error("Failed to fetch students");
+  const data: ApiStudent[] = await res.json();
+  console.log("Raw API response:", data);
+
+  return data.map((item: ApiStudent) => {
+    const dobFormatted = item.dob
+      ? new Date(item.dob).toISOString().split("T")[0]
+      : "";
+    const calculatedAge = dobFormatted
+      ? calculateAge(dobFormatted)
+      : item.age || 0;
+
+    const mappedStudent = {
+      id: item.child_id,
+      name: item.name || "",
+      age: calculatedAge, // Use calculated age based on DOB
+      classroom: item.group_name || "",
+      dob: dobFormatted,
+      gender: item.gender || "",
+      parentName: item.parent_name || "",
+      parentNIC: item.nic || "", // This field might not exist in API response
+      parentEmail: item.parent_email || "",
+      parentAddress: item.parent_address || "",
+      parentContact: item.parent_phone || "",
+      profileImage: item.image || "",
+      packageName: item.package_name || "",
+    };
+    console.log("Mapped student:", mappedStudent);
+    return mappedStudent;
+  });
+};
+
+const createStudent = async (
+  student: Omit<Student, "id">
+): Promise<Student> => {
+  // Ensure age is calculated from DOB if available
+  const ageFromDob = student.dob ? calculateAge(student.dob) : student.age;
+
+  const res = await fetch(API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      name: student.name,
+      age: ageFromDob, // Use calculated age
+      gender: student.gender,
+      dob: student.dob,
+      group_name: student.classroom || null,
+      image: null,
+      bc: null,
+      blood_type: null,
+      mr: null,
+      allergies: null,
+      created_at: new Date().toISOString(),
+      package_name: student.packageName || null,
+      // Backend database field names
+      parent_name: student.parentName,
+      nic: student.parentNIC,
+      parent_email: student.parentEmail,
+      parent_address: student.parentAddress,
+      parent_phone: student.parentContact,
+      // Frontend form field names (also required)
+      parentName: student.parentName,
+      parentNIC: student.parentNIC,
+      parentEmail: student.parentEmail,
+      parentAddress: student.parentAddress,
+      parentContact: student.parentContact,
+    }),
+  });
+  if (!res.ok) {
+    const errorData = await res
+      .json()
+      .catch(() => ({ message: "Failed to create student" }));
+
+    // Check if it's an email duplication error
+    if (res.status === 400 || res.status === 409) {
+      if (
+        errorData.message &&
+        errorData.message.toLowerCase().includes("email")
+      ) {
+        throw new Error(
+          "EMAIL_DUPLICATE: " + (errorData.message || "Email already exists")
+        );
+      }
+      if (errorData.error && errorData.error.toLowerCase().includes("email")) {
+        throw new Error(
+          "EMAIL_DUPLICATE: " + (errorData.error || "Email already exists")
+        );
+      }
+      if (
+        errorData.details &&
+        errorData.details.toLowerCase().includes("email")
+      ) {
+        throw new Error(
+          "EMAIL_DUPLICATE: " + (errorData.details || "Email already exists")
+        );
+      }
+    }
+
+    throw new Error(
+      errorData.message ||
+        errorData.error ||
+        `Failed to create student: ${res.statusText}`
+    );
+  }
+  const item = await res.json();
+
+  const dobFromResponse = item.dob
+    ? new Date(item.dob).toISOString().split("T")[0]
+    : "";
+  const ageForStudent = dobFromResponse
+    ? calculateAge(dobFromResponse)
+    : item.age || student.age;
+
+  return {
+    id: item.child_id,
+    name: item.name,
+    age: ageForStudent, // Use calculated age based on DOB
+    classroom: item.group_name,
+    dob: dobFromResponse,
+    gender: item.gender,
+    parentName: student.parentName,
+    parentNIC: student.parentNIC,
+    parentEmail: student.parentEmail,
+    parentAddress: student.parentAddress,
+    parentContact: student.parentContact,
+    profileImage: item.image,
+    packageName: item.package_name || student.packageName,
+  };
+};
+
+const updateStudent = async (student: Student): Promise<Student> => {
+  console.log("Updating student with data:", student);
+
+  // Ensure age is calculated from DOB if available
+  const ageFromDob = student.dob ? calculateAge(student.dob) : student.age;
+
+  const res = await fetch(`${API_URL}${student.id}`, {
+    method: "PUT",
+    headers: { 
+      "Content-Type": "application/json",
+      "Accept": "application/json"
+    },
+    body: JSON.stringify({
+      name: student.name,
+      package_name: student.packageName || null
+    }),
+  });
+
+  if (!res.ok) {
+    const errorData = await res
+      .json()
+      .catch(() => ({ message: "Failed to update student" }));
+    console.error("Update failed:", errorData);
+    throw new Error(
+      errorData.message || `Failed to update student: ${res.statusText}`
+    );
+  }
+
+  const item = await res.json();
+  console.log("Update response:", item);
+
+  const dobFormatted = item.dob
+    ? new Date(item.dob).toISOString().split("T")[0]
+    : "";
+  const finalAge = dobFormatted
+    ? calculateAge(dobFormatted)
+    : item.age || student.age;
+
+  return {
+    id: item.child_id,
+    name: item.name,
+    age: finalAge, // Use calculated age based on DOB
+    classroom: item.group_name || "",
+    dob: dobFormatted,
+    gender: item.gender,
+    parentName: item.parent_name || student.parentName,
+    parentNIC: item.nic || student.parentNIC,
+    parentEmail: item.parent_email || student.parentEmail,
+    parentAddress: item.parent_address || student.parentAddress,
+    parentContact: item.parent_phone || student.parentContact,
+    profileImage: item.image,
+    packageName: item.package_name || student.packageName,
+  };
+};
+
+const deleteStudentApi = async (id: string): Promise<void> => {
+  const res = await fetch(`${API_URL}${id}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("Failed to delete student");
+};
+
+export default function Childrens() {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [students, setStudents] = useState<Student[]>([]);
+  const [groups, setGroups] = useState<ClassGroup[]>([]);
+  const [packages, setPackages] = useState<{ name: string }[]>([]);
+  const [form, setForm] = useState<Omit<Student, "id">>({
+    name: "",
+    age: 1,
+    classroom: "",
+    dob: "",
+    gender: "",
+    parentName: "",
+    parentNIC: "",
+    parentEmail: "",
+    parentAddress: "",
+    parentContact: "",
+    packageName: "",
+  });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [currentChild, setCurrentChild] = useState<Student | null>(null);
+  const [isCheckingNIC, setIsCheckingNIC] = useState(false);
+
+  // Prevent showing add form for admins - only allow edit mode
+  useEffect(() => {
+    if (showAddForm && !editingId) {
+      setShowAddForm(false);
+    }
+  }, [showAddForm, editingId]);
+  const [nicCheckMessage, setNicCheckMessage] = useState<string>("");
+  const [emailError, setEmailError] = useState<string>("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const loadStudents = async () => {
+    try {
+      const studentsData = await fetchStudents();
+      setStudents(studentsData);
+
+      // Try to fetch groups from API first
+      let groupsData = await fetchGroups();
+
+      // If API doesn't return groups, extract from students data
+      if (groupsData.length === 0) {
+        console.log("Fallback: extracting groups from students data");
+        groupsData = extractGroupsFromStudents(studentsData);
+      }
+
+      setGroups(groupsData);
+      console.log("Final groups data:", groupsData);
+
+      // Load packages
+      const packagesData = await fetchPackages();
+      setPackages(packagesData);
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error ? err.message : "An unknown error occurred";
+      toast.error(errorMessage);
+    }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    loadStudents();
+  }, []);
+
+  // Function to check if NIC exists and auto-fill parent details
+  const checkNIC = async () => {
+    if (!form.parentNIC || form.parentNIC.trim() === "") {
+      setNicCheckMessage("Please enter a NIC number first");
+      toast.error("Please enter a NIC number first");
+      return;
+    }
+
+    setIsCheckingNIC(true);
+    setNicCheckMessage("");
+
+    try {
+      // Check if NIC exists in the current students data first (local check)
+      const existingParent = students.find(
+        (student) => student.parentNIC === form.parentNIC.trim()
+      );
+
+      if (existingParent) {
+        // Auto-fill parent details from existing data
+        setForm((prev) => ({
+          ...prev,
+          parentName: existingParent.parentName,
+          parentEmail: existingParent.parentEmail,
+          parentAddress: existingParent.parentAddress,
+          parentContact: existingParent.parentContact,
+        }));
+        setNicCheckMessage("Parent details found and auto-filled");
+        toast.success("Parent details found and auto-filled");
+      } else {
+        // Try API call to check NIC (if backend API exists)
+        try {
+          const res = await fetch(CHECK_NIC_API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ nic: form.parentNIC.trim() }),
+          });
+
+          if (res.ok) {
+            const parentData = await res.json();
+            // Auto-fill parent details from API response
+            setForm((prev) => ({
+              ...prev,
+              parentName: parentData.parent_name || parentData.name || "",
+              parentEmail: parentData.parent_email || parentData.email || "",
+              parentAddress:
+                parentData.parent_address || parentData.address || "",
+              parentContact:
+                parentData.parent_phone || parentData.contact || "",
+            }));
+            setNicCheckMessage("Parent details found and auto-filled");
+            toast.success("Parent details found and auto-filled");
+          } else {
+            setNicCheckMessage(
+              "This NIC does not exist in our records. Please enter parent details manually."
+            );
+            toast.info(
+              "This NIC does not exist in our records. Please enter parent details manually."
+            );
+          }
+        } catch {
+          // If API fails, show message that NIC doesn't exist
+          setNicCheckMessage(
+            "This NIC does not exist in our records. Please enter parent details manually."
+          );
+          toast.info(
+            "This NIC does not exist in our records. Please enter parent details manually."
+          );
+        }
+      }
+    } catch (error) {
+      console.error("Error checking NIC:", error);
+      setNicCheckMessage("Error checking NIC. Please try again.");
+      toast.error("Error checking NIC. Please try again.");
+    } finally {
+      setIsCheckingNIC(false);
+    }
+  };
+
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
+  ) => {
+    const { name, value } = e.target;
+
+    // Clear NIC check message when NIC input changes
+    if (name === "parentNIC") {
+      setNicCheckMessage("");
+    }
+
+    // Clear email error when email input changes
+    if (name === "parentEmail") {
+      setEmailError("");
+    }
+
+    setForm((prev) => {
+      const updatedForm = {
+        ...prev,
+        [name]: name === "age" ? Number(value) : value,
+      };
+
+      // Auto-calculate age when DOB changes
+      if (name === "dob" && value) {
+        updatedForm.age = calculateAge(value);
+      }
+
+      return updatedForm;
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Here you would typically call an API to save the child
-    console.log('Form submitted:', formData);
-    // Close the modal after submission
-    setShowAddModal(false);
-    setShowEditModal(false);
+    console.log("Form submitted with data:", form);
+
+    // Clear previous errors
+    setEmailError("");
+    setIsSubmitting(true);
+
+    try {
+      if (editingId) {
+        // Get current student data
+        const currentStudent = students.find(s => s.id === editingId);
+        if (!currentStudent) {
+          throw new Error("Student not found");
+        }
+
+        // Create update data with only the fields admin can edit
+        const updateData: Student = {
+          ...currentStudent, // Keep all existing data
+          id: editingId,
+          name: form.name,        // Can edit name
+          packageName: form.packageName  // Can edit package
+        };
+
+        console.log("Sending update with data:", updateData);
+        await updateStudent(updateData);
+        toast.success("Updated successfully");
+      } else {
+        await createStudent(form);
+        toast.success("Created successfully");
+      }
+      setForm({
+        name: "",
+        age: 1,
+        classroom: "",
+        dob: "",
+        gender: "",
+        parentName: "",
+        parentNIC: "",
+        parentEmail: "",
+        parentAddress: "",
+        parentContact: "",
+        packageName: "",
+      });
+      setEditingId(null);
+      setShowAddForm(false);
+      setEmailError("");
+      await loadStudents();
+    } catch (err: unknown) {
+      let errorMessage = "An unknown error occurred";
+
+      if (err instanceof Error) {
+        errorMessage = err.message;
+
+        // Handle email duplication error specifically
+        if (errorMessage.startsWith("EMAIL_DUPLICATE:")) {
+          const emailErrorMsg = errorMessage
+            .replace("EMAIL_DUPLICATE:", "")
+            .trim();
+          setEmailError(
+            emailErrorMsg ||
+              "This email is already registered. Please use a different email."
+          );
+          toast.error("Email already exists. Please use a different email.");
+          return; // Don't show the generic error toast
+        }
+      }
+
+      toast.error(errorMessage);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleDelete = () => {
-    // Here you would typically call an API to delete the child
-    console.log('Deleting child:', currentChild?.id);
-    setShowDeleteModal(false);
+  const handleEdit = (student: Student) => {
+    console.log("Editing student:", student); // Debug log
+
+    // Format date for HTML date input (YYYY-MM-DD)
+    const formatDateForInput = (dateString: string) => {
+      if (!dateString) return "";
+      const date = new Date(dateString);
+      return date.toISOString().split("T")[0];
+    };
+
+    const formattedDob = formatDateForInput(student.dob);
+    const calculatedAge = formattedDob
+      ? calculateAge(formattedDob)
+      : student.age || 1;
+
+    setForm({
+      name: student.name || "",
+      age: calculatedAge, // Use calculated age based on DOB
+      classroom: student.classroom || "",
+      dob: formattedDob,
+      gender: student.gender || "",
+      parentName: student.parentName || "",
+      parentNIC: student.parentNIC || "",
+      parentEmail: student.parentEmail || "",
+      parentAddress: student.parentAddress || "",
+      parentContact: student.parentContact || "",
+      packageName: student.packageName || "",
+    });
+    setEditingId(student.id);
+    setShowAddForm(true);
+    // Clear error messages when editing
+    setEmailError("");
+    setNicCheckMessage("");
   };
 
-  const handleExport = (format: 'csv' | 'pdf') => {
-    // Here you would typically call an API to export data
-    console.log(`Exporting data as ${format}`);
-    setShowExportModal(false);
+  const handleDelete = (student: Student) => {
+    setCurrentChild(student);
+    setIsDeleteModalOpen(true);
+  };
+
+  const deleteChild = async () => {
+    if (!currentChild) return;
+    try {
+      await deleteStudentApi(currentChild.id);
+      toast.success("Deleted successfully");
+      setIsDeleteModalOpen(false);
+      setCurrentChild(null);
+      await loadStudents();
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error ? err.message : "An unknown error occurred";
+      toast.error(errorMessage);
+    }
+  };
+
+  const closeModal = () => {
+    setShowAddForm(false);
+    setIsDeleteModalOpen(false);
+    setCurrentChild(null);
+    setForm({
+      name: "",
+      age: 1,
+      classroom: "",
+      dob: "",
+      gender: "",
+      parentName: "",
+      parentNIC: "",
+      parentEmail: "",
+      parentAddress: "",
+      parentContact: "",
+      packageName: "",
+    });
+    setEditingId(null);
+    setNicCheckMessage("");
+    setEmailError("");
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-2xl font-bold text-gray-800">Child Management</h1>
-        <div className="flex space-x-3 w-full sm:w-auto">
-          <button 
-            onClick={() => setShowAddModal(true)}
-            className="btn-primary flex items-center"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Add Child
-          </button>
-          <button 
-            onClick={() => setShowExportModal(true)} 
-            className="btn-secondary"
-          >
-            <Download className="w-4 h-4 mr-2" />
-            Export
-          </button>
-        </div>
+    <div className="space-y-6 p-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold text-gray-800 flex items-center">
+          <User className="mr-2 text-[#4f46e5]" size={24} />
+          Children Management
+        </h1>
       </div>
-
-      {/* Filters and Search */}
-      <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-3 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search children by name, parent or classroom..."
-              className="pl-10 pr-4 py-2 w-full border rounded-lg focus:border-[#6339C0] focus:ring-2 focus:ring-[#f3eeff] outline-none"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          
-          <div className="flex space-x-2">
-            <div className="dropdown relative">
-              <button
-                className="btn-outline flex items-center"
-                onClick={() => setShowFilterDropdown((prev) => !prev)}
-              >
-                <Filter className="w-4 h-4 mr-2" />
-                Filter
-                {showFilterDropdown ? (
-                  <ChevronUp className="w-4 h-4 ml-2" />
-                ) : (
-                  <ChevronDown className="w-4 h-4 ml-2" />
-                )}
-              </button>
-              {showFilterDropdown && (
-                <div className="dropdown-menu absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-200">
-                  <div className="p-2 space-y-1">
-                    <button 
-                      className={`w-full text-left px-4 py-2 text-sm rounded ${activeFilter === 'all' ? 'bg-[#f3eeff] text-[#6339C0]' : 'hover:bg-gray-50'}`}
-                      onClick={() => { setActiveFilter('all'); setShowFilterDropdown(false); }}
-                    >
-                      All Children
-                    </button>
-                    <button 
-                      className={`w-full text-left px-4 py-2 text-sm rounded ${activeFilter === 'active' ? 'bg-[#f3eeff] text-[#6339C0]' : 'hover:bg-gray-50'}`}
-                      onClick={() => { setActiveFilter('active'); setShowFilterDropdown(false); }}
-                    >
-                      Active
-                    </button>
-                    <button 
-                      className={`w-full text-left px-4 py-2 text-sm rounded ${activeFilter === 'inactive' ? 'bg-[#f3eeff] text-[#6339C0]' : 'hover:bg-gray-50'}`}
-                      onClick={() => { setActiveFilter('inactive'); setShowFilterDropdown(false); }}
-                    >
-                      Inactive
-                    </button>
-                    <button 
-                      className={`w-full text-left px-4 py-2 text-sm rounded ${activeFilter === 'waitlist' ? 'bg-[#f3eeff] text-[#6339C0]' : 'hover:bg-gray-50'}`}
-                      onClick={() => { setActiveFilter('waitlist'); setShowFilterDropdown(false); }}
-                    >
-                      Waitlist
-                    </button>
-                  </div>
-                </div>
-              )}
+      {!showAddForm && (
+        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-3 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search students by name, classroom, parent or ID..."
+                className="pl-10 pr-4 py-2 w-full border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
-            
-            {selectedChildren.length > 0 && (
-              <div className="dropdown relative">
-                <button className="btn-outline bg-red-50 text-red-600 border-red-200 hover:bg-red-100 flex items-center">
-                  <span className="mr-2">{selectedChildren.length} selected</span>
-                  <ChevronDown className="w-4 h-4" />
-                </button>
-                <div className="dropdown-menu absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-200">
-                  <div className="p-2 space-y-1">
-                    <button className="w-full text-left px-4 py-2 text-sm rounded hover:bg-gray-50 flex items-center">
-                      <CheckCircle className="w-4 h-4 mr-2 text-green-600" />
-                      Mark Active
-                    </button>
-                    <button className="w-full text-left px-4 py-2 text-sm rounded hover:bg-gray-50 flex items-center">
-                      <X className="w-4 h-4 mr-2 text-red-600" />
-                      Mark Inactive
-                    </button>
-                    <button className="w-full text-left px-4 py-2 text-sm rounded hover:bg-gray-50 flex items-center">
-                      <School className="w-4 h-4 mr-2 text-blue-600" />
-                      Assign Classroom
-                    </button>
-                    <button className="w-full text-left px-4 py-2 text-sm rounded hover:bg-gray-50 flex items-center text-red-600">
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Children Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  <input 
-                    type="checkbox" 
-                    checked={selectedChildren.length === currentChildren.length && currentChildren.length > 0}
-                    onChange={toggleSelectAll}
-                    className="h-4 w-4 text-[#6339C0] border-gray-300 rounded focus:ring-[#6339C0]"
-                  />
-                </th>
-                <th 
-                  scope="col" 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => requestSort('name')}
-                >
-                  <div className="flex items-center">
-                    Child
-                    {sortConfig.key === 'name' && (
-                      sortConfig.direction === 'asc' ? 
-                        <ChevronUp className="ml-1 w-4 h-4" /> : 
-                        <ChevronDown className="ml-1 w-4 h-4" />
-                    )}
-                  </div>
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Parent Info
-                </th>
-                <th 
-                  scope="col" 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => requestSort('classroom')}
-                >
-                  <div className="flex items-center">
-                    Classroom
-                    {sortConfig.key === 'classroom' && (
-                      sortConfig.direction === 'asc' ? 
-                        <ChevronUp className="ml-1 w-4 h-4" /> : 
-                        <ChevronDown className="ml-1 w-4 h-4" />
-                    )}
-                  </div>
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Allergies
-                </th>
-                <th 
-                  scope="col" 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => requestSort('status')}
-                >
-                  <div className="flex items-center">
-                    Status
-                    {sortConfig.key === 'status' && (
-                      sortConfig.direction === 'asc' ? 
-                        <ChevronUp className="ml-1 w-4 h-4" /> : 
-                        <ChevronDown className="ml-1 w-4 h-4" />
-                    )}
-                  </div>
-                </th>
-                <th 
-                  scope="col" 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => requestSort('lastCheckIn')}
-                >
-                  <div className="flex items-center">
-                    Last Check-In
-                    {sortConfig.key === 'lastCheckIn' && (
-                      sortConfig.direction === 'asc' ? 
-                        <ChevronUp className="ml-1 w-4 h-4" /> : 
-                        <ChevronDown className="ml-1 w-4 h-4" />
-                    )}
-                  </div>
-                </th>
-                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {currentChildren.length > 0 ? (
-                currentChildren.map((child) => (
-                  <tr key={child.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <input 
-                        type="checkbox" 
-                        checked={selectedChildren.includes(child.id)}
-                        onChange={() => toggleSelectChild(child.id)}
-                        className="h-4 w-4 text-[#6339C0] border-gray-300 rounded focus:ring-[#6339C0]"
-                      />
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10 bg-[#f3eeff] rounded-full flex items-center justify-center">
-                          <Baby className="text-[#6339C0]" />
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">{child.name}</div>
-                          <div className="text-sm text-gray-500 flex items-center">
-                            <Calendar className="w-3 h-3 mr-1" />
-                            {child.birthDate} ({child.age})
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{child.parentName}</div>
-                      <div className="text-sm text-gray-500">{child.parentContact}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {getClassroomBadge(child.classroom)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {child.allergies.length > 0 ? (
-                        <div className="flex flex-wrap gap-1 max-w-xs">
-                          {child.allergies.map(allergy => (
-                            <span key={allergy} className="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">
-                              {allergy}
-                            </span>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-sm text-gray-500">None</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {getStatusBadge(child.status)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {child.lastCheckIn || 'N/A'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex justify-end space-x-2">
-                        <button
-                          onClick={() => openEditModal(child)}
-                          className="text-[#6339C0] hover:text-[#7e57ff]"
-                        >
-                          <Edit className="w-5 h-5" />
-                        </button>
-                        <button 
-                          onClick={() => openDeleteModal(child)}
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          <Trash2 className="w-5 h-5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={8} className="px-6 py-4 text-center text-sm text-gray-500">
-                    No children found matching your criteria
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination (same as UserManagement) */}
-        {totalPages > 1 && (
-          <div className="bg-white px-6 py-3 flex items-center justify-between border-t border-gray-200">
-            {/* ... (same pagination implementation as UserManagement) */}
-          </div>
-        )}
-      </div>
-
-      {/* Add Child Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-gray-800">Add New Child</h2>
-                <button onClick={() => setShowAddModal(false)} className="text-gray-400 hover:text-gray-500">
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-              <form onSubmit={handleSubmit}>
-                <div className="space-y-4">
-                  <div>
-                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                      Child's Full Name
-                    </label>
-                    <input
-                      type="text"
-                      id="name"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6339C0] focus:border-transparent"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="birthDate" className="block text-sm font-medium text-gray-700 mb-1">
-                      Birth Date
-                    </label>
-                    <input
-                      type="date"
-                      id="birthDate"
-                      name="birthDate"
-                      value={formData.birthDate}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6339C0] focus:border-transparent"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="parentName" className="block text-sm font-medium text-gray-700 mb-1">
-                      Parent/Guardian Name
-                    </label>
-                    <input
-                      type="text"
-                      id="parentName"
-                      name="parentName"
-                      value={formData.parentName}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6339C0] focus:border-transparent"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="parentContact" className="block text-sm font-medium text-gray-700 mb-1">
-                      Parent Contact
-                    </label>
-                    <input
-                      type="email"
-                      id="parentContact"
-                      name="parentContact"
-                      value={formData.parentContact}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6339C0] focus:border-transparent"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="classroom" className="block text-sm font-medium text-gray-700 mb-1">
-                      Classroom
-                    </label>
-                    <select
-                      id="classroom"
-                      name="classroom"
-                      value={formData.classroom}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6339C0] focus:border-transparent"
-                      required
-                    >
-                      <option value="">Select classroom</option>
-                      <option value="Sunflowers">Sunflowers (2-3 years)</option>
-                      <option value="Butterflies">Butterflies (3-4 years)</option>
-                      <option value="Caterpillars">Caterpillars (1-2 years)</option>
-                      <option value="Waitlist">Waitlist</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label htmlFor="allergies" className="block text-sm font-medium text-gray-700 mb-1">
-                      Allergies (comma separated)
-                    </label>
-                    <input
-                      type="text"
-                      id="allergies"
-                      name="allergies"
-                      value={formData.allergies}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6339C0] focus:border-transparent"
-                      placeholder="Peanuts, Dairy, Eggs, etc."
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
-                      Status
-                    </label>
-                    <select
-                      id="status"
-                      name="status"
-                      value={formData.status}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6339C0] focus:border-transparent"
-                      required
-                    >
-                      <option value="active">Active</option>
-                      <option value="inactive">Inactive</option>
-                      <option value="waitlist">Waitlist</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="mt-6 flex justify-end space-x-3">
-                  <button
-                    type="button"
-                    onClick={() => setShowAddModal(false)}
-                    className="btn-outline"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="btn-primary"
-                  >
-                    Add Child
-                  </button>
-                </div>
-              </form>
-            </div>
+            {/* Add New Child button removed for admin */}
           </div>
         </div>
       )}
 
-      {/* Edit Child Modal */}
-      {showEditModal && currentChild && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-gray-800">Edit Child</h2>
-                <button onClick={() => setShowEditModal(false)} className="text-gray-400 hover:text-gray-500">
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-              <form onSubmit={handleSubmit}>
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="flex-shrink-0 h-12 w-12 bg-[#f3eeff] rounded-full flex items-center justify-center">
-                      <Baby className="text-[#6339C0]" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-medium text-gray-800">{currentChild.name}</h3>
-                      <p className="text-sm text-gray-500">Enrolled on {currentChild.enrollmentDate}</p>
-                    </div>
-                  </div>
-                  <div>
-                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                      Child's Full Name
-                    </label>
-                    <input
-                      type="text"
-                      id="name"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6339C0] focus:border-transparent"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="birthDate" className="block text-sm font-medium text-gray-700 mb-1">
-                      Birth Date
-                    </label>
-                    <input
-                      type="date"
-                      id="birthDate"
-                      name="birthDate"
-                      value={formData.birthDate}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6339C0] focus:border-transparent"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="parentName" className="block text-sm font-medium text-gray-700 mb-1">
-                      Parent/Guardian Name
-                    </label>
-                    <input
-                      type="text"
-                      id="parentName"
-                      name="parentName"
-                      value={formData.parentName}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6339C0] focus:border-transparent"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="parentContact" className="block text-sm font-medium text-gray-700 mb-1">
-                      Parent Contact
-                    </label>
-                    <input
-                      type="email"
-                      id="parentContact"
-                      name="parentContact"
-                      value={formData.parentContact}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6339C0] focus:border-transparent"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="classroom" className="block text-sm font-medium text-gray-700 mb-1">
-                      Classroom
-                    </label>
-                    <select
-                      id="classroom"
-                      name="classroom"
-                      value={formData.classroom}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6339C0] focus:border-transparent"
-                      required
-                    >
-                      <option value="Sunflowers">Sunflowers (2-3 years)</option>
-                      <option value="Butterflies">Butterflies (3-4 years)</option>
-                      <option value="Caterpillars">Caterpillars (1-2 years)</option>
-                      <option value="Waitlist">Waitlist</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label htmlFor="allergies" className="block text-sm font-medium text-gray-700 mb-1">
-                      Allergies (comma separated)
-                    </label>
-                    <input
-                      type="text"
-                      id="allergies"
-                      name="allergies"
-                      value={formData.allergies}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6339C0] focus:border-transparent"
-                      placeholder="Peanuts, Dairy, Eggs, etc."
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
-                      Status
-                    </label>
-                    <select
-                      id="status"
-                      name="status"
-                      value={formData.status}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6339C0] focus:border-transparent"
-                      required
-                    >
-                      <option value="active">Active</option>
-                      <option value="inactive">Inactive</option>
-                      <option value="waitlist">Waitlist</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="mt-6 flex justify-end space-x-3">
-                  <button
-                    type="button"
-                    onClick={() => setShowEditModal(false)}
-                    className="btn-outline"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="btn-primary"
-                  >
-                    Save Changes
-                  </button>
-                </div>
-              </form>
+      {showAddForm ? (
+        <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h2 className="text-xl font-bold text-gray-800">
+                {editingId ? "Edit Child Information" : "Add New Child"}
+              </h2>
+              {editingId && (
+                <p className="text-sm text-gray-600 mt-1">
+                  As an admin, you can only edit the child's name and package.
+                </p>
+              )}
             </div>
+            {/* <button
+              onClick={closeModal}
+              className="flex items-center px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+            >
+              <X className="w-4 h-4 mr-2" />
+              Back to List
+            </button> */}
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-8">
+            {/* Child Information Section */}
+            <div className="bg-blue-50 p-6 rounded-lg">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                <User className="mr-2 text-blue-600" size={20} />
+                {editingId ? "Child Information (Admin Edit Mode)" : "Child Information"}
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Child Name *
+                  </label>
+                  <input
+                    name="name"
+                    value={form.name}
+                    onChange={handleChange}
+                    className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    type="text"
+                    required
+                    placeholder="Enter child's name"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Date of Birth *
+                  </label>
+                  <input
+                    name="dob"
+                    value={form.dob}
+                    onChange={handleChange}
+                    className={`block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
+                      editingId ? "bg-gray-50 cursor-not-allowed" : ""
+                    }`}
+                    type="date"
+                    required
+                    disabled={!!editingId}
+                  />
+                  {editingId && (
+                    <p className="text-xs text-gray-500">
+                      Date of birth cannot be changed when editing
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Age *
+                  </label>
+                  <input
+                    name="age"
+                    value={form.age}
+                    className="block w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    type="number"
+                    min={0}
+                    max={15}
+                    required
+                    readOnly
+                    placeholder="Calculated from date of birth"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Gender *
+                  </label>
+                  <select
+                    name="gender"
+                    value={form.gender}
+                    onChange={handleChange}
+                    className={`block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
+                      editingId ? "bg-gray-50 cursor-not-allowed" : ""
+                    }`}
+                    required
+                    disabled={!!editingId}
+                  >
+                    <option value="">Select gender</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                  </select>
+                  {editingId && (
+                    <p className="text-xs text-gray-500">
+                      Gender cannot be changed when editing
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Classroom
+                  </label>
+                  <select
+                    name="classroom"
+                    value={form.classroom}
+                    onChange={handleChange}
+                    className={`block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
+                      editingId ? "bg-gray-50 cursor-not-allowed" : ""
+                    }`}
+                    disabled={!!editingId}
+                  >
+                    <option value="">Select a classroom (optional)</option>
+                    {groups.map((group, index) => (
+                      <option key={index} value={group.group_name}>
+                        {group.group_name}
+                      </option>
+                    ))}
+                  </select>
+                  {editingId && (
+                    <p className="text-xs text-gray-500">
+                      Classroom cannot be changed when editing
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Package *
+                  </label>
+                  <select
+                    name="packageName"
+                    value={form.packageName}
+                    onChange={handleChange}
+                    className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  >
+                    <option value="">Select a package (optional)</option>
+                    {packages.map((pkg, index) => (
+                      <option key={index} value={pkg.name}>
+                        {pkg.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Parent Information Section - Only show when adding new child */}
+            {!editingId && (
+              <div className="bg-green-50 p-6 rounded-lg">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                  <User className="mr-2 text-green-600" size={20} />
+                  Parent Information
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Parent Name *
+                    </label>
+                    <input
+                      name="parentName"
+                      value={form.parentName}
+                      onChange={handleChange}
+                      className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      type="text"
+                      required
+                      placeholder="Enter parent's name"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Parent NIC
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        name="parentNIC"
+                        value={form.parentNIC}
+                        onChange={handleChange}
+                        className="flex-1 px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 cursor-not-allowed"
+                        type="text"
+                        disabled={true}
+                        placeholder="Enter parent's NIC"
+                      />
+                      {!editingId && (
+                        <button
+                          type="button"
+                          onClick={checkNIC}
+                          disabled={isCheckingNIC || !form.parentNIC.trim()}
+                          className="px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
+                        >
+                          {isCheckingNIC ? (
+                            <>
+                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                              Checking...
+                            </>
+                          ) : (
+                            "Check"
+                          )}
+                        </button>
+                      )}
+                    </div>
+                    {nicCheckMessage && (
+                      <p
+                        className={`text-xs ${
+                          nicCheckMessage.includes("found")
+                            ? "text-green-600"
+                            : "text-red-600"
+                        }`}
+                      >
+                        {nicCheckMessage}
+                      </p>
+                    )}
+                    {editingId && (
+                      <p className="text-xs text-gray-500">
+                        Parent NIC cannot be changed when editing
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Parent Email *
+                    </label>
+                    <input
+                      name="parentEmail"
+                      value={form.parentEmail}
+                      onChange={handleChange}
+                      className="block w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 cursor-not-allowed"
+                      type="email"
+                      required
+                      disabled={true}
+                      placeholder="Enter parent's email"
+                    />
+                    {emailError && !editingId && (
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 rounded-full bg-red-100 flex items-center justify-center">
+                          <X className="w-3 h-3 text-red-600" />
+                        </div>
+                        <p className="text-xs text-red-600">{emailError}</p>
+                      </div>
+                    )}
+                    {editingId && (
+                      <p className="text-xs text-gray-500">
+                        Parent email cannot be changed when editing
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Parent Contact *
+                    </label>
+                    <input
+                      name="parentContact"
+                      value={form.parentContact}
+                      onChange={handleChange}
+                      className="block w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 cursor-not-allowed"
+                      type="tel"
+                      required
+                      disabled={true}
+                      placeholder="Enter parent's contact number"
+                    />
+                  </div>
+
+                  <div className="space-y-2 md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Parent Address *
+                    </label>
+                    <textarea
+                      name="parentAddress"
+                      value={form.parentAddress}
+                      onChange={handleChange}
+                      className="block w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 cursor-not-allowed"
+                      rows={3}
+                      required
+                      disabled={true}
+                      placeholder="Enter parent's address"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
+              <button
+                type="button"
+                onClick={closeModal}
+                className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className={`flex items-center px-6 py-3 rounded-lg transition-colors ${
+                  isSubmitting
+                    ? "bg-gray-400 cursor-not-allowed text-white"
+                    : "bg-indigo-600 text-white hover:bg-indigo-700"
+                }`}
+              >
+                {isSubmitting ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                    {editingId ? "Updating..." : "Creating..."}
+                  </>
+                ) : editingId ? (
+                  <>
+                    <Edit className="w-4 h-4 mr-2" />
+                    Update Child
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Child
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
+      ) : (
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Name
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Age
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Classroom
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Package
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Gender
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Parent
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {students
+                  .filter((student) => {
+                    if (!searchTerm) return true;
+                    const searchLower = searchTerm.toLowerCase();
+                    return (
+                      student.name.toLowerCase().includes(searchLower) ||
+                      student.classroom.toLowerCase().includes(searchLower) ||
+                      student.parentName.toLowerCase().includes(searchLower) ||
+                      student.id.toLowerCase().includes(searchLower) ||
+                      student.gender.toLowerCase().includes(searchLower) ||
+                      student.parentEmail.toLowerCase().includes(searchLower)
+                    );
+                  })
+                  .map((student) => (
+                    <tr key={student.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          {student.profileImage ? (
+                            <img
+                              src={student.profileImage}
+                              alt={student.name}
+                              className="flex-shrink-0 h-10 w-10 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
+                              <User className="h-5 w-5 text-indigo-600" />
+                            </div>
+                          )}
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900">
+                              {student.name}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {student.age}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {student.classroom || "Not assigned"}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <div className="flex items-center">
+                          {student.packageName}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {student.gender}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {student.parentName}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button
+                          onClick={() => handleEdit(student)}
+                          className="text-indigo-600 hover:text-indigo-900 mr-4 flex items-center"
+                        >
+                          <Edit className="w-4 h-4 mr-1" />
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(student)}
+                          className="text-red-600 hover:text-red-900 flex items-center"
+                        >
+                          <Trash2 className="w-4 h-4 mr-1" />
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
 
       {/* Delete Confirmation Modal */}
-      {showDeleteModal && currentChild && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-lg max-w-md w-full">
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-gray-800">Confirm Deletion</h2>
-                <button onClick={() => setShowDeleteModal(false)} className="text-gray-400 hover:text-gray-500">
-                  <X className="w-6 h-6" />
+                <h2 className="text-xl font-bold text-gray-800">
+                  Confirm Deletion
+                </h2>
+                <button
+                  onClick={closeModal}
+                  className="text-gray-400 hover:text-gray-500 rounded-full p-1 hover:bg-gray-100"
+                  title="Close"
+                >
+                  <X className="w-5 h-5" />
                 </button>
               </div>
-              <div className="space-y-4">
-                <p className="text-gray-600">
-                  Are you sure you want to delete <span className="font-semibold">{currentChild.name}</span>? This will permanently remove all records associated with this child.
-                </p>
-                <div className="bg-red-50 p-4 rounded-lg">
-                  <div className="flex items-start">
-                    <div className="flex-shrink-0">
-                      <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                    <div className="ml-3">
-                      <h3 className="text-sm font-medium text-red-800">Important Notice</h3>
-                      <div className="mt-2 text-sm text-red-700">
-                        <p>This action cannot be undone. All attendance records, photos, and other data will be permanently deleted.</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="mt-6 flex justify-end space-x-3">
+
+              <p className="mb-6 text-gray-600">
+                Are you sure you want to delete child{" "}
+                <span className="font-semibold text-gray-800">
+                  {currentChild?.name}
+                </span>
+                ? This action cannot be undone.
+              </p>
+
+              <div className="flex justify-end gap-3">
                 <button
-                  type="button"
-                  onClick={() => setShowDeleteModal(false)}
-                  className="btn-outline"
+                  onClick={closeModal}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                 >
                   Cancel
                 </button>
                 <button
-                  type="button"
-                  onClick={handleDelete}
-                  className="btn-danger"
+                  onClick={deleteChild}
+                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                 >
-                  Delete Child Record
+                  Delete
                 </button>
               </div>
             </div>
           </div>
         </div>
       )}
-
-      {/* Export Modal */}
-      {showExportModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-lg max-w-md w-full">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-gray-800">Export Child Data</h2>
-                <button onClick={() => setShowExportModal(false)} className="text-gray-400 hover:text-gray-500">
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-              <div className="space-y-4">
-                <p className="text-gray-600">
-                  Select the format you want to export the child data in:
-                </p>
-                <div className="grid grid-cols-2 gap-4">
-                  <button
-                    onClick={() => handleExport('csv')}
-                    className="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:border-[#6339C0] hover:bg-[#f3eeff] transition-colors"
-                  >
-                    <FileText className="w-8 h-8 text-gray-600 mb-2" />
-                    <span className="font-medium">CSV Format</span>
-                    <span className="text-xs text-gray-500 mt-1">Excel, Numbers, etc.</span>
-                  </button>
-                  <button
-                    onClick={() => handleExport('pdf')}
-                    className="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:border-[#6339C0] hover:bg-[#f3eeff] transition-colors"
-                  >
-                    <FileText className="w-8 h-8 text-gray-600 mb-2" />
-                    <span className="font-medium">PDF Format</span>
-                    <span className="text-xs text-gray-500 mt-1">Adobe Reader, etc.</span>
-                  </button>
-                </div>
-                <div className="mt-4">
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 text-[#6339C0] focus:ring-[#6339C0] border-gray-300 rounded"
-                    />
-                    <span className="ml-2 text-sm text-gray-700">Include all child details</span>
-                  </label>
-                  <label className="flex items-center mt-2">
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 text-[#6339C0] focus:ring-[#6339C0] border-gray-300 rounded"
-                      checked={selectedChildren.length > 0}
-                      disabled={selectedChildren.length === 0}
-                    />
-                    <span className={`ml-2 text-sm ${selectedChildren.length === 0 ? 'text-gray-400' : 'text-gray-700'}`}>
-                      Export only selected children ({selectedChildren.length})
-                    </span>
-                  </label>
-                  <label className="flex items-center mt-2">
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 text-[#6339C0] focus:ring-[#6339C0] border-gray-300 rounded"
-                    />
-                    <span className="ml-2 text-sm text-gray-700">Include medical/allergy information</span>
-                  </label>
-                  <label className="flex items-center mt-2">
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 text-[#6339C0] focus:ring-[#6339C0] border-gray-300 rounded"
-                    />
-                    <span className="ml-2 text-sm text-gray-700">Include attendance history</span>
-                  </label>
-                </div>
-              </div>
-              <div className="mt-6 flex justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={() => setShowExportModal(false)}
-                  className="btn-outline"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleExport('csv')}
-                  className="btn-primary"
-                >
-                  Export Data
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* User Management Modals */}
-      <UserModals
-        showAdd={showAddUserModal}
-        showEdit={showEditUserModal}
-        showDelete={showDeleteUserModal}
-        showExport={showExportUserModal}
-        userForm={userForm}
-        currentUser={currentUser}
-        onCloseAdd={() => setShowAddUserModal(false)}
-        onCloseEdit={() => setShowEditUserModal(false)}
-        onCloseDelete={() => setShowDeleteUserModal(false)}
-        onCloseExport={() => setShowExportUserModal(false)}
-        onChange={handleUserInputChange}
-        onAdd={handleAddUserSubmit}
-        onEdit={handleEditUserSubmit}
-        onDelete={handleDeleteUser}
-        onExport={handleExportUser}
-      />
     </div>
   );
-};
-
-export default ChildManagement;
+}
