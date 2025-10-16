@@ -122,6 +122,18 @@ class MeetingService {
     }
   }
 
+  // Reschedule meeting (date and time only)
+  async rescheduleMeeting(meetingId: number, meeting_date: string, meeting_time: string, response?: string): Promise<Meeting> {
+    try {
+      const rescheduleData = { meeting_date, meeting_time, response };
+      const response_data = await axios.patch(`${API_BASE_URL}/meetings/${meetingId}/reschedule`, rescheduleData);
+      return response_data.data.data;
+    } catch (error) {
+      console.error('Error rescheduling meeting:', error);
+      throw error;
+    }
+  }
+
   // Delete meeting
   async deleteMeeting(meetingId: number): Promise<void> {
     try {

@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Calendar, Search, User, Check, X, Trash2, Eye, Phone,  Filter } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Search, User, Eye, Phone, Filter, RefreshCw, X, MessageSquare, Trash2 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import meetingService from '../../services/meetingService';
@@ -12,13 +12,8 @@ const Appointments = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [isRescheduleModalOpen, setIsRescheduleModalOpen] = useState(false);
   const [currentMeeting, setCurrentMeeting] = useState<Meeting | null>(null);
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [rescheduleData, setRescheduleData] = useState({
-    meeting_date: '',
-    meeting_time: ''
-  });
+  const [isEditMode] = useState(false);
   const [formData, setFormData] = useState<CreateMeetingData>({
     child_id: 0,
     recipient: 'supervisor',
@@ -29,6 +24,10 @@ const Appointments = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  const [isViewLoading, setIsViewLoading] = useState(false);
+  const [isResponseModalOpen, setIsResponseModalOpen] = useState(false);
+  const [responseModalText, setResponseModalText] = useState('');
+  const [responseMeetingId, setResponseMeetingId] = useState<number | null>(null);
 
   // Mock child data for demo purposes (in real app, this would come from child service)
   const mockChildren = [
@@ -46,10 +45,51 @@ const Appointments = () => {
     cancelled: meetings.filter(m => m.response && m.response.toLowerCase().includes('cancelled')).length
   };
 
+  const fetchMeetings = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      // Get only supervisor meetings
+      const data = await meetingService.getMeetingsByRecipient('supervisor');
+      setMeetings(data);
+    } catch (error: unknown) {
+      console.error('Error fetching supervisor meetings:', error);
+      toast.error('Failed to load supervisor meetings');
+    } finally {
+      setIsLoading(false);
+      setIsSearching(false);
+    }
+  }, []);
+
   // Fetch meetings from database (only supervisor meetings)
   useEffect(() => {
     fetchMeetings();
-  }, []);
+  }, [fetchMeetings]);
+
+  const handleSearch = useCallback(async () => {
+    if (!searchTerm.trim() && statusFilter === 'All Status') {
+      fetchMeetings();
+      return;
+    }
+    setIsLoading(true);
+    setIsSearching(true);
+    try {
+      const searchParams: {
+        searchTerm?: string;
+        response?: string;
+      } = {};
+      if (searchTerm.trim()) searchParams.searchTerm = searchTerm;
+      if (statusFilter !== 'All Status') searchParams.response = statusFilter;
+      
+      // Search only supervisor meetings
+      const data = await meetingService.searchMeetings(searchParams);
+      setMeetings(data);
+    } catch (error: unknown) {
+      console.error('Error searching supervisor meetings:', error);
+      toast.error('Search failed');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [searchTerm, statusFilter, fetchMeetings]);
 
   // Search effect with debounce
   useEffect(() => {
@@ -62,46 +102,7 @@ const Appointments = () => {
     return () => {
       clearTimeout(timerId);
     };
-  }, [searchTerm, statusFilter]);
-
-  const fetchMeetings = async () => {
-    setIsLoading(true);
-    try {
-      // Get only supervisor meetings
-      const data = await meetingService.getMeetingsByRecipient('supervisor');
-      setMeetings(data);
-    } catch (error) {
-      console.error('Error fetching supervisor meetings:', error);
-      toast.error('Failed to load supervisor meetings');
-    } finally {
-      setIsLoading(false);
-      setIsSearching(false);
-    }
-  };
-
-  // Search meetings (only supervisor meetings)
-  const handleSearch = async () => {
-    if (!searchTerm.trim() && statusFilter === 'All Status') {
-      fetchMeetings();
-      return;
-    }
-    setIsLoading(true);
-    setIsSearching(true);
-    try {
-      const searchParams: any = {};
-      if (searchTerm.trim()) searchParams.searchTerm = searchTerm;
-      if (statusFilter !== 'All Status') searchParams.response = statusFilter;
-      
-      // Search only supervisor meetings
-      const data = await meetingService.searchMeetings(searchParams);
-      setMeetings(data);
-    } catch (error) {
-      console.error('Error searching supervisor meetings:', error);
-      toast.error('Search failed');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }, [handleSearch, searchTerm, statusFilter, isSearching]);
 
   // Handle input changes for form
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -114,35 +115,113 @@ const Appointments = () => {
 
   
 
-  // Open modal for rescheduling meeting (supervisor can only edit date and time)
-  const openRescheduleModal = (meeting: Meeting) => {
-    setIsRescheduleModalOpen(true);
-    setCurrentMeeting(meeting);
-    setRescheduleData({
-      meeting_date: meeting.meeting_date,
-      meeting_time: meeting.meeting_time
-    });
+  // Fetch meeting details from database
+  const fetchMeetingDetails = async (meetingId: number) => {
+    setIsViewLoading(true);
+    try {
+      const fullMeetingData = await meetingService.getMeetingById(meetingId);
+      setCurrentMeeting(fullMeetingData);
+      toast.success('Meeting details loaded successfully');
+    } catch (error: unknown) {
+      console.error('Error fetching meeting details:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load meeting details';
+      toast.error(errorMessage);
+    } finally {
+      setIsViewLoading(false);
+    }
   };
 
-  // Open view modal for meeting details
-  const openViewModal = (meeting: Meeting) => {
+  // Open view modal for meeting details and fetch real data
+  const openViewModal = async (meeting: Meeting) => {
     setIsViewModalOpen(true);
-    setCurrentMeeting(meeting);
+    setCurrentMeeting(meeting); // Set initial data to avoid blank modal
+    await fetchMeetingDetails(meeting.meeting_id);
   };
 
-  // Open delete confirmation modal
-  const openDeleteModal = (meeting: Meeting) => {
-    setIsDeleteModalOpen(true);
-    setCurrentMeeting(meeting);
+  // Refresh meeting details
+  const refreshMeetingDetails = async () => {
+    if (currentMeeting) {
+      await fetchMeetingDetails(currentMeeting.meeting_id);
+    }
   };
+
+  // Open delete confirmation modal (currently disabled)
+  // const openDeleteModal = (meeting: Meeting) => {
+  //   setIsDeleteModalOpen(true);
+  //   setCurrentMeeting(meeting);
+  // };
 
   // Close all modals
   const closeModal = () => {
     setIsModalOpen(false);
     setIsDeleteModalOpen(false);
     setIsViewModalOpen(false);
-    setIsRescheduleModalOpen(false);
+    setIsResponseModalOpen(false);
     setCurrentMeeting(null);
+    setResponseModalText('');
+    setResponseMeetingId(null);
+  };
+
+  // Open response modal
+  const openResponseModal = (meeting: Meeting) => {
+    if (!meeting.response || (!meeting.response.toLowerCase().includes('confirmed') && !meeting.response.toLowerCase().includes('cancelled'))) {
+      toast.warning('Can only add notes to Confirmed or Cancelled meetings');
+      return;
+    }
+    setIsResponseModalOpen(true);
+    setCurrentMeeting(meeting);
+    setResponseMeetingId(meeting.meeting_id);
+    setResponseModalText(meeting.response || '');
+  };
+
+  // Save/Update response
+  const handleSaveResponse = async () => {
+    if (!responseModalText.trim()) {
+      toast.error('Please enter a response or note');
+      return;
+    }
+
+    if (responseMeetingId === null) return;
+
+    try {
+      await meetingService.updateMeetingResponse(responseMeetingId, responseModalText.trim());
+      
+      setMeetings(meetings.map(meeting => 
+        meeting.meeting_id === responseMeetingId
+          ? { ...meeting, response: responseModalText.trim() }
+          : meeting
+      ));
+
+      toast.success('Response updated successfully!');
+      closeModal();
+    } catch (error: unknown) {
+      console.error('Error saving response:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save response';
+      toast.error(errorMessage);
+    }
+  };
+
+  // Delete response
+  const handleDeleteResponse = async () => {
+    if (responseMeetingId === null) return;
+
+    try {
+      // Set empty response
+      await meetingService.updateMeetingResponse(responseMeetingId, '');
+      
+      setMeetings(meetings.map(meeting => 
+        meeting.meeting_id === responseMeetingId
+          ? { ...meeting, response: '' }
+          : meeting
+      ));
+
+      toast.success('Response deleted successfully!');
+      closeModal();
+    } catch (error: unknown) {
+      console.error('Error deleting response:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete response';
+      toast.error(errorMessage);
+    }
   };
 
   // Handle form submission
@@ -169,9 +248,10 @@ const Appointments = () => {
         toast.success('Supervisor meeting scheduled successfully!');
       }
       closeModal();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error submitting meeting:', error);
-      toast.error(error.response?.data?.message || 'An error occurred');
+      const errorMessage = error instanceof Error ? error.message : 'An error occurred';
+      toast.error(errorMessage);
     }
   };
 
@@ -183,45 +263,10 @@ const Appointments = () => {
       setMeetings(meetings.filter(m => m.meeting_id !== currentMeeting.meeting_id));
       toast.success('Supervisor meeting deleted successfully!');
       closeModal();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error deleting meeting:', error);
-      toast.error(error.response?.data?.message || 'Failed to delete meeting');
-    }
-  };
-
-  // Update meeting response
-  const updateResponse = async (meetingId: number, newResponse: string) => {
-    try {
-      const updatedMeeting = await meetingService.updateMeetingResponse(meetingId, newResponse);
-      setMeetings(meetings.map(m => m.meeting_id === meetingId ? updatedMeeting : m));
-      toast.success(`Meeting response updated successfully!`);
-    } catch (error: any) {
-      console.error('Error updating meeting response:', error);
-      toast.error(error.response?.data?.message || `Failed to update meeting response`);
-    }
-  };
-
-  // Handle rescheduling meeting (only date and time)
-  const handleReschedule = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!currentMeeting) return;
-    
-    try {
-      const updateData: UpdateMeetingData = {
-        meeting_date: rescheduleData.meeting_date,
-        meeting_time: rescheduleData.meeting_time,
-        reason: currentMeeting.reason, // Keep existing reason
-        response: currentMeeting.response // Keep existing response
-      };
-      
-      const result = await meetingService.updateMeeting(currentMeeting.meeting_id, updateData);
-      setMeetings(meetings.map(m => m.meeting_id === result.meeting_id ? result : m));
-      toast.success('Supervisor meeting rescheduled successfully!');
-      closeModal();
-    } catch (error: any) {
-      console.error('Error rescheduling meeting:', error);
-      toast.error(error.response?.data?.message || 'Failed to reschedule meeting');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete meeting';
+      toast.error(errorMessage);
     }
   };
 
@@ -272,6 +317,8 @@ const Appointments = () => {
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
                 className="pl-10 pr-8 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none bg-white"
+                title="Filter by status"
+                aria-label="Filter meetings by status"
               >
                 <option value="All Status">All Status</option>
                 <option value="Pending">Pending</option>
@@ -311,102 +358,103 @@ const Appointments = () => {
       </div>
 
       {/* Meetings Table */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         {meetings.length > 0 ? (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
+            <table className="w-full table-auto">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Parent & Child</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date & Time</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reason</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/5">
+                    Parent & Child
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[12%]">
+                    Date & Time
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[23%]">
+                    Reason
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%]">
+                    Status
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/4">
+                    Response/Notes
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%]">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {meetings.map((meeting) => (
                   <tr key={meeting.meeting_id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center">
-                        <User className="flex-shrink-0 h-8 w-8 text-indigo-600" />
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">{meeting.parent_name}</div>
-                          <div className="text-sm text-gray-500">{meeting.child_name} ({meeting.child_age} years)</div>
+                    <td className="px-4 py-4 align-top">
+                      <div className="flex items-start">
+                        <User className="flex-shrink-0 h-8 w-8 text-indigo-600 mt-1" />
+                        <div className="ml-4 min-w-0 flex-1">
+                          <div className="text-sm font-medium text-gray-900 break-words mb-1">
+                            {meeting.parent_name}
+                          </div>
+                          <div className="text-sm text-gray-500 break-words">
+                            {meeting.child_name} ({meeting.child_age} years)
+                          </div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 py-4 align-top">
                       <div className="text-sm text-gray-900">
                         {new Date(meeting.meeting_date).toLocaleDateString()}
                       </div>
                       <div className="text-sm text-gray-500">{meeting.meeting_time}</div>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900 max-w-xs truncate" title={meeting.reason}>
+                    <td className="px-4 py-4 align-top">
+                      <div className="text-sm text-gray-900 break-words leading-relaxed">
                         {meeting.reason}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 text-xs rounded-full ${
+                    <td className="px-4 py-4 align-top">
+                      <span className={`inline-flex px-2 py-1 text-xs rounded-full ${
                         meeting.response && meeting.response.toLowerCase().includes('confirmed')
                           ? 'bg-green-100 text-green-800' 
                           : meeting.response && meeting.response.toLowerCase().includes('cancelled')
                             ? 'bg-red-100 text-red-800'
                             : 'bg-yellow-100 text-yellow-800'
                       }`}>
-                        {meeting.response ? meeting.response : 'Pending'}
+                        {meeting.response ? 
+                          (meeting.response.length > 15 ? `${meeting.response.substring(0, 15)}...` : meeting.response)
+                          : 'Pending'
+                        }
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                      <button
-                        onClick={() => openViewModal(meeting)}
-                        className="text-blue-600 hover:text-blue-900 flex items-center"
-                        title="View Details"
-                      >
-                        <Eye className="w-4 h-4 mr-1" />
-                        View
-                      </button>
-                      
-                      {/* Confirm/Cancel buttons for pending meetings */}
-                      {(!meeting.response || meeting.response.toLowerCase().includes('pending')) && (
-                        <>
-                          <button
-                            onClick={() => updateResponse(meeting.meeting_id, 'Confirmed')}
-                            className="text-green-600 hover:text-green-900 flex items-center"
-                            title="Confirm Meeting"
-                          >
-                            <Check className="w-4 h-4 mr-1" />
-                            Confirm
-                          </button>
-                          <button
-                            onClick={() => updateResponse(meeting.meeting_id, 'Cancelled')}
-                            className="text-red-600 hover:text-red-900 flex items-center"
-                            title="Cancel Meeting"
-                          >
-                            <X className="w-4 h-4 mr-1" />
-                            Cancel
-                          </button>
-                        </>
-                      )}
-                      
-                      {/* Reschedule button for all meetings */}
-                      <button
-                        onClick={() => openRescheduleModal(meeting)}
-                        className="text-indigo-600 hover:text-indigo-900 flex items-center"
-                        title="Reschedule Date & Time Only"
-                      >
-                        <Calendar className="w-4 h-4 mr-1" />
-                        Reschedule
-                      </button>
-                      
-                      <button
-                        onClick={() => openDeleteModal(meeting)}
-                        className="text-gray-600 hover:text-gray-900 flex items-center"
-                      >
-                        <Trash2 className="w-4 h-4 mr-1" />
-                        Delete
-                      </button>
+                    <td className="px-4 py-4 align-top">
+                      <div className="text-sm text-gray-700 break-words max-w-xs">
+                        {meeting.response ? meeting.response : <span className="text-gray-400 italic">No notes</span>}
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 align-top">
+                      <div className="flex flex-col space-y-1">
+                        <button
+                          onClick={() => openViewModal(meeting)}
+                          className="text-blue-600 hover:text-blue-900 flex items-center text-sm"
+                          title="View Details"
+                        >
+                          <Eye className="w-4 h-4 mr-1" />
+                          View
+                        </button>
+                        
+                        <button
+                          onClick={() => openResponseModal(meeting)}
+                          disabled={!meeting.response || (!meeting.response.toLowerCase().includes('confirmed') && !meeting.response.toLowerCase().includes('cancelled'))}
+                          className={`flex items-center text-sm ${
+                            !meeting.response || (!meeting.response.toLowerCase().includes('confirmed') && !meeting.response.toLowerCase().includes('cancelled'))
+                              ? 'text-gray-400 cursor-not-allowed'
+                              : 'text-purple-600 hover:text-purple-900'
+                          }`}
+                          title={!meeting.response || (!meeting.response.toLowerCase().includes('confirmed') && !meeting.response.toLowerCase().includes('cancelled')) ? 'Response available only when Confirmed or Cancelled' : 'Add/Edit Response'}
+                        >
+                          <MessageSquare className="w-4 h-4 mr-1" />
+                          Response
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -428,17 +476,39 @@ const Appointments = () => {
           <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold text-gray-800">Supervisor Appointment Details</h2>
-                <button 
-                  onClick={closeModal}
-                  className="text-gray-400 hover:text-gray-500"
-                  title="Close"
-                >
-                  <X className="h-6 w-6" />
-                </button>
+                <h2 className="text-xl font-bold text-gray-800">
+                  Supervisor Appointment Details
+                  {isViewLoading && (
+                    <span className="ml-2 text-sm text-blue-600">(Loading...)</span>
+                  )}
+                </h2>
+                <div className="flex items-center space-x-2">
+                  <button 
+                    onClick={refreshMeetingDetails}
+                    className="text-blue-600 hover:text-blue-800 p-2 rounded-lg hover:bg-blue-50"
+                    title="Refresh Data"
+                    disabled={isViewLoading}
+                  >
+                    <RefreshCw className={`h-5 w-5 ${isViewLoading ? 'animate-spin' : ''}`} />
+                  </button>
+                  <button 
+                    onClick={closeModal}
+                    className="text-gray-400 hover:text-gray-500"
+                    title="Close"
+                  >
+                    <X className="h-6 w-6" />
+                  </button>
+                </div>
               </div>
 
-              <div className="space-y-6">
+              {isViewLoading && (
+                <div className="flex justify-center items-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500"></div>
+                  <span className="ml-3 text-gray-600">Loading appointment details...</span>
+                </div>
+              )}
+
+              <div className={`space-y-6 ${isViewLoading ? 'opacity-50' : ''}`}>
                 {/* Basic Information */}
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <h3 className="text-lg font-semibold text-gray-800 mb-3">Basic Information</h3>
@@ -459,14 +529,7 @@ const Appointments = () => {
                       <label className="block text-sm font-medium text-gray-600">Child Gender</label>
                       <p className="text-sm text-gray-900">{currentMeeting.child_gender}</p>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-600">Date</label>
-                      <p className="text-sm text-gray-900">{new Date(currentMeeting.meeting_date).toLocaleDateString()}</p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-600">Time</label>
-                      <p className="text-sm text-gray-900">{currentMeeting.meeting_time}</p>
-                    </div>
+                    
                     <div>
                       <label className="block text-sm font-medium text-gray-600">Recipient</label>
                       <p className="text-sm text-gray-900 capitalize">{currentMeeting.recipient}</p>
@@ -512,6 +575,14 @@ const Appointments = () => {
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <h3 className="text-lg font-semibold text-gray-800 mb-3">Meeting Details</h3>
                   <div className="space-y-3">
+                  <div>
+                      <label className="block text-sm font-medium text-gray-600">Date</label>
+                      <p className="text-sm text-gray-900">{new Date(currentMeeting.meeting_date).toLocaleDateString()}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600">Time</label>
+                      <p className="text-sm text-gray-900">{currentMeeting.meeting_time}</p>
+                    </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-600">Reason</label>
                       <p className="text-sm text-gray-900">{currentMeeting.reason}</p>
@@ -524,6 +595,7 @@ const Appointments = () => {
                     )}
                   </div>
                 </div>
+
               </div>
 
               <div className="flex justify-end space-x-3 pt-6">
@@ -569,6 +641,7 @@ const Appointments = () => {
                           onChange={handleInputChange}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                           required
+                          title="Select a child"
                         >
                           <option value={0}>Select a child</option>
                           {mockChildren.map(child => (
@@ -587,6 +660,7 @@ const Appointments = () => {
                           onChange={handleInputChange}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                           required
+                          title="Select recipient"
                         >
                           <option value="supervisor">Supervisor</option>
                         </select>
@@ -637,6 +711,7 @@ const Appointments = () => {
                         value={new Date(currentMeeting?.meeting_date || '').toLocaleDateString()}
                         className="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-50 text-gray-600"
                         readOnly
+                        title="Current appointment date (read-only)"
                       />
                     </div>
                     <div>
@@ -646,6 +721,7 @@ const Appointments = () => {
                         value={currentMeeting?.meeting_time || ''}
                         className="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-50 text-gray-600"
                         readOnly
+                        title="Current appointment time (read-only)"
                       />
                     </div>
                   </div>
@@ -701,86 +777,6 @@ const Appointments = () => {
         </div>
       )}
 
-      {/* Reschedule Modal */}
-      {isRescheduleModalOpen && currentMeeting && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-lg w-full max-w-md">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold text-gray-800">Reschedule Supervisor Meeting</h2>
-                <button 
-                  onClick={closeModal}
-                  className="text-gray-400 hover:text-gray-500"
-                  title="Close"
-                >
-                  <X className="h-6 w-6" />
-                </button>
-              </div>
-
-              <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-                <p className="text-sm text-gray-600">
-                  <strong>Parent:</strong> {currentMeeting.parent_name}<br />
-                  <strong>Child:</strong> {currentMeeting.child_name}<br />
-                  <strong>Current Date:</strong> {new Date(currentMeeting.meeting_date).toLocaleDateString()}<br />
-                  <strong>Current Time:</strong> {currentMeeting.meeting_time}
-                </p>
-              </div>
-
-              <form onSubmit={handleReschedule} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">New Date *</label>
-                    <input
-                      type="date"
-                      name="meeting_date"
-                      value={rescheduleData.meeting_date}
-                      onChange={(e) => setRescheduleData({
-                        ...rescheduleData,
-                        meeting_date: e.target.value
-                      })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      required
-                      min={new Date().toISOString().split('T')[0]}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">New Time *</label>
-                    <input
-                      type="time"
-                      name="meeting_time"
-                      value={rescheduleData.meeting_time}
-                      onChange={(e) => setRescheduleData({
-                        ...rescheduleData,
-                        meeting_time: e.target.value
-                      })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="flex justify-end space-x-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={closeModal}
-                    className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
-                  >
-                    Reschedule Meeting
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Delete Confirmation Modal */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -811,6 +807,106 @@ const Appointments = () => {
                 >
                   Delete
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Response Modal - CRUD for response/notes */}
+      {isResponseModalOpen && currentMeeting && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold text-gray-800">Add/Edit Response & Notes</h2>
+                <button 
+                  onClick={closeModal}
+                  className="text-gray-400 hover:text-gray-500"
+                  title="Close"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+
+              {/* Meeting Summary */}
+              <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+                <h3 className="text-sm font-semibold text-gray-700 mb-3">Meeting Details</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs text-gray-600">Parent</label>
+                    <p className="text-sm font-medium text-gray-900">{currentMeeting.parent_name}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-600">Child</label>
+                    <p className="text-sm font-medium text-gray-900">{currentMeeting.child_name}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-600">Date & Time</label>
+                    <p className="text-sm font-medium text-gray-900">
+                      {new Date(currentMeeting.meeting_date).toLocaleDateString()} at {currentMeeting.meeting_time}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-600">Status</label>
+                    <span className={`inline-flex px-2 py-1 text-xs rounded-full ${
+                      currentMeeting.response && currentMeeting.response.toLowerCase().includes('confirmed')
+                        ? 'bg-green-100 text-green-800' 
+                        : currentMeeting.response && currentMeeting.response.toLowerCase().includes('cancelled')
+                          ? 'bg-red-100 text-red-800'
+                          : 'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {currentMeeting.response ? currentMeeting.response : 'Pending'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Response/Notes Input */}
+              <div className="mb-6">
+                <label className="block text-sm font-semibold text-gray-800 mb-2">Response & Notes *</label>
+                <textarea
+                  value={responseModalText}
+                  onChange={(e) => setResponseModalText(e.target.value)}
+                  rows={6}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+                  placeholder="Enter your response or notes for this meeting..."
+                  title="Enter response or notes"
+                />
+                <p className="mt-2 text-xs text-gray-500">
+                  {responseModalText.length} characters
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-between space-x-3 pt-6 border-t border-gray-200">
+                <div>
+                  {currentMeeting.response && (
+                    <button
+                      onClick={handleDeleteResponse}
+                      className="px-4 py-2 border border-red-300 text-red-600 hover:bg-red-50 rounded-md flex items-center text-sm"
+                      title="Delete Response"
+                    >
+                      <Trash2 className="w-4 h-4 mr-1" />
+                      Delete Response
+                    </button>
+                  )}
+                </div>
+                <div className="flex space-x-3">
+                  <button
+                    onClick={closeModal}
+                    className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSaveResponse}
+                    className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 flex items-center"
+                  >
+                    <MessageSquare className="w-4 h-4 mr-1" />
+                    Save Response
+                  </button>
+                </div>
               </div>
             </div>
           </div>

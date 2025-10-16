@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { 
   Search, AlertCircle, User, Trash2, Filter,Eye, X
 } from 'lucide-react';
@@ -51,6 +51,37 @@ const Complaints = () => {
     fetchComplaints();
   }, []);
 
+  // Search complaints
+  const handleSearch = useCallback(async () => {
+    if (!searchTerm.trim() && statusFilter === 'All Status' && recipientFilter === 'All Recipients') {
+      fetchComplaints();
+      return;
+    }
+    setIsLoading(true);
+    setIsSearching(true);
+    try {
+      const searchParams: {
+        searchTerm?: string;
+        status?: string;
+        recipient?: string;
+      } = {};
+      if (searchTerm.trim()) searchParams.searchTerm = searchTerm;
+      if (statusFilter !== 'All Status') searchParams.status = statusFilter;
+      if (recipientFilter !== 'All Recipients') searchParams.recipient = recipientFilter;
+
+      // Always filter for supervisor complaints
+      searchParams.recipient = 'supervisor';
+
+      const data = await complaintService.searchComplaints(searchParams);
+      setComplaints(data);
+    } catch (error: unknown) {
+      console.error('Error searching complaints:', error);
+      toast.error('Search failed');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [searchTerm, statusFilter, recipientFilter]);
+
   // Search effect with debounce
   useEffect(() => {
     const timerId = setTimeout(() => {
@@ -62,7 +93,7 @@ const Complaints = () => {
     return () => {
       clearTimeout(timerId);
     };
-  }, [searchTerm, statusFilter, recipientFilter]);
+  }, [searchTerm, statusFilter, recipientFilter, handleSearch, isSearching]);
 
   const fetchComplaints = async () => {
     setIsLoading(true);
@@ -79,37 +110,7 @@ const Complaints = () => {
       setIsLoading(false);
       setIsSearching(false);
     }
-  };
-
-  // Search complaints
-  const handleSearch = async () => {
-    if (!searchTerm.trim() && statusFilter === 'All Status' && recipientFilter === 'All Recipients') {
-      fetchComplaints();
-      return;
-    }
-    setIsLoading(true);
-    setIsSearching(true);
-    try {
-      const searchParams: any = {};
-      if (searchTerm.trim()) searchParams.searchTerm = searchTerm;
-      if (statusFilter !== 'All Status') searchParams.status = statusFilter;
-      if (recipientFilter !== 'All Recipients') searchParams.recipient = recipientFilter;
-
-      // Always filter for supervisor complaints
-      searchParams.recipient = 'supervisor';
-
-      console.log('Searching complaints with params:', searchParams);
-      const data = await complaintService.searchComplaints(searchParams);
-      setComplaints(data);
-    } catch (error) {
-      console.error('Error searching complaints:', error);
-      toast.error('Search failed');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Handle input changes for form
+  };  // Handle input changes for form
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData({
@@ -179,9 +180,10 @@ const Complaints = () => {
         toast.success('Complaint created successfully!');
       }
       closeModal();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error saving complaint:', error);
-      toast.error(error.response?.data?.message || 'Failed to save complaint');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save complaint';
+      toast.error(errorMessage);
     }
   };
 
@@ -194,24 +196,13 @@ const Complaints = () => {
       setComplaints(complaints.filter(c => c.complaint_id !== currentComplaint.complaint_id));
       toast.success('Complaint deleted successfully!');
       closeModal();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error deleting complaint:', error);
-      toast.error(error.response?.data?.message || 'Failed to delete complaint');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete complaint';
+      toast.error(errorMessage);
     }
   };
 
-
-  // Update complaint action
-  const updateAction = async (complaintId: number, newAction: string) => {
-    try {
-      const updatedComplaint = await complaintService.updateComplaintAction(complaintId, newAction);
-      setComplaints(complaints.map(c => c.complaint_id === complaintId ? updatedComplaint : c));
-      toast.success('Complaint action updated successfully!');
-    } catch (error: any) {
-      console.error('Error updating complaint action:', error);
-      toast.error(error.response?.data?.message || 'Failed to update complaint action');
-    }
-  };
 
   // Clear filters
   const clearFilters = () => {
@@ -262,6 +253,8 @@ const Complaints = () => {
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
                 className="pl-10 pr-8 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none bg-white"
+                title="Filter by status"
+                aria-label="Filter complaints by status"
               >
                 <option value="All Status">All Status</option>
                 <option value="Pending">Pending</option>
@@ -306,49 +299,60 @@ const Complaints = () => {
       </div>
 
       {/* Complaints Table */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         {complaints.length > 0 ? (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
+            <table className="w-full table-auto">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Complaint Details</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Child & Parent</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-2/5">
+                    Complaint Details
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/4">
+                    Child & Parent
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[15%]">
+                    Status
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/5">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {complaints.map((complaint) => (
                   <tr key={complaint.complaint_id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center">
-                        <AlertCircle className="flex-shrink-0 h-8 w-8 text-red-600" />
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">{complaint.subject}</div>
-                          <div className="text-sm text-gray-500 max-w-xs truncate" title={complaint.description}>
+                    <td className="px-4 py-4 align-top">
+                      <div className="flex items-start">
+                        <AlertCircle className="flex-shrink-0 h-8 w-8 text-red-600 mt-1" />
+                        <div className="ml-4 min-w-0 flex-1">
+                          <div className="text-sm font-medium text-gray-900 break-words mb-1">
+                            {complaint.subject}
+                          </div>
+                          <div className="text-sm text-gray-500 break-words mb-2">
                             {complaint.description}
                           </div>
-                          <div className="text-sm text-gray-400">{new Date(complaint.date).toLocaleDateString()}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center">
-                        <User className="flex-shrink-0 h-8 w-8 text-indigo-600" />
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
-                            Parent : {complaint.parent_name}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            Child : {complaint.child_name}
+                          <div className="text-sm text-gray-400">
+                            {new Date(complaint.date).toLocaleDateString()}
                           </div>
                         </div>
                       </div>
                     </td>
-
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 text-xs rounded-full ${complaint.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                    <td className="px-4 py-4 align-top">
+                      <div className="flex items-start">
+                        <User className="flex-shrink-0 h-8 w-8 text-indigo-600 mt-1" />
+                        <div className="ml-4 min-w-0 flex-1">
+                          <div className="text-sm font-medium text-gray-900 break-words mb-1">
+                            Parent: {complaint.parent_name}
+                          </div>
+                          <div className="text-sm text-gray-500 break-words">
+                            Child: {complaint.child_name}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 align-top">
+                      <span className={`inline-flex px-2 py-1 text-xs rounded-full ${complaint.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
                           complaint.status === 'In Progress' ? 'bg-blue-100 text-blue-800' :
                             complaint.status === 'Solved' ? 'bg-green-100 text-green-800' :
                               'bg-gray-100 text-gray-800'
@@ -356,22 +360,24 @@ const Complaints = () => {
                         {complaint.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                      <button
-                        onClick={() => openViewModal(complaint)}
-                        className="text-blue-600 hover:text-blue-900 flex items-center"
-                        title="View Details"
-                      >
-                        <Eye className="w-4 h-4 mr-1" />
-                        View
-                      </button>
-                      <button
-                        onClick={() => openDeleteModal(complaint)}
-                        className="text-gray-600 hover:text-gray-900 flex items-center"
-                      >
-                        <Trash2 className="w-4 h-4 mr-1" />
-                        Delete
-                      </button>
+                    <td className="px-4 py-4 align-top">
+                      <div className="flex flex-col space-y-2">
+                        <button
+                          onClick={() => openViewModal(complaint)}
+                          className="text-blue-600 hover:text-blue-900 flex items-center text-sm"
+                          title="View Details"
+                        >
+                          <Eye className="w-4 h-4 mr-1" />
+                          View
+                        </button>
+                        <button
+                          onClick={() => openDeleteModal(complaint)}
+                          className="text-red-600 hover:text-red-900 flex items-center text-sm"
+                        >
+                          <Trash2 className="w-4 h-4 mr-1" />
+                          Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -418,6 +424,7 @@ const Complaints = () => {
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       required
+                      title="Select a child"
                     >
                       <option value={0}>Select a child</option>
                       {mockChildren.map(child => (
@@ -438,6 +445,7 @@ const Complaints = () => {
                         value={formData.status}
                         onChange={handleInputChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        title="Select complaint status"
                       >
                         <option value="Pending">Pending</option>
                         <option value="In Progress">In Progress</option>
