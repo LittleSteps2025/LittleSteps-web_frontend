@@ -10,9 +10,7 @@ import {
   Bell,
   Settings,
   PieChart,
-  Calendar,
-  BookOpen,
-  LifeBuoy
+  
 } from 'lucide-react';
 
 const AdminSidebar = () => {
@@ -67,7 +65,7 @@ const AdminSidebar = () => {
           onClick={handleLogout}
           className="flex items-center p-3 rounded-lg transition-all w-full hover:bg-red-500/20 text-white hover:text-red-200 text-left"
         >
-          <LogOut className="w-5 h-5 mr-3" />
+          {/* <LogOut className="w-5 h-5 mr-3" /> */}
           <span>Logout</span>
         </button>
       </div>

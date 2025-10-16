@@ -10,6 +10,7 @@ export interface Meeting {
   meeting_time: string;
   reason: string;
   response?: string;
+  status?: 'pending' | 'confirmed' | 'cancelled';
   child_name: string;
   child_age: number;
   child_gender: string;
@@ -122,14 +123,23 @@ class MeetingService {
     }
   }
 
-  // Reschedule meeting (date and time only)
-  async rescheduleMeeting(meetingId: number, meeting_date: string, meeting_time: string, response?: string): Promise<Meeting> {
+  // Update meeting status
+  async updateMeetingStatus(meetingId: number, status: 'pending' | 'confirmed' | 'cancelled'): Promise<Meeting> {
     try {
-      const rescheduleData = { meeting_date, meeting_time, response };
-      const response_data = await axios.patch(`${API_BASE_URL}/meetings/${meetingId}/reschedule`, rescheduleData);
-      return response_data.data.data;
+      console.log('=== SERVICE: updateMeetingStatus ===');
+      console.log('Meeting ID:', meetingId);
+      console.log('Status:', status);
+      console.log('URL:', `${API_BASE_URL}/meetings/${meetingId}/status`);
+      console.log('Payload:', { status });
+      
+      const response = await axios.patch(`${API_BASE_URL}/meetings/${meetingId}/status`, { status });
+      console.log('Response:', response.data);
+      return response.data.data;
     } catch (error) {
-      console.error('Error rescheduling meeting:', error);
+      console.error('Error updating meeting status:', error);
+      if (axios.isAxiosError(error) && error.response) {
+        console.error('Error response:', error.response.data);
+      }
       throw error;
     }
   }

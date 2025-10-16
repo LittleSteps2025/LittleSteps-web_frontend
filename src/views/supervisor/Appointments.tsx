@@ -37,12 +37,12 @@ const Appointments = () => {
     { child_id: 4, name: 'Lakshmi Fernando', parent_name: 'Priya Fernando' }
   ];
 
-  // Stats calculation based on response status
+  // Stats calculation based on status field
   const stats = {
     total: meetings.length,
-    confirmed: meetings.filter(m => m.response && m.response.toLowerCase().includes('confirmed')).length,
-    pending: meetings.filter(m => !m.response || m.response.toLowerCase().includes('pending')).length,
-    cancelled: meetings.filter(m => m.response && m.response.toLowerCase().includes('cancelled')).length
+    confirmed: meetings.filter(m => m.status === 'confirmed').length,
+    pending: meetings.filter(m => m.status === 'pending').length,
+    cancelled: meetings.filter(m => m.status === 'cancelled').length
   };
 
   const fetchMeetings = useCallback(async () => {
@@ -164,7 +164,7 @@ const Appointments = () => {
 
   // Open response modal
   const openResponseModal = (meeting: Meeting) => {
-    if (!meeting.response || (!meeting.response.toLowerCase().includes('confirmed') && !meeting.response.toLowerCase().includes('cancelled'))) {
+    if (meeting.status !== 'confirmed' && meeting.status !== 'cancelled') {
       toast.warning('Can only add notes to Confirmed or Cancelled meetings');
       return;
     }
@@ -184,13 +184,18 @@ const Appointments = () => {
     if (responseMeetingId === null) return;
 
     try {
-      await meetingService.updateMeetingResponse(responseMeetingId, responseModalText.trim());
+      const updatedMeeting = await meetingService.updateMeetingResponse(responseMeetingId, responseModalText.trim());
       
       setMeetings(meetings.map(meeting => 
         meeting.meeting_id === responseMeetingId
-          ? { ...meeting, response: responseModalText.trim() }
+          ? updatedMeeting
           : meeting
       ));
+
+      // Update current meeting if it's the one being edited
+      if (currentMeeting && currentMeeting.meeting_id === responseMeetingId) {
+        setCurrentMeeting(updatedMeeting);
+      }
 
       toast.success('Response updated successfully!');
       closeModal();
@@ -207,19 +212,53 @@ const Appointments = () => {
 
     try {
       // Set empty response
-      await meetingService.updateMeetingResponse(responseMeetingId, '');
+      const updatedMeeting = await meetingService.updateMeetingResponse(responseMeetingId, '');
       
       setMeetings(meetings.map(meeting => 
         meeting.meeting_id === responseMeetingId
-          ? { ...meeting, response: '' }
+          ? updatedMeeting
           : meeting
       ));
+
+      // Update current meeting if it's the one being edited
+      if (currentMeeting && currentMeeting.meeting_id === responseMeetingId) {
+        setCurrentMeeting(updatedMeeting);
+      }
 
       toast.success('Response deleted successfully!');
       closeModal();
     } catch (error: unknown) {
       console.error('Error deleting response:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to delete response';
+      toast.error(errorMessage);
+    }
+  };
+
+  // Update meeting status
+  const updateMeetingStatus = async (meetingId: number, newStatus: 'confirmed' | 'cancelled') => {
+    console.log('=== FRONTEND: updateMeetingStatus ===');
+    console.log('Meeting ID:', meetingId);
+    console.log('New Status:', newStatus);
+    
+    try {
+      const updatedMeeting = await meetingService.updateMeetingStatus(meetingId, newStatus);
+      console.log('Updated meeting received:', updatedMeeting);
+      
+      setMeetings(meetings.map(meeting => 
+        meeting.meeting_id === meetingId ? updatedMeeting : meeting
+      ));
+
+      // Update current meeting if it's the one being viewed
+      if (currentMeeting && currentMeeting.meeting_id === meetingId) {
+        console.log('Updating current meeting in view modal');
+        setCurrentMeeting(updatedMeeting);
+      }
+
+      toast.success(`Meeting ${newStatus} successfully!`);
+      console.log('Status update completed successfully');
+    } catch (error: unknown) {
+      console.error('Error updating status:', error);
+      const errorMessage = error instanceof Error ? error.message : `Failed to update status to ${newStatus}`;
       toast.error(errorMessage);
     }
   };
@@ -412,17 +451,14 @@ const Appointments = () => {
                       </div>
                     </td>
                     <td className="px-4 py-4 align-top">
-                      <span className={`inline-flex px-2 py-1 text-xs rounded-full ${
-                        meeting.response && meeting.response.toLowerCase().includes('confirmed')
+                      <span className={`inline-flex px-2 py-1 text-xs rounded-full font-medium ${
+                        meeting.status === 'confirmed'
                           ? 'bg-green-100 text-green-800' 
-                          : meeting.response && meeting.response.toLowerCase().includes('cancelled')
+                          : meeting.status === 'cancelled'
                             ? 'bg-red-100 text-red-800'
                             : 'bg-yellow-100 text-yellow-800'
                       }`}>
-                        {meeting.response ? 
-                          (meeting.response.length > 15 ? `${meeting.response.substring(0, 15)}...` : meeting.response)
-                          : 'Pending'
-                        }
+                        {meeting.status ? meeting.status.charAt(0).toUpperCase() + meeting.status.slice(1) : 'Pending'}
                       </span>
                     </td>
                     <td className="px-4 py-4 align-top">
@@ -441,19 +477,33 @@ const Appointments = () => {
                           View
                         </button>
                         
-                        <button
-                          onClick={() => openResponseModal(meeting)}
-                          disabled={!meeting.response || (!meeting.response.toLowerCase().includes('confirmed') && !meeting.response.toLowerCase().includes('cancelled'))}
-                          className={`flex items-center text-sm ${
-                            !meeting.response || (!meeting.response.toLowerCase().includes('confirmed') && !meeting.response.toLowerCase().includes('cancelled'))
-                              ? 'text-gray-400 cursor-not-allowed'
-                              : 'text-purple-600 hover:text-purple-900'
-                          }`}
-                          title={!meeting.response || (!meeting.response.toLowerCase().includes('confirmed') && !meeting.response.toLowerCase().includes('cancelled')) ? 'Response available only when Confirmed or Cancelled' : 'Add/Edit Response'}
-                        >
-                          <MessageSquare className="w-4 h-4 mr-1" />
-                          Response
-                        </button>
+                        {meeting.status === 'pending' ? (
+                          <>
+                            <button
+                              onClick={() => updateMeetingStatus(meeting.meeting_id, 'confirmed')}
+                              className="text-green-600 hover:text-green-900 flex items-center text-sm"
+                              title="Confirm this meeting"
+                            >
+                              ✓ Confirm
+                            </button>
+                            <button
+                              onClick={() => updateMeetingStatus(meeting.meeting_id, 'cancelled')}
+                              className="text-red-600 hover:text-red-900 flex items-center text-sm"
+                              title="Cancel this meeting"
+                            >
+                              ✕ Cancel
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            onClick={() => openResponseModal(meeting)}
+                            className="text-purple-600 hover:text-purple-900 flex items-center text-sm"
+                            title="Add/Edit Response"
+                          >
+                            <MessageSquare className="w-4 h-4 mr-1" />
+                            Response
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -536,14 +586,14 @@ const Appointments = () => {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-600">Status</label>
-                      <span className={`px-2 py-1 text-xs rounded-full ${
-                        currentMeeting.response && currentMeeting.response.toLowerCase().includes('confirmed')
+                      <span className={`px-2 py-1 text-xs rounded-full font-medium ${
+                        currentMeeting.status === 'confirmed'
                           ? 'bg-green-100 text-green-800' 
-                          : currentMeeting.response && currentMeeting.response.toLowerCase().includes('cancelled')
+                          : currentMeeting.status === 'cancelled'
                             ? 'bg-red-100 text-red-800'
                             : 'bg-yellow-100 text-yellow-800'
                       }`}>
-                        {currentMeeting.response ? currentMeeting.response : 'Pending'}
+                        {currentMeeting.status ? currentMeeting.status.charAt(0).toUpperCase() + currentMeeting.status.slice(1) : 'Pending'}
                       </span>
                     </div>
                   </div>
@@ -849,14 +899,14 @@ const Appointments = () => {
                   </div>
                   <div>
                     <label className="text-xs text-gray-600">Status</label>
-                    <span className={`inline-flex px-2 py-1 text-xs rounded-full ${
-                      currentMeeting.response && currentMeeting.response.toLowerCase().includes('confirmed')
+                    <span className={`inline-flex px-2 py-1 text-xs rounded-full font-medium ${
+                      currentMeeting.status === 'confirmed'
                         ? 'bg-green-100 text-green-800' 
-                        : currentMeeting.response && currentMeeting.response.toLowerCase().includes('cancelled')
+                        : currentMeeting.status === 'cancelled'
                           ? 'bg-red-100 text-red-800'
                           : 'bg-yellow-100 text-yellow-800'
                     }`}>
-                      {currentMeeting.response ? currentMeeting.response : 'Pending'}
+                      {currentMeeting.status ? currentMeeting.status.charAt(0).toUpperCase() + currentMeeting.status.slice(1) : 'Pending'}
                     </span>
                   </div>
                 </div>
