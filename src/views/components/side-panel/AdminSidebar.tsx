@@ -20,6 +20,7 @@ const AdminSidebar = () => {
     { path: '/admin/users', icon: Users, label: 'Supervisor and Teachers' },
     { path: '/admin/children', icon: Baby, label: 'Child Details' },
     { path: '/admin/subscriptions', icon: CreditCard, label: 'Subscriptions' },
+    { path: '/admin/payments', icon: CreditCard, label: 'Payment Management' },
     { path: '/admin/complaints', icon: AlertCircle, label: 'Complaints' },
     // { path: '/admin/attendance', icon: Calendar, label: 'Attendance' },
     { path: '/admin/announcements', icon: Bell, label: 'Announcements' },

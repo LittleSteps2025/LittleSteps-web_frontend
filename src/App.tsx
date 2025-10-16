@@ -16,6 +16,7 @@ import AdminDashboard from './views/admin/Dashboard';
 import AdminUsers from './views/admin/UsersManagement';
 import AdminChildren from './views/admin/ChildManagement';
 import AdminSubscriptions from './views/admin/SubscriptionsManagement';
+import AdminPayments from './views/admin/PaymentManagement';
 import AdminComplaints from './views/admin/ComplaintsManagement';
 import AdminAttendance from './views/admin/AttendanceManagement';
 import AdminAnnouncements from './views/admin/Announcements';
@@ -65,6 +66,7 @@ function App() {
             <Route path="users" element={<AdminUsers />} />
             <Route path="children" element={<AdminChildren />} />
             <Route path="subscriptions" element={<AdminSubscriptions />} />
+            <Route path="payments" element={<AdminPayments />} />
             <Route path="complaints" element={<AdminComplaints />} />
             <Route path="attendance" element={<AdminAttendance />} />
             <Route path="announcements" element={<AdminAnnouncements />} />
