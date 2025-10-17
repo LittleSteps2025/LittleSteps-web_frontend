@@ -74,7 +74,7 @@ const Announcements = () => {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   // API base URL
-  const API_BASE_URL = '/api/announcements';
+  const API_BASE_URL = 'http://localhost:5001/api/announcements';
 
   // Format date and time for display
   const formatDateTime = (dateString: string) => {
@@ -103,7 +103,8 @@ const Announcements = () => {
     try {
       const response = await fetch(API_BASE_URL);
       if (!response.ok) throw new Error('Failed to fetch announcements');
-      let data = await response.json();
+      const responseData = await response.json();
+      let data = responseData.data;
       // Map audience integer to string
       data = data.map((a: { audience: string | number; }) => ({
         ...a,
