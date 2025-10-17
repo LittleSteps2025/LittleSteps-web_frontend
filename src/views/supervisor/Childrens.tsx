@@ -1116,20 +1116,22 @@ export default function Childrens() {
                         {student.parentName}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button
-                          onClick={() => handleEdit(student)}
-                          className="text-indigo-600 hover:text-indigo-900 mr-4 flex items-center"
-                        >
-                          <Edit className="w-4 h-4 mr-1" />
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDelete(student)}
-                          className="text-red-600 hover:text-red-900 flex items-center"
-                        >
-                          <Trash2 className="w-4 h-4 mr-1" />
-                          Delete
-                        </button>
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleEdit(student)}
+                            className="p-2 text-indigo-600 hover:text-indigo-900 hover:bg-indigo-50 rounded-full transition-colors"
+                            title="Edit"
+                          >
+                            <Edit className="w-5 h-5" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(student)}
+                            className="p-2 text-red-600 hover:text-red-900 hover:bg-red-50 rounded-full transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-5 h-5" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}

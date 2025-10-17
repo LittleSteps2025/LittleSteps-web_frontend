@@ -23,8 +23,8 @@ interface ApiResponse<T> {
 // API endpoints
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001';
 const API_ENDPOINTS = {
-  COMPLAINTS: `${API_BASE_URL}/api/complaints`,
-  CHILDREN: `${API_BASE_URL}/api/children`,
+  COMPLAINTS: `${API_BASE_URL}/api/admin/complaint`,
+  CHILDREN: `${API_BASE_URL}/api/parent/children`,
 } as const;
 
 const ComplaintsManagement = () => {
