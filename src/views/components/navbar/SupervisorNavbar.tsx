@@ -2,13 +2,18 @@ import { Menu, X, User, Bell, ChevronDown, LogOut } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
+import { useNotifications } from '../../../context/NotificationContext';
+import NotificationDropdown from '../notification/NotificationDropdown';
 
 const SupervisorNavbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const { user, logout } = useAuth();
+  const { unreadCount } = useNotifications();
   const navigate = useNavigate();
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const notificationRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -44,10 +49,31 @@ const SupervisorNavbar = () => {
           <div className="flex-1 flex items-center justify-end">
             <div className="flex items-center space-x-4">
               
-              <button className="bg-white p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                <span className="sr-only">View notifications</span>
-                <Bell className="h-6 w-6" />
-              </button>
+              {/* Notification Bell */}
+              <div className="relative" ref={notificationRef}>
+                <button 
+                  onClick={() => setIsNotificationOpen(!isNotificationOpen)}
+                  className="bg-white p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 relative"
+                >
+                  <span className="sr-only">View notifications</span>
+                  <Bell className="h-6 w-6" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center">
+                      <span className="absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75 animate-ping"></span>
+                      <span className="relative inline-flex items-center justify-center h-5 w-5 rounded-full bg-red-500 text-white text-xs font-bold">
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                      </span>
+                    </span>
+                  )}
+                </button>
+                
+                {/* Notification Dropdown */}
+                <NotificationDropdown 
+                  isOpen={isNotificationOpen} 
+                  onClose={() => setIsNotificationOpen(false)} 
+                />
+              </div>
+
               <div className="ml-3 relative" ref={dropdownRef}>
                 <div>
                   <button 

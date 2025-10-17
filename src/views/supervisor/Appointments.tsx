@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Search, User, Eye, Phone, Filter, RefreshCw, X, MessageSquare, Trash2 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -6,6 +7,7 @@ import meetingService from '../../services/meetingService';
 import type { Meeting, CreateMeetingData, UpdateMeetingData } from '../../services/meetingService';
 
 const Appointments = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All Status');
@@ -64,6 +66,24 @@ const Appointments = () => {
   useEffect(() => {
     fetchMeetings();
   }, [fetchMeetings]);
+
+  // Handle URL parameter for auto-opening meeting detail
+  useEffect(() => {
+    const meetingId = searchParams.get('meeting_id');
+    if (meetingId && meetings.length > 0) {
+      const meeting = meetings.find(m => m.meeting_id === parseInt(meetingId));
+      if (meeting) {
+        // Open the view modal directly
+        setIsViewModalOpen(true);
+        setCurrentMeeting(meeting);
+        // Fetch full details
+        fetchMeetingDetails(meeting.meeting_id);
+        // Remove the parameter from URL after opening
+        setSearchParams({});
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, meetings]);
 
   const handleSearch = useCallback(async () => {
     if (!searchTerm.trim() && statusFilter === 'All Status') {

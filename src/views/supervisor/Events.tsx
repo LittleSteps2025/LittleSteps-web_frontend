@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Calendar, Search, Plus, X, Edit, Trash2 } from 'lucide-react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import { useAuth } from '../../context/AuthContext';
 
 type Event = {
   event_id: number;
@@ -39,6 +40,7 @@ const Toast = ({ message, type, onClose }: { message: string; type: 'success' | 
 const API_BASE_URL = 'http://localhost:5001/api/events';
 
 const Events = () => {
+  const { user } = useAuth(); // Get the logged-in user
   const [events, setEvents] = useState<Event[]>([]);
   const [filteredEvents, setFilteredEvents] = useState<Event[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -100,7 +102,7 @@ const Events = () => {
       
       setEvents(data);
       setFilteredEvents(data);
-      showToast(`Successfully loaded ${data.length} events`, 'success');
+      // Remove success toast on fetch to avoid too many notifications
     } catch (error) {
       console.error('Error fetching events:', error);
       showToast('Failed to load events. Please check your connection.', 'error');
@@ -240,14 +242,23 @@ const Events = () => {
     setIsLoading(true);
   
     try {
+      // Get the user ID from the logged-in user
+      const userId = user?.id || user?.user_id;
+      
+      if (!userId && !isEditMode) {
+        showToast('User not logged in. Please log in first.', 'error');
+        return;
+      }
+
+      // Prepare event payload with proper image handling
       const eventPayload = {
         topic: formData.topic.trim(),
         description: formData.description.trim(),
         venue: formData.venue.trim(),
         date: formData.date,
         time: formData.time,
-        image: formData.image ? formData.image : null,
-        user_id: isEditMode ? undefined : '1',
+        image: formData.image ? formData.image.name : null, // Send only the filename
+        user_id: isEditMode ? undefined : userId, // Use actual logged-in user ID
       };
   
       let url = API_BASE_URL;
@@ -263,6 +274,7 @@ const Events = () => {
   
       console.log('Sending request to:', url);
       console.log('Method:', method);
+      console.log('Payload:', eventPayload);
   
       const response = await fetch(url, {
         method,

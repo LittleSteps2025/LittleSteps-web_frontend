@@ -1,13 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { 
-  Search, AlertCircle, User, Trash2, Filter,Eye, X
+  Search, AlertCircle, User, Trash2, Filter,Eye, X, Edit
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import complaintService from '../../services/complaintService';
-import type { Complaint, CreateComplaintData, UpdateComplaintData } from '../../services/complaintService';
+import type { Complaint, CreateComplaintData } from '../../services/complaintService';
 
 const Complaints = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All Status');
@@ -29,14 +31,6 @@ const Complaints = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
 
-  // Mock child data for demo purposes (in real app, this would come from child service)
-  const mockChildren = [
-    { child_id: 1, name: 'Damsara Perera', parent_name: 'Malith Perera' },
-    { child_id: 2, name: 'Mohomad Ahmed', parent_name: 'Farshad Ahmed' },
-    { child_id: 3, name: 'Silva Silva', parent_name: 'Chathumini Silva' },
-    { child_id: 4, name: 'Lakshmi Fernando', parent_name: 'Priya Fernando' }
-  ];
-
   // Stats calculation based on status
   const stats = {
     total: complaints.length,
@@ -50,6 +44,19 @@ const Complaints = () => {
   useEffect(() => {
     fetchComplaints();
   }, []);
+
+  // Handle URL parameter for auto-opening complaint detail
+  useEffect(() => {
+    const complaintId = searchParams.get('complaint_id');
+    if (complaintId && complaints.length > 0) {
+      const complaint = complaints.find(c => c.complaint_id === parseInt(complaintId));
+      if (complaint) {
+        openViewModal(complaint);
+        // Remove the parameter from URL after opening
+        setSearchParams({});
+      }
+    }
+  }, [searchParams, complaints, setSearchParams]);
 
   // Search complaints
   const handleSearch = useCallback(async () => {
@@ -156,34 +163,88 @@ const Complaints = () => {
     setCurrentComplaint(null);
   };
 
-  // Handle form submission
+  // Handle form submission (for supervisor: only status and action updates)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!isEditMode || !currentComplaint) return;
+
+    const loadingToast = toast.loading('Updating complaint...');
+
     try {
-      let result: Complaint;
-      if (isEditMode && currentComplaint) {
-        const updateData: UpdateComplaintData = {
-          date: formData.date,
-          subject: formData.subject,
-          recipient: formData.recipient,
-          description: formData.description,
-          status: formData.status,
-          action: formData.action
-        };
-        result = await complaintService.updateComplaint(currentComplaint.complaint_id, updateData);
-        setComplaints(complaints.map(c => c.complaint_id === result.complaint_id ? result : c));
-        toast.success('Complaint updated successfully!');
-      } else {
-        result = await complaintService.createComplaint(formData);
-        setComplaints([result, ...complaints]);
-        toast.success('Complaint created successfully!');
+      let statusUpdated = false;
+      let actionUpdated = false;
+
+      // Normalize values for comparison
+      const currentAction = (currentComplaint.action || '').trim();
+      const newAction = (formData.action || '').trim();
+      const currentStatus = currentComplaint.status;
+      const newStatus = formData.status;
+
+      console.log('Current status:', currentStatus, 'New status:', newStatus);
+      console.log('Current action:', currentAction, 'New action:', newAction);
+
+      // Update status if changed
+      if (newStatus && newStatus !== currentStatus) {
+        console.log(`Updating status from "${currentStatus}" to "${newStatus}"`);
+        const result = await complaintService.updateComplaintStatus(currentComplaint.complaint_id, newStatus);
+        console.log('Status update result:', result);
+        statusUpdated = true;
       }
+      
+      // Update action if different from current
+      if (newAction !== currentAction) {
+        console.log(`Updating action from "${currentAction}" to "${newAction}"`);
+        const result = await complaintService.updateComplaintAction(currentComplaint.complaint_id, newAction);
+        console.log('Action update result:', result);
+        actionUpdated = true;
+      }
+
+      if (!statusUpdated && !actionUpdated) {
+        toast.dismiss(loadingToast);
+        toast.info('No changes to update');
+        closeModal();
+        return;
+      }
+      
+      // Fetch updated complaint with full details
+      console.log('Fetching updated complaint...');
+      const updatedComplaint = await complaintService.getComplaintById(currentComplaint.complaint_id);
+      console.log('Updated complaint fetched:', updatedComplaint);
+      
+      // Update the complaints list
+      setComplaints(complaints.map(c => 
+        c.complaint_id === updatedComplaint.complaint_id ? updatedComplaint : c
+      ));
+      
+      toast.dismiss(loadingToast);
+      
+      // Show specific success message
+      if (statusUpdated && actionUpdated) {
+        toast.success('✅ Complaint status and action updated successfully!');
+      } else if (statusUpdated) {
+        toast.success('✅ Complaint status updated successfully!');
+      } else if (actionUpdated) {
+        toast.success('✅ Complaint action updated successfully!');
+      }
+      
       closeModal();
+      
     } catch (error: unknown) {
-      console.error('Error saving complaint:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to save complaint';
-      toast.error(errorMessage);
+      toast.dismiss(loadingToast);
+      console.error('Error updating complaint:', error);
+      
+      let errorMessage = 'Failed to update complaint';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'object' && error !== null) {
+        const err = error as { response?: { data?: { message?: string } } };
+        if (err.response?.data?.message) {
+          errorMessage = err.response.data.message;
+        }
+      }
+      
+      toast.error(`❌ ${errorMessage}`);
     }
   };
 
@@ -191,15 +252,33 @@ const Complaints = () => {
   const deleteComplaint = async () => {
     if (!currentComplaint) return;
 
+    const loadingToast = toast.loading('Deleting complaint...');
+
     try {
       await complaintService.deleteComplaint(currentComplaint.complaint_id);
+      
+      // Remove from local state
       setComplaints(complaints.filter(c => c.complaint_id !== currentComplaint.complaint_id));
-      toast.success('Complaint deleted successfully!');
+      
+      toast.dismiss(loadingToast);
+      toast.success('✅ Complaint deleted successfully!');
       closeModal();
+      
     } catch (error: unknown) {
+      toast.dismiss(loadingToast);
       console.error('Error deleting complaint:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to delete complaint';
-      toast.error(errorMessage);
+      
+      let errorMessage = 'Failed to delete complaint';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'object' && error !== null) {
+        const err = error as { response?: { data?: { message?: string } } };
+        if (err.response?.data?.message) {
+          errorMessage = err.response.data.message;
+        }
+      }
+      
+      toast.error(`❌ ${errorMessage}`);
     }
   };
 
@@ -371,6 +450,14 @@ const Complaints = () => {
                           View
                         </button>
                         <button
+                          onClick={() => openEditModal(complaint)}
+                          className="text-green-600 hover:text-green-900 flex items-center text-sm"
+                          title="Update Status & Action"
+                        >
+                          <Edit className="w-4 h-4 mr-1" />
+                          Action
+                        </button>
+                        <button
                           onClick={() => openDeleteModal(complaint)}
                           className="text-red-600 hover:text-red-900 flex items-center text-sm"
                         >
@@ -393,14 +480,14 @@ const Complaints = () => {
         )}
       </div>
 
-      {/* Add/Edit Complaint Modal */}
-      {isModalOpen && (
+      {/* Edit Complaint Status and Action Modal */}
+      {isModalOpen && isEditMode && currentComplaint && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-bold text-gray-800">
-                  {isEditMode ? 'Edit Complaint' : 'New Complaint'}
+                  Update Complaint Status & Action
                 </h2>
                 <button
                   onClick={closeModal}
@@ -412,63 +499,79 @@ const Complaints = () => {
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
-              
-            
+                {/* Complaint Details (Read-only) */}
+                <div className="bg-gray-50 p-4 rounded-lg space-y-3">
+                  <h3 className="font-semibold text-gray-700 mb-2">Complaint Details</h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-500">Date</label>
+                      <p className="text-sm text-gray-900">{new Date(currentComplaint.date).toLocaleDateString()}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-500">Recipient</label>
+                      <p className="text-sm text-gray-900">{currentComplaint.recipient.charAt(0).toUpperCase() + currentComplaint.recipient.slice(1)}</p>
+                    </div>
+                  </div>
 
-                {!isEditMode && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Child *</label>
+                    <label className="block text-sm font-medium text-gray-500">Subject</label>
+                    <p className="text-sm text-gray-900">{currentComplaint.subject}</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500">Description</label>
+                    <p className="text-sm text-gray-900">{currentComplaint.description}</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-500">Child</label>
+                      <p className="text-sm text-gray-900">{currentComplaint.child_name}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-500">Parent</label>
+                      <p className="text-sm text-gray-900">{currentComplaint.parent_name}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Editable Fields */}
+                <div className="space-y-4 pt-2">
+                  <h3 className="font-semibold text-gray-700">Update Response</h3>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Status *</label>
                     <select
-                      name="child_id"
-                      value={formData.child_id}
+                      name="status"
+                      value={formData.status}
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      title="Select complaint status"
                       required
-                      title="Select a child"
                     >
-                      <option value={0}>Select a child</option>
-                      {mockChildren.map(child => (
-                        <option key={child.child_id} value={child.child_id}>
-                          {child.name} - {child.parent_name}
-                        </option>
-                      ))}
+                      <option value="Pending">Pending</option>
+                      <option value="In Progress">In Progress</option>
+                      <option value="Solved">Solved</option>
+                      <option value="Closed">Closed</option>
                     </select>
                   </div>
-                )}
 
-                {isEditMode && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                      <select
-                        name="status"
-                        value={formData.status}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        title="Select complaint status"
-                      >
-                        <option value="Pending">Pending</option>
-                        <option value="In Progress">In Progress</option>
-                        <option value="Solved">Solved</option>
-                        <option value="Closed">Closed</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Action Taken</label>
-                      <textarea
-                        name="action"
-                        value={formData.action}
-                        onChange={handleInputChange}
-                        rows={2}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="Enter action taken or response"
-                      />
-                    </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Action Taken</label>
+                    <textarea
+                      name="action"
+                      value={formData.action}
+                      onChange={handleInputChange}
+                      rows={4}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      placeholder="Enter action taken or response to the complaint..."
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Describe what actions were taken to resolve this complaint</p>
                   </div>
-                )}
+                </div>
 
-                <div className="flex justify-end space-x-3 pt-4">
+                <div className="flex justify-end space-x-3 pt-4 border-t">
                   <button
                     type="button"
                     onClick={closeModal}
@@ -480,7 +583,7 @@ const Complaints = () => {
                     type="submit"
                     className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
                   >
-                    {isEditMode ? 'Update Complaint' : 'Create Complaint'}
+                    Update Status & Action
                   </button>
                 </div>
               </form>
@@ -543,15 +646,7 @@ const Complaints = () => {
                   >
                     Close
                   </button>
-                  <button
-                    onClick={() => {
-                      closeModal();
-                      openEditModal(currentComplaint);
-                    }}
-                    className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
-                  >
-                    Add Status and Action
-                  </button>
+                  
                 </div>
               </div>
             </div>
