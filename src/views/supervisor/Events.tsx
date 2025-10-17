@@ -1,8 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useCallback } from 'react';
 import { Calendar, Search, Plus, X, Edit, Trash2 } from 'lucide-react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import { useAuth } from '../../context/AuthContext';
 
 type Event = {
   event_id: number;
@@ -37,9 +37,10 @@ const Toast = ({ message, type, onClose }: { message: string; type: 'success' | 
   );
 };
 
-const API_BASE_URL = 'http://localhost:5001/api/supervisor/events';
+const API_BASE_URL = 'http://localhost:5001/api/events';
 
 const Events = () => {
+  const { user } = useAuth(); // Get the logged-in user
   const [events, setEvents] = useState<Event[]>([]);
   const [filteredEvents, setFilteredEvents] = useState<Event[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -59,7 +60,6 @@ const Events = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
-  const [, setShowDatePicker] = useState(false);
 
   // Format date and time for display
   const formatDateTime = (dateString: string) => {
@@ -102,7 +102,7 @@ const Events = () => {
       
       setEvents(data);
       setFilteredEvents(data);
-      showToast(`Successfully loaded ${data.length} events`, 'success');
+      // Remove success toast on fetch to avoid too many notifications
     } catch (error) {
       console.error('Error fetching events:', error);
       showToast('Failed to load events. Please check your connection.', 'error');
@@ -182,7 +182,6 @@ const Events = () => {
         date: formattedDate
       });
     }
-    setShowDatePicker(false);
   };
 
   const openAddModal = () => {
@@ -243,14 +242,23 @@ const Events = () => {
     setIsLoading(true);
   
     try {
+      // Get the user ID from the logged-in user
+      const userId = user?.id || user?.user_id;
+      
+      if (!userId && !isEditMode) {
+        showToast('User not logged in. Please log in first.', 'error');
+        return;
+      }
+
+      // Prepare event payload with proper image handling
       const eventPayload = {
         topic: formData.topic.trim(),
         description: formData.description.trim(),
         venue: formData.venue.trim(),
         date: formData.date,
         time: formData.time,
-        image: formData.image ? formData.image : null,
-        user_id: isEditMode ? undefined : '136',
+        image: formData.image ? formData.image.name : null, // Send only the filename
+        user_id: isEditMode ? undefined : userId, // Use actual logged-in user ID
       };
   
       let url = API_BASE_URL;
@@ -266,6 +274,7 @@ const Events = () => {
   
       console.log('Sending request to:', url);
       console.log('Method:', method);
+      console.log('Payload:', eventPayload);
   
       const response = await fetch(url, {
         method,
@@ -311,9 +320,10 @@ const Events = () => {
         fetchEvents();
       }, 500);
   
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error saving event:', error);
-      showToast(error.message || 'Failed to save event. Please try again.', 'error');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save event. Please try again.';
+      showToast(errorMessage, 'error');
     } finally {
       setIsLoading(false);
     }
@@ -360,9 +370,10 @@ const Events = () => {
         fetchEvents();
       }, 500);
 
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error deleting event:', error);
-      showToast(error.message || 'Failed to delete event. Please try again.', 'error');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete event. Please try again.';
+      showToast(errorMessage, 'error');
     } finally {
       setIsLoading(false);
     }
@@ -569,7 +580,7 @@ const Events = () => {
 
       {/* Add/Edit Event Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
@@ -726,7 +737,7 @@ const Events = () => {
 
       {/* Delete Confirmation Modal */}
       {isDeleteModalOpen && (
-        <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-bold text-gray-800">Delete Event</h2>

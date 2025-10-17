@@ -2,16 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { Search, Plus, Edit, Trash2, X, Calendar } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext'; // Assuming you have an auth context
 
-interface AuthUser {
-  id: string | number;
-  session_id?: string | number;
-  role?: string;
-  email?: string;
-  name?: string;
-}
-
 type Announcement = {
-   ann_id: string;
+  ann_id: string;
   title: string;
   details: string;
   date: string;
@@ -19,7 +11,7 @@ type Announcement = {
   audience: 'All' | 'Teachers' | 'Parents';
   created_at: string;
   attachment?: string;
-  session_id?: string | number;
+  session_id?: string;
   user_id: string;
   updated_at?: string;
 };
@@ -59,8 +51,7 @@ const Toast = ({ message, type, onClose }: { message: string; type: 'success' | 
 };
 
 const Announcements = () => {
-  const { user } = useAuth() as { user: AuthUser | null };
-   // Get current user from auth context
+  const { user } = useAuth(); // Get current user from auth context
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [filteredAnnouncements, setFilteredAnnouncements] = useState<Announcement[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -73,9 +64,9 @@ const Announcements = () => {
     title: '',
     details: '',
     date: new Date().toISOString().split('T')[0],
-    time: new Date().toTimeString().slice(0, 5), // Fix time format
+    time: new Date().toTimeString().split(' ')[0],
     audience: 'All',
-    user_id: '',
+    user_id: user?.id ? String(user.id) : '',
     attachment: '',
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -83,7 +74,7 @@ const Announcements = () => {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   // API base URL
- const API_BASE_URL = 'http://localhost:5001/api/announcement';
+  const API_BASE_URL = '/api/announcements';
 
   // Format date and time for display
   const formatDateTime = (dateString: string) => {
@@ -110,35 +101,19 @@ const Announcements = () => {
   const fetchAnnouncements = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(API_BASE_URL, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      console.log('Fetching announcements from:', API_BASE_URL);
+      const response = await fetch(API_BASE_URL);
       if (!response.ok) throw new Error('Failed to fetch announcements');
-      const responseData = await response.json();
-      console.log('API Response:', responseData);
-      
-      // Extract data array from response object
-      let data = responseData.data || responseData;
-      
+      let data = await response.json();
       // Map audience integer to string
       data = data.map((a: { audience: string | number; }) => ({
         ...a,
         audience: audienceMap[Number(a.audience)] || 'All',
       }));
-      console.log('Processed announcements:', data);
       setAnnouncements(data);
       setFilteredAnnouncements(data);
     } catch (error) {
+      showToast('Failed to load announcements', 'error');
       console.error('Error fetching announcements:', error);
-      if (error instanceof Error) {
-        showToast(`Failed to load announcements: ${error.message}`, 'error');
-      } else {
-        showToast('Failed to load announcements', 'error');
-      }
     } finally {
       setIsLoading(false);
       setIsSearching(false);
@@ -176,7 +151,6 @@ const Announcements = () => {
   }, [searchTerm, searchDate, announcements]);
 
   // Create announcement
-  // Create announcement
 const createAnnouncement = async (announcement: Omit<Announcement, 'ann_id' | 'created_at'>) => {
   const response = await fetch(API_BASE_URL, {
     method: 'POST',
@@ -200,36 +174,34 @@ const createAnnouncement = async (announcement: Omit<Announcement, 'ann_id' | 'c
 
   // Update announcement
   const updateAnnouncement = async (id: string, announcement: Partial<Announcement>) => {
-    const sessionId = user?.session_id ? 
-      (typeof user.session_id === 'number' ? user.session_id : Number(user.session_id)) 
-      : null;
-      
+    interface UserWithSession {
+      session_id?: string | number;
+    }
+    const userWithSession = user as UserWithSession;
+    const sessionId = typeof userWithSession?.session_id === 'number' 
+      ? userWithSession.session_id 
+      : (userWithSession?.session_id ? Number(userWithSession.session_id) : null);
+    
     const payload = {
       ...announcement,
       audience: audienceReverseMap[announcement.audience as 'All' | 'Teachers' | 'Parents'] || 1,
       session_id: sessionId,
     };
     
-    try {
-      const response = await fetch(`${API_BASE_URL}/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(payload)
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Failed to update announcement');
-      }
-      
-      return await response.json();
-    } catch (error) {
-      console.error('Update announcement error:', error);
-      throw error;
+    const response = await fetch(`${API_BASE_URL}/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      },
+      body: JSON.stringify(payload)
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to update announcement');
     }
+    
+    return await response.json();
   };
 
   // Delete announcement
@@ -258,16 +230,6 @@ const createAnnouncement = async (announcement: Omit<Announcement, 'ann_id' | 'c
     searchAnnouncements();
   }, [searchTerm, searchDate, searchAnnouncements]);
 
-  // Update formData when user changes
-  useEffect(() => {
-    if (user?.id) {
-      setFormData(prev => ({
-        ...prev,
-        user_id: String(user.id)
-      }));
-    }
-  }, [user]);
-
   // Handle input changes for form
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -285,7 +247,7 @@ const createAnnouncement = async (announcement: Omit<Announcement, 'ann_id' | 'c
       title: '',
       details: '',
       date: new Date().toISOString().split('T')[0],
-      time: new Date().toTimeString().slice(0, 5), // Fix time format
+      time: new Date().toTimeString().split(' ')[0],
       audience: 'All',
       user_id: user?.id ? String(user.id) : '',
       attachment: '',
@@ -359,9 +321,8 @@ const createAnnouncement = async (announcement: Omit<Announcement, 'ann_id' | 'c
       showToast('Announcement deleted successfully!', 'success');
       closeModal();
       fetchAnnouncements();
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to delete announcement';
-      showToast(errorMessage, 'error');
+    } catch {
+      showToast('Failed to delete announcement', 'error');
     }
   };
 
@@ -397,9 +358,9 @@ const createAnnouncement = async (announcement: Omit<Announcement, 'ann_id' | 'c
             Announcements
           </span>
         </h1>
-        {user?.session_id && (
+        {(user as { session_id?: string | number })?.session_id && (
           <span className="text-sm text-gray-500">
-            Session: {user.session_id}
+            Session: {(user as { session_id?: string | number }).session_id}
           </span>
         )}
       </div>
@@ -561,7 +522,7 @@ const createAnnouncement = async (announcement: Omit<Announcement, 'ann_id' | 'c
 
       {/* Add/Edit Announcement Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
@@ -613,6 +574,7 @@ const createAnnouncement = async (announcement: Omit<Announcement, 'ann_id' | 'c
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       required
+                      title="Select target audience"
                     >
                       <option value="All">All</option>
                       <option value="Teachers">Teachers</option>
@@ -633,6 +595,7 @@ const createAnnouncement = async (announcement: Omit<Announcement, 'ann_id' | 'c
                       }
                     }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    title="Upload an attachment"
                   />
                   {formData.attachment && (
                     <p className="mt-1 text-sm text-gray-500">Selected: {formData.attachment}</p>
@@ -662,7 +625,7 @@ const createAnnouncement = async (announcement: Omit<Announcement, 'ann_id' | 'c
 
       {/* Delete Confirmation Modal */}
       {isDeleteModalOpen && (
-        <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
