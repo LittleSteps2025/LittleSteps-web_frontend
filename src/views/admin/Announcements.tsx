@@ -77,8 +77,8 @@ const Announcements = () => {
   const [formData, setFormData] = useState<Omit<Announcement, 'ann_id' | 'created_at' | 'session_id'>>({
     title: '',
     details: '',
-    date: new Date().toISOString().split('T')[0],
-    time: new Date().toTimeString().slice(0, 5), // Fix time format
+    date: '',
+    time: '',
     audience: 'All',
     user_id: '',
     attachment: '',
@@ -115,7 +115,11 @@ const Announcements = () => {
   const fetchAnnouncements = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(API_BASE_URL);
+      const response = await fetch(API_BASE_URL, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
       if (!response.ok) throw new Error('Failed to fetch announcements');
       const data = await response.json();
       
@@ -127,14 +131,15 @@ const Announcements = () => {
         ann_id: a.ann_id,
         title: a.title,
         details: a.details,
-        date: a.date,
-        time: a.time,
+        date: a.date || '',
+        time: a.time || '',
         audience: audienceMap[Number(a.audience)] || 'All',
         created_at: a.created_at,
         attachment: a.attachment,
         session_id: a.session_id,
         user_id: a.user_id,
-        updated_at: a.updated_at
+        updated_at: a.updated_at,
+        published_by: a.published_by || null
       }));
 
       setAnnouncements(mappedAnnouncements);
@@ -165,7 +170,7 @@ const Announcements = () => {
           : true;
         
         const dateMatch = searchDate 
-          ? announcement.date.includes(searchDate)
+          ? announcement.date && announcement.date.includes(searchDate)
           : true;
         
         return termMatch && dateMatch;
@@ -188,6 +193,8 @@ const Announcements = () => {
       },
       body: JSON.stringify({
         ...announcement,
+        date: announcement.date || null,
+        time: announcement.time || null,
         published_by: {
           id: user?.id,
           name: user?.name || 'Unknown',
@@ -291,8 +298,8 @@ const Announcements = () => {
     setFormData({
       title: '',
       details: '',
-      date: new Date().toISOString().split('T')[0],
-      time: new Date().toTimeString().slice(0, 5), // Fix time format
+      date: '',
+      time: '',
       audience: 'All',
       user_id: user?.id ? String(user.id) : '',
       attachment: '',
@@ -484,9 +491,11 @@ const Announcements = () => {
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                         To: {announcement.audience}
                       </span>
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        Date: {announcement.date.split('T')[0]}
-                      </span>
+                      {announcement.date && (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          Date: {announcement.date.split('T')[0]}
+                        </span>
+                      )}
                       {announcement.time && (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
                           Time: {announcement.time.slice(0, 5)}
@@ -497,37 +506,37 @@ const Announcements = () => {
                           {/* Session: {announcement.session_id} */}
                         </span>
                       )}
-                      {announcement.attachment && (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                          Attachment
-                          {/* Attachment: {announcement.attachment} */}
-                        </span>
-                      )}
                     </div>
                   </div>
                 </div>
                 
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {/* ...existing tags... */}
-                  
-                  {/* Add this publisher badge */}
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                    Published by: {announcement.published_by?.name || 'Unknown'} 
-                    ({announcement.published_by?.role || 'Admin'})
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                    Published by: {announcement.published_by?.name || user?.name || 'Unknown'} 
+                    ({announcement.published_by?.role || user?.role || 'Admin'})
                   </span>
-                </div>
-                
-                <div className="mt-4 text-xs text-gray-500">
-                  <div className="flex items-center">
-                    {/* <Clock className="w-3 h-3 mr-1" />
-                    <span>Posted: {createdDateTime.date} at {createdDateTime.time}</span> */}
-                  </div>
-                  {announcement.updated_at && (
-                    <div className="flex items-center mt-1">
-                      <span>Updated: {formatDateTime(announcement.updated_at).date} at {formatDateTime(announcement.updated_at).time}</span>
-                  </div>
+                  
+                  {announcement.created_at && (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                      Published at: {formatDateTime(announcement.created_at).date} at {formatDateTime(announcement.created_at).time}
+                    </span>
+                  )}
+                  
+                  {announcement.attachment && (
+                    <button
+                      onClick={() => window.open(announcement.attachment, '_blank')}
+                      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 hover:bg-yellow-200 transition-colors cursor-pointer"
+                    >
+                      📎 View Attachment
+                    </button>
                   )}
                 </div>
+                
+                {announcement.updated_at && (
+                  <div className="mt-2 text-xs text-gray-500">
+                    <span>Last updated: {formatDateTime(announcement.updated_at).date} at {formatDateTime(announcement.updated_at).time}</span>
+                  </div>
+                )}
                 
                 <div className="flex mt-4 space-x-3">
                   <button
@@ -637,25 +646,27 @@ const Announcements = () => {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Date*</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Event Date <span className="text-gray-400 text-xs">(Optional - for event announcements)</span>
+                    </label>
                     <input
                       type="date"
                       name="date"
                       value={formData.date}
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Time*</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Event Time <span className="text-gray-400 text-xs">(Optional)</span>
+                    </label>
                     <input
                       type="time"
                       name="time"
                       value={formData.time}
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      required
                     />
                   </div>
                 </div>

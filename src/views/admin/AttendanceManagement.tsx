@@ -187,12 +187,13 @@ const AttendanceManagement = () => {
       {/* Header */}
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center">
-            <CalendarDays className="mr-2 text-[#6339C0]" />
-            Attendance Management
+          <h1 className="text-2xl font-bold text-gray-800">
+            <span className="bg-gradient-to-r from-[#4f46e5] to-[#7c73e6] bg-clip-text text-transparent">
+              Attendance Management
+            </span>
           </h1>
           <div className="flex items-center space-x-4">
-            <button className="btn-primary flex items-center">
+            <button className="bg-[#6339C0] text-white py-2 px-4 rounded-lg hover:bg-[#5227a3] transition-colors flex items-center">
               <Download className="w-4 h-4 mr-2" />
               Export
             </button>
