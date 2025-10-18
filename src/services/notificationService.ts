@@ -21,10 +21,18 @@ class NotificationService {
       console.log('🔔 [NotificationService] Fetched complaints:', complaints);
       console.log('🔔 [NotificationService] Total complaints:', complaints.length);
       
-      // Filter for new/pending complaints (you can adjust the filter logic)
-      const newComplaints = complaints.filter(c => 
-        c.status === 'Pending' || c.status === 'pending'
-      );
+      // Log each complaint's status for debugging
+      complaints.forEach((c, index) => {
+        console.log(`🔔 [NotificationService] Complaint ${index + 1}: status="${c.status}" (length: ${c.status?.length}, type: ${typeof c.status})`);
+      });
+      
+      // Filter for new/pending complaints - case insensitive and trimmed
+      const newComplaints = complaints.filter(c => {
+        const statusLower = c.status?.toString().toLowerCase().trim();
+        const isPending = statusLower === 'pending';
+        console.log(`🔔 [NotificationService] Checking complaint ${c.complaint_id}: original status="${c.status}", normalized="${statusLower}", isPending=${isPending}`);
+        return isPending;
+      });
       console.log('🔔 [NotificationService] Pending complaints:', newComplaints);
       console.log('🔔 [NotificationService] Pending count:', newComplaints.length);
       
@@ -58,10 +66,18 @@ class NotificationService {
       console.log('🔔 [NotificationService] Fetched meetings:', meetings);
       console.log('🔔 [NotificationService] Total meetings:', meetings.length);
       
-      // Filter for pending meetings
-      const newMeetings = meetings.filter(m => 
-        m.status === 'pending'
-      );
+      // Log each meeting's status for debugging
+      meetings.forEach((m, index) => {
+        console.log(`🔔 [NotificationService] Meeting ${index + 1}: status="${m.status}" (length: ${m.status?.length}, type: ${typeof m.status})`);
+      });
+      
+      // Filter for pending meetings - case insensitive and trimmed
+      const newMeetings = meetings.filter(m => {
+        const statusLower = m.status?.toString().toLowerCase().trim();
+        const isPending = statusLower === 'pending';
+        console.log(`🔔 [NotificationService] Checking meeting ${m.meeting_id}: original status="${m.status}", normalized="${statusLower}", isPending=${isPending}`);
+        return isPending;
+      });
       console.log('🔔 [NotificationService] Pending meetings:', newMeetings);
       console.log('🔔 [NotificationService] Pending count:', newMeetings.length);
       
