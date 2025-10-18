@@ -1,9 +1,37 @@
-import { Menu, X, User, Bell } from 'lucide-react';
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Menu, X, User, Bell, ChevronDown, LogOut } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../../context/AuthContext';
+import { useNotifications } from '../../../context/NotificationContext';
+import NotificationDropdown from '../notification/NotificationDropdown';
 
 const SupervisorNavbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const { user, logout } = useAuth();
+  const { unreadCount } = useNotifications();
+  const navigate = useNavigate();
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const notificationRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsProfileDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
 
   return (
     <nav className="bg-white shadow-sm">
@@ -21,17 +49,78 @@ const SupervisorNavbar = () => {
           <div className="flex-1 flex items-center justify-end">
             <div className="flex items-center space-x-4">
               
-              <button className="bg-white p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                <span className="sr-only">View notifications</span>
-                <Bell className="h-6 w-6" />
-              </button>
-              <div className="ml-3 relative">
+              {/* Notification Bell */}
+              <div className="relative" ref={notificationRef}>
+                <button 
+                  onClick={() => setIsNotificationOpen(!isNotificationOpen)}
+                  className="bg-white p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 relative"
+                >
+                  <span className="sr-only">View notifications</span>
+                  <Bell className="h-6 w-6" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center">
+                      <span className="absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75 animate-ping"></span>
+                      <span className="relative inline-flex items-center justify-center h-5 w-5 rounded-full bg-red-500 text-white text-xs font-bold">
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                      </span>
+                    </span>
+                  )}
+                </button>
+                
+                {/* Notification Dropdown */}
+                <NotificationDropdown 
+                  isOpen={isNotificationOpen} 
+                  onClose={() => setIsNotificationOpen(false)} 
+                />
+              </div>
+
+              <div className="ml-3 relative" ref={dropdownRef}>
                 <div>
-                  <button className="bg-white rounded-full flex text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                  <button 
+                    onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+                    className="bg-white rounded-full flex items-center space-x-1 text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 p-2"
+                  >
                     <span className="sr-only">Open user menu</span>
-                    <User className="h-8 w-8 text-indigo-600" />
+                    {user?.image ? (
+                      <img
+                        src={user.image}
+                        alt="Profile"
+                        className="h-6 w-6 rounded-full object-cover"
+                      />
+                    ) : (
+                      <User className="h-6 w-6 text-indigo-600" />
+                    )}
+                    <ChevronDown className="h-4 w-4 text-gray-500" />
                   </button>
                 </div>
+                
+                {isProfileDropdownOpen && (
+                  <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
+                    <div className="py-1">
+                      <div className="px-4 py-2 border-b border-gray-100">
+                        <p className="text-sm font-medium text-gray-900">{user?.name}</p>
+                        <p className="text-xs text-gray-500">{user?.email}</p>
+                      </div>
+                      
+                      <Link
+                        to="/supervisor/profile"
+                        onClick={() => setIsProfileDropdownOpen(false)}
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        <User className="w-4 h-4 mr-3" />
+                        View Profile
+                      </Link>
+                      
+                      <button
+                        onClick={handleLogout}
+                        className="flex items-center w-full px-4 py-2 text-sm text-red-700 hover:bg-gray-100"
+                      >
+                        <LogOut className="w-4 h-4 mr-3" />
+                        Logout
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
