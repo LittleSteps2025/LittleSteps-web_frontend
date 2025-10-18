@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Calendar, Search, Plus, X, Edit, Trash2 } from "lucide-react";
+import { Calendar, Search, Plus, X, Edit } from "lucide-react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { useAuth } from "../../context/AuthContext";
@@ -257,10 +257,6 @@ const Events = () => {
     });
   };
 
-  const openDeleteModal = (event: Event) => {
-    setIsDeleteModalOpen(true);
-    setCurrentEvent(event);
-  };
 
   const closeModal = () => {
     setIsModalOpen(false);
@@ -777,7 +773,11 @@ const Events = () => {
                       />
                     </div>
 
-
+                    <div>
+                      <label
+                        htmlFor="image"
+                        className="block text-sm font-medium text-gray-700 mb-1"
+                      >
                         Event Image
                       </label>
                       <input
@@ -804,7 +804,7 @@ const Events = () => {
                           />
                         </div>
                       )}
-                    </div> */}
+                    </div>
                   </div>
 
                   {/* Event Details */}

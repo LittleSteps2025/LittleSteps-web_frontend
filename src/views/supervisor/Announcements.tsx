@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Search, Plus, Edit, Trash2, X, Calendar } from "lucide-react";
+import { Search, Plus, Edit, X, Calendar } from "lucide-react";
 import { useAuth } from "../../context/AuthContext"; // Assuming you have an auth context
 import { API_BASE_URL } from "../../config/api";
 
@@ -99,6 +99,16 @@ const Announcements = () => {
   // API base URL
   const ANNOUNCEMENTS_API_URL = `${API_BASE_URL}/announcements`;
 
+  // Update formData when user changes
+  useEffect(() => {
+    if (user?.id) {
+      setFormData(prev => ({
+        ...prev,
+        user_id: String(user.id)
+      }));
+    }
+  }, [user?.id]);
+
   // Format date and time for display
   const formatDateTime = (dateString: string) => {
     const date = new Date(dateString);
@@ -126,15 +136,14 @@ const Announcements = () => {
     try {
       const response = await fetch(ANNOUNCEMENTS_API_URL);
       if (!response.ok) throw new Error("Failed to fetch announcements");
-      const responseData = await response.json();
-      let data = responseData.data;
+      const data = await response.json();
       // Map audience integer to string
-      data = data.map((a: { audience: string | number }) => ({
+      const mappedData = data.map((a: { audience: string | number }) => ({
         ...a,
         audience: audienceMap[Number(a.audience)] || "All",
       }));
-      setAnnouncements(data);
-      setFilteredAnnouncements(data);
+      setAnnouncements(mappedData);
+      setFilteredAnnouncements(mappedData);
     } catch (error) {
       showToast("Failed to load announcements", "error");
       console.error("Error fetching announcements:", error);
@@ -142,7 +151,7 @@ const Announcements = () => {
       setIsLoading(false);
       setIsSearching(false);
     }
-  }, []);
+  }, [ANNOUNCEMENTS_API_URL]);
 
   // Search announcements with debounce
   const searchAnnouncements = useCallback(() => {
@@ -165,7 +174,7 @@ const Announcements = () => {
           : true;
 
         const dateMatch = searchDate
-          ? announcement.date.includes(searchDate)
+          ? announcement.date && typeof announcement.date === 'string' && announcement.date.includes(searchDate)
           : true;
 
         return termMatch && dateMatch;
@@ -314,10 +323,6 @@ const Announcements = () => {
   };
 
   // Open delete confirmation modal
-  const openDeleteModal = (announcement: Announcement) => {
-    setIsDeleteModalOpen(true);
-    setCurrentAnnouncement(announcement);
-  };
 
   // Close all modals
   const closeModal = () => {
@@ -329,6 +334,18 @@ const Announcements = () => {
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validation
+    if (!formData.title.trim() || !formData.details.trim() || !formData.date || !formData.user_id) {
+      showToast("Please fill in all required fields", "error");
+      return;
+    }
+
+    if (!user) {
+      showToast("You must be logged in to create announcements", "error");
+      return;
+    }
+
     try {
       let result: Announcement;
       if (isEditMode && currentAnnouncement) {
@@ -511,11 +528,11 @@ const Announcements = () => {
                           To: {announcement.audience}
                         </span>
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          Date: {announcement.date.split("T")[0]}
+                          Date: {announcement.date ? (typeof announcement.date === 'string' && announcement.date.includes('T') ? announcement.date.split("T")[0] : announcement.date) : 'N/A'}
                         </span>
                         {announcement.time && (
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                            Time: {announcement.time.slice(0, 5)}
+                            Time: {typeof announcement.time === 'string' ? announcement.time.slice(0, 5) : announcement.time}
                           </span>
                         )}
                         {announcement.session_id && (
