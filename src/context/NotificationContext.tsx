@@ -20,8 +20,13 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const refreshNotifications = useCallback(async () => {
     setIsLoading(true);
     try {
+      console.log('🔔 [NotificationContext] Fetching notifications...');
       const fetchedNotifications = await notificationService.getAllNotifications();
+      console.log('🔔 [NotificationContext] Fetched notifications:', fetchedNotifications);
+      console.log('🔔 [NotificationContext] Total fetched:', fetchedNotifications.length);
+      
       const readNotifications = notificationService.getReadNotifications();
+      console.log('🔔 [NotificationContext] Read notifications from localStorage:', readNotifications);
       
       // Mark notifications as read based on localStorage
       const updatedNotifications = fetchedNotifications.map(notif => ({
@@ -29,9 +34,17 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         read: readNotifications.includes(notif.id)
       }));
       
+      const unreadCount = updatedNotifications.filter(n => !n.read).length;
+      console.log('🔔 [NotificationContext] Unread count:', unreadCount);
+      console.log('🔔 [NotificationContext] Updated notifications:', updatedNotifications);
+      
       setNotifications(updatedNotifications);
     } catch (error) {
-      console.error('Error refreshing notifications:', error);
+      console.error('❌ [NotificationContext] Error refreshing notifications:', error);
+      if (error instanceof Error) {
+        console.error('❌ Error message:', error.message);
+        console.error('❌ Error stack:', error.stack);
+      }
     } finally {
       setIsLoading(false);
     }

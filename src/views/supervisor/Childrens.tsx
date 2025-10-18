@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { User, Edit, Trash2, Plus, Search, X } from "lucide-react";
+import { API_BASE_URL } from "../../config/api";
 
 interface Student {
   id: string;
@@ -39,11 +40,10 @@ interface ClassGroup {
   group_name: string;
 }
 
-const API_URL = "http://localhost:5001/api/supervisors/child/";
-const GROUPS_API_URL = "http://localhost:5001/api/supervisors/child/groups"; // Correct groups endpoint
-const PACKAGES_API_URL = "http://localhost:5001/api/supervisors/child/packages"; // Placeholder for future packages API
-const CHECK_NIC_API_URL =
-  "http://localhost:5001/api/supervisors/child/check-nic"; // Placeholder for NIC check API
+const API_URL = `${API_BASE_URL}/supervisors/child/`;
+const GROUPS_API_URL = `${API_BASE_URL}/supervisors/child/groups`; // Correct groups endpoint
+const PACKAGES_API_URL = `${API_BASE_URL}/supervisors/child/packages`; // Placeholder for future packages API
+const CHECK_NIC_API_URL = `${API_BASE_URL}/supervisors/child/check-nic`; // Placeholder for NIC check API
 // Utility function to calculate age from date of birth
 const calculateAge = (dob: string): number => {
   if (!dob) return 0;
