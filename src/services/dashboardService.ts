@@ -21,6 +21,33 @@ export interface Event {
   description?: string;
 }
 
+export interface ChartData {
+  revenue: Array<{
+    day_name?: string;
+    date_label?: string;
+    parent_count: number;
+    revenue: number;
+  }>;
+  attendance: Array<{
+    day_name?: string;
+    date_label?: string;
+    check_ins: number;
+  }>;
+  complaints: Array<{
+    day_name?: string;
+    date_label?: string;
+    complaint_count: number;
+    pending_count: number;
+    resolved_count: number;
+  }>;
+}
+
+export interface PeriodStats {
+  totalChildren: number;
+  checkIns: number;
+  revenue: number;
+}
+
 // Backend API response structure
 interface DashboardApiResponse {
   success: boolean;
@@ -158,5 +185,61 @@ export const fetchUpcomingEvents = async (): Promise<Event[]> => {
   } catch (error) {
     console.error("❌ Error fetching events:", error);
     return [];
+  }
+};
+
+/**
+ * Fetch stats by period (today, week, month)
+ */
+export const fetchStatsByPeriod = async (period: 'today' | 'week' | 'month'): Promise<PeriodStats> => {
+  try {
+    console.log(`📊 Fetching stats for period: ${period}`);
+    
+    const response = await fetch(`${API_BASE_URL}/dashboard/stats/period?period=${period}`);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch period stats: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    
+    console.log(`✅ Period stats (${period}) fetched:`, result.data);
+    
+    return result.data;
+  } catch (error) {
+    console.error('❌ Error fetching period stats:', error);
+    return {
+      totalChildren: 0,
+      checkIns: 0,
+      revenue: 0
+    };
+  }
+};
+
+/**
+ * Fetch chart data for graphs
+ */
+export const fetchChartData = async (period: 'week' | 'month'): Promise<ChartData> => {
+  try {
+    console.log(`📊 Fetching chart data for period: ${period}`);
+    
+    const response = await fetch(`${API_BASE_URL}/dashboard/charts?period=${period}`);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch chart data: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    
+    console.log(`✅ Chart data (${period}) fetched:`, result.data);
+    
+    return result.data;
+  } catch (error) {
+    console.error('❌ Error fetching chart data:', error);
+    return {
+      revenue: [],
+      attendance: [],
+      complaints: []
+    };
   }
 };
