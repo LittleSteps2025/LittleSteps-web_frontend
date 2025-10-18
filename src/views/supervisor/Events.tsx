@@ -153,11 +153,10 @@ const Events = () => {
             event.venue.toLowerCase().includes(searchTerm.toLowerCase())
           : true;
 
-        
-        const dateMatch = searchDate 
+        const dateMatch = searchDate
           ? event.date.slice(0, 10) === searchDate
           : true;
-        
+
         return termMatch && dateMatch;
       });
 
@@ -228,35 +227,37 @@ const Events = () => {
     setIsModalOpen(true);
     setIsEditMode(true);
     setCurrentEvent(event);
-    
+
     // Extract date string without timezone conversion
-    let dateStr = '';
+    let dateStr = "";
     if (event.date) {
       // If the date is already in YYYY-MM-DD format, use it directly
-      if (typeof event.date === 'string' && event.date.match(/^\d{4}-\d{2}-\d{2}/)) {
+      if (
+        typeof event.date === "string" &&
+        event.date.match(/^\d{4}-\d{2}-\d{2}/)
+      ) {
         dateStr = event.date.slice(0, 10);
       } else {
         // Otherwise, parse it carefully
         const dateObj = new Date(event.date);
-        dateStr = dateObj.toISOString().split('T')[0];
+        dateStr = dateObj.toISOString().split("T")[0];
       }
     }
-    
+
     setFormData({
       topic: event.topic,
       description: event.description,
 
       date: dateStr,
-      time: event.time ? event.time.slice(0, 5) : '',
+      time: event.time ? event.time.slice(0, 5) : "",
 
-     // date: event.date ? event.date.slice(0, 10) : "",
-     // time: event.time ? event.time.slice(0, 5) : "",
+      // date: event.date ? event.date.slice(0, 10) : "",
+      // time: event.time ? event.time.slice(0, 5) : "",
 
       venue: event.venue,
       image: null,
     });
   };
-
 
   const closeModal = () => {
     setIsModalOpen(false);
@@ -531,17 +532,18 @@ const Events = () => {
               <span className="text-sm text-gray-500">
                 Showing {filteredEvents.length} results
                 {searchTerm && ` for "${searchTerm}"`}
-
-                {searchDate && ` on ${(() => {
-                  const [year, month, day] = searchDate.split('-').map(Number);
-                  const dateObj = new Date(year, month - 1, day);
-                  return dateObj.toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric'
-                  });
-                })()}`}
-
+                {searchDate &&
+                  ` on ${(() => {
+                    const [year, month, day] = searchDate
+                      .split("-")
+                      .map(Number);
+                    const dateObj = new Date(year, month - 1, day);
+                    return dateObj.toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                    });
+                  })()}`}
               </span>
               <button
                 onClick={clearFilters}
@@ -609,18 +611,19 @@ const Events = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap w-1/5">
                         <div className="text-sm text-gray-900">
-
                           {(() => {
                             // Parse date string directly without timezone conversion
-                            const [year, month, day] = event.date.split('-').map(Number);
+                            const [year, month, day] = event.date
+                              .split("-")
+                              .map(Number);
                             const dateObj = new Date(year, month - 1, day);
-                            return dateObj.toLocaleDateString('en-US', {
-                              year: 'numeric',
-                              month: 'short',
-                              day: 'numeric'
+                            return dateObj.toLocaleDateString("en-US", {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
                             });
-                          })()} at {event.time}
-
+                          })()}{" "}
+                          at {event.time}
                         </div>
                         {createdDateTime && (
                           <div className="mt-1 text-xs text-gray-500 flex items-center">
@@ -637,30 +640,38 @@ const Events = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2 w-1/5">
                         <button
                           onClick={() => openEditModal(event)}
-
-                          className={`text-indigo-600 hover:text-indigo-900 p-1 rounded hover:bg-indigo-50 ${event.date < new Date().toISOString().split('T')[0] ? 'opacity-50 cursor-not-allowed' : ''}`}
-                          title={event.date < new Date().toISOString().split('T')[0] ? 'Cannot edit past events' : 'Edit'}
+                          className={`text-indigo-600 hover:text-indigo-900 p-1 rounded hover:bg-indigo-50 ${
+                            event.date < new Date().toISOString().split("T")[0]
+                              ? "opacity-50 cursor-not-allowed"
+                              : ""
+                          }`}
+                          title={
+                            event.date < new Date().toISOString().split("T")[0]
+                              ? "Cannot edit past events"
+                              : "Edit"
+                          }
                           aria-label="Edit"
-                          disabled={event.date < new Date().toISOString().split('T')[0]}
+                          disabled={
+                            event.date < new Date().toISOString().split("T")[0]
+                          }
 
-                 //         className={`text-indigo-600 hover:text-indigo-900 p-1 rounded hover:bg-indigo-50 ${
-                 //           new Date(event.date) <
-                 //           new Date(new Date().toISOString().split("T")[0])
-                 //             ? "opacity-50 cursor-not-allowed"
-                 //             : ""
-                 //         }`}
-                 //         title={
-                 //           new Date(event.date) <
-                 //           new Date(new Date().toISOString().split("T")[0])
-                 //             ? "Cannot edit past events"
-                 //             : "Edit"
-                 //         }
-                 //         aria-label="Edit"
-                 //         disabled={
-                 //           new Date(event.date) <
-                 //           new Date(new Date().toISOString().split("T")[0])
-                 //         }
-
+                          //         className={`text-indigo-600 hover:text-indigo-900 p-1 rounded hover:bg-indigo-50 ${
+                          //           new Date(event.date) <
+                          //           new Date(new Date().toISOString().split("T")[0])
+                          //             ? "opacity-50 cursor-not-allowed"
+                          //             : ""
+                          //         }`}
+                          //         title={
+                          //           new Date(event.date) <
+                          //           new Date(new Date().toISOString().split("T")[0])
+                          //             ? "Cannot edit past events"
+                          //             : "Edit"
+                          //         }
+                          //         aria-label="Edit"
+                          //         disabled={
+                          //           new Date(event.date) <
+                          //           new Date(new Date().toISOString().split("T")[0])
+                          //         }
                         >
                           <Edit className="w-4 h-4" />
                         </button>
@@ -838,7 +849,9 @@ const Events = () => {
                         />
                         <Calendar className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                       </div>
-                      <p className="mt-1 text-xs text-gray-500">Select a date between today and one year from now</p>
+                      <p className="mt-1 text-xs text-gray-500">
+                        Select a date between today and one year from now
+                      </p>
                     </div>
 
                     <div>

@@ -102,9 +102,9 @@ const Announcements = () => {
   // Update formData when user changes
   useEffect(() => {
     if (user?.id) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        user_id: String(user.id)
+        user_id: String(user.id),
       }));
     }
   }, [user?.id]);
@@ -174,7 +174,9 @@ const Announcements = () => {
           : true;
 
         const dateMatch = searchDate
-          ? announcement.date && typeof announcement.date === 'string' && announcement.date.includes(searchDate)
+          ? announcement.date &&
+            typeof announcement.date === "string" &&
+            announcement.date.includes(searchDate)
           : true;
 
         return termMatch && dateMatch;
@@ -336,7 +338,12 @@ const Announcements = () => {
     e.preventDefault();
 
     // Validation
-    if (!formData.title.trim() || !formData.details.trim() || !formData.date || !formData.user_id) {
+    if (
+      !formData.title.trim() ||
+      !formData.details.trim() ||
+      !formData.date ||
+      !formData.user_id
+    ) {
       showToast("Please fill in all required fields", "error");
       return;
     }
@@ -528,11 +535,20 @@ const Announcements = () => {
                           To: {announcement.audience}
                         </span>
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          Date: {announcement.date ? (typeof announcement.date === 'string' && announcement.date.includes('T') ? announcement.date.split("T")[0] : announcement.date) : 'N/A'}
+                          Date:{" "}
+                          {announcement.date
+                            ? typeof announcement.date === "string" &&
+                              announcement.date.includes("T")
+                              ? announcement.date.split("T")[0]
+                              : announcement.date
+                            : "N/A"}
                         </span>
                         {announcement.time && (
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                            Time: {typeof announcement.time === 'string' ? announcement.time.slice(0, 5) : announcement.time}
+                            Time:{" "}
+                            {typeof announcement.time === "string"
+                              ? announcement.time.slice(0, 5)
+                              : announcement.time}
                           </span>
                         )}
                         {announcement.session_id && (
