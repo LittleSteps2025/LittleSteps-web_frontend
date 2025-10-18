@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
-import { Search, Plus, Mail, Phone, Edit, Trash2, X } from 'lucide-react';
-import { toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import userImg from '../../assets/user.png';
+import { useState, useEffect } from "react";
+import { Search, Plus, Mail, Phone, Edit, Trash2, X } from "lucide-react";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import userImg from "../../assets/user.png";
+import { API_BASE_URL } from "../../config/api";
 
 type Teacher = {
   id: number;
@@ -37,13 +38,13 @@ type AvailableGroup = {
   group_id: number;
   name: string;
   age_category: number;
-  available_position: 'main_teacher' | 'co_teacher' | 'full';
+  available_position: "main_teacher" | "co_teacher" | "full";
   main_teacher_id?: number;
   co_teacher_id?: number;
 };
 
 // API Base URL
-const API_BASE_URL = 'http://localhost:5001/api/teachers';
+const TEACHERS_API_URL = `${API_BASE_URL}/teachers`;
 
 // API Response types
 interface ApiResponse<T> {
@@ -61,11 +62,13 @@ interface ApiResponse<T> {
 // API functions
 const teacherApi = {
   // Create a new teacher
-  async createTeacher(teacherData: CreateTeacherRequest): Promise<ApiResponse<Teacher>> {
-    const response = await fetch(`${API_BASE_URL}/teacherRegister`, {
-      method: 'POST',
+  async createTeacher(
+    teacherData: CreateTeacherRequest
+  ): Promise<ApiResponse<Teacher>> {
+    const response = await fetch(`${TEACHERS_API_URL}/teacherRegister`, {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(teacherData),
     });
@@ -79,7 +82,7 @@ const teacherApi = {
 
   // Get all teachers
   async getAllTeachers(): Promise<ApiResponse<Teacher>> {
-    const response = await fetch(`${API_BASE_URL}/teachers`);
+    const response = await fetch(`${TEACHERS_API_URL}/teachers`);
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -90,7 +93,11 @@ const teacherApi = {
 
   // Search teachers
   async searchTeachers(searchTerm: string): Promise<ApiResponse<Teacher>> {
-    const response = await fetch(`${API_BASE_URL}/teachers/search?search=${encodeURIComponent(searchTerm)}`);
+    const response = await fetch(
+      `${TEACHERS_API_URL}/teachers/search?search=${encodeURIComponent(
+        searchTerm
+      )}`
+    );
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -101,7 +108,7 @@ const teacherApi = {
 
   // Get teacher by ID
   async getTeacherById(id: number): Promise<ApiResponse<Teacher>> {
-    const response = await fetch(`${API_BASE_URL}/teachers/${id}`);
+    const response = await fetch(`${TEACHERS_API_URL}/teachers/${id}`);
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -112,7 +119,7 @@ const teacherApi = {
 
   // Get available groups for teacher assignment
   async getAvailableGroups(): Promise<ApiResponse<Teacher>> {
-    const response = await fetch(`${API_BASE_URL}/available-groups`);
+    const response = await fetch(`${TEACHERS_API_URL}/available-groups`);
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -122,12 +129,9 @@ const teacherApi = {
   },
 };
 
-
-
-
 const Teachers = () => {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [currentTeacher, setCurrentTeacher] = useState<Teacher | null>(null);
@@ -135,14 +139,14 @@ const Teachers = () => {
   const [availableGroups, setAvailableGroups] = useState<AvailableGroup[]>([]);
   const [isLoadingGroups, setIsLoadingGroups] = useState(false);
   const [formData, setFormData] = useState<CreateTeacherRequest>({
-    name: '',
-    email: '',
-    password: 'teacher@123', // Default password
+    name: "",
+    email: "",
+    password: "teacher@123", // Default password
     nic: undefined,
-    address: '',
+    address: "",
     phone: undefined,
-    image: '',
-    cv: '',
+    image: "",
+    cv: "",
     group_id: undefined,
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -175,11 +179,11 @@ const Teachers = () => {
       if (response.success) {
         setTeachers(response.teachers || []);
       } else {
-        toast.error(response.message || 'Failed to load teachers');
+        toast.error(response.message || "Failed to load teachers");
       }
     } catch (error) {
-      console.error('Error fetching teachers:', error);
-      toast.error('Failed to load teachers');
+      console.error("Error fetching teachers:", error);
+      toast.error("Failed to load teachers");
     } finally {
       setIsLoading(false);
       setIsSearching(false);
@@ -199,24 +203,29 @@ const Teachers = () => {
       if (response.success) {
         setTeachers(response.teachers || []);
       } else {
-        toast.error(response.message || 'Search failed');
+        toast.error(response.message || "Search failed");
       }
     } catch (error) {
-      console.error('Error searching teachers:', error);
-      toast.error('Search failed');
+      console.error("Error searching teachers:", error);
+      toast.error("Search failed");
     } finally {
       setIsLoading(false);
     }
   };
 
   // Handle input changes for form
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
     setFormData({
       ...formData,
-      [name]: name === 'nic' || name === 'phone' || name === 'group_id'
-        ? (value ? parseInt(value) : undefined)
-        : value
+      [name]:
+        name === "nic" || name === "phone" || name === "group_id"
+          ? value
+            ? parseInt(value)
+            : undefined
+          : value,
     });
   };
 
@@ -228,21 +237,21 @@ const Teachers = () => {
     try {
       if (isEditMode) {
         // For edit mode, you might want to implement an update endpoint
-        toast.info('Edit functionality not implemented yet');
+        toast.info("Edit functionality not implemented yet");
       } else {
         // Create new teacher
         const response = await teacherApi.createTeacher(formData);
         if (response.success) {
-          toast.success('Teacher added successfully!');
+          toast.success("Teacher added successfully!");
           closeModal();
           fetchTeachers(); // Refresh the list
         } else {
-          toast.error(response.message || 'Failed to add teacher');
+          toast.error(response.message || "Failed to add teacher");
         }
       }
     } catch (error) {
-      console.error('Error submitting form:', error);
-      toast.error('Failed to save teacher');
+      console.error("Error submitting form:", error);
+      toast.error("Failed to save teacher");
     } finally {
       setIsLoading(false);
     }
@@ -251,7 +260,7 @@ const Teachers = () => {
   // Delete teacher function (placeholder)
   const deleteTeacher = async () => {
     // You might want to implement a delete endpoint
-    toast.info('Delete functionality not implemented yet');
+    toast.info("Delete functionality not implemented yet");
     closeModal();
   };
 
@@ -270,11 +279,11 @@ const Teachers = () => {
       if (response.success) {
         setAvailableGroups(response.groups || []);
       } else {
-        console.error('Failed to fetch available groups:', response.message);
+        console.error("Failed to fetch available groups:", response.message);
         setAvailableGroups([]);
       }
     } catch (error) {
-      console.error('Error fetching available groups:', error);
+      console.error("Error fetching available groups:", error);
       setAvailableGroups([]);
     } finally {
       setIsLoadingGroups(false);
@@ -286,14 +295,14 @@ const Teachers = () => {
     setIsModalOpen(true);
     setIsEditMode(false);
     setFormData({
-      name: '',
-      email: '',
-      password: 'teacher@123', // Default password
+      name: "",
+      email: "",
+      password: "teacher@123", // Default password
       nic: undefined,
-      address: '',
+      address: "",
       phone: undefined,
-      image: '',
-      cv: '',
+      image: "",
+      cv: "",
       group_id: undefined,
     });
 
@@ -309,12 +318,12 @@ const Teachers = () => {
     setFormData({
       name: teacher.name,
       email: teacher.email,
-      password: '', // Don't pre-fill password for editing
+      password: "", // Don't pre-fill password for editing
       nic: teacher.nic,
-      address: teacher.address || '',
+      address: teacher.address || "",
       phone: teacher.phone,
-      image: teacher.image || '',
-      cv: teacher.cv || '',
+      image: teacher.image || "",
+      cv: teacher.cv || "",
       group_id: teacher.group_id,
     });
   };
@@ -327,9 +336,7 @@ const Teachers = () => {
 
   // Handle form submission
 
-
   // Delete teacher
-
 
   if (isLoading) {
     return (
@@ -380,10 +387,18 @@ const Teachers = () => {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Teacher</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Teacher
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Contact
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Details
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -394,7 +409,7 @@ const Teachers = () => {
                         <div className="flex-shrink-0 h-10 w-10 rounded-full overflow-hidden">
                           <img
                             src={
-                              teacher.image && teacher.image.trim() !== ''
+                              teacher.image && teacher.image.trim() !== ""
                                 ? teacher.image
                                 : userImg
                             }
@@ -405,8 +420,12 @@ const Teachers = () => {
                           />
                         </div>
                         <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">{teacher.name}</div>
-                          <div className="text-sm text-gray-500">ID: {teacher.id}</div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {teacher.name}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            ID: {teacher.id}
+                          </div>
                         </div>
                       </div>
                     </td>
@@ -417,14 +436,22 @@ const Teachers = () => {
                       </div>
                       <div className="flex items-center text-sm text-gray-500 mt-1">
                         <Phone className="mr-2 w-4 h-4" />
-                        {teacher.phone || 'N/A'}
+                        {teacher.phone || "N/A"}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        <div><strong>NIC:</strong> {teacher.nic || 'N/A'}</div>
-                        <div><strong>Address:</strong> {teacher.address || 'N/A'}</div>
-                        {teacher.group_name && <div><strong>Group:</strong> {teacher.group_name}</div>}
+                        <div>
+                          <strong>NIC:</strong> {teacher.nic || "N/A"}
+                        </div>
+                        <div>
+                          <strong>Address:</strong> {teacher.address || "N/A"}
+                        </div>
+                        {teacher.group_name && (
+                          <div>
+                            <strong>Group:</strong> {teacher.group_name}
+                          </div>
+                        )}
                       </div>
                     </td>
 
@@ -452,7 +479,7 @@ const Teachers = () => {
         ) : (
           <div className="text-center py-10">
             <p className="text-gray-500">
-              {isSearching ? 'No matching teachers found' : 'No teachers found'}
+              {isSearching ? "No matching teachers found" : "No teachers found"}
             </p>
             <button
               onClick={openAddModal}
@@ -472,7 +499,7 @@ const Teachers = () => {
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold text-gray-800">
-                  {isEditMode ? 'Edit Teacher' : 'Add New Teacher'}
+                  {isEditMode ? "Edit Teacher" : "Add New Teacher"}
                 </h2>
                 <button
                   onClick={closeModal}
@@ -483,18 +510,23 @@ const Teachers = () => {
                 </button>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-5 bg-white rounded-lg shadow-sm p-6 ">
-                <div >
+              <form
+                onSubmit={handleSubmit}
+                className="space-y-5 bg-white rounded-lg shadow-sm p-6 "
+              >
+                <div>
                   {/* Teacher Information */}
                   <div className="space-y-4">
                     <h3 className="text-lg font-medium text-indigo-700 border-b border-indigo-100 pb-2">
                       Teacher Information
                     </h3>
 
-                    <div className='flex flex-row gap-10 justify-between'>
-                      <div className='flex-1 flex flex-col gap-4'>
+                    <div className="flex flex-row gap-10 justify-between">
+                      <div className="flex-1 flex flex-col gap-4">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Full Name
+                          </label>
                           <input
                             type="text"
                             name="name"
@@ -508,7 +540,9 @@ const Teachers = () => {
                         </div>
 
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Email
+                          </label>
                           <input
                             type="email"
                             name="email"
@@ -521,24 +555,32 @@ const Teachers = () => {
                         </div>
 
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1 hidden">Password</label>
+                          <label className="block text-sm font-medium text-gray-700 mb-1 hidden">
+                            Password
+                          </label>
                           <input
                             type="password"
                             name="password"
-                            value={'teacher@123'}
+                            value={"teacher@123"}
                             onChange={handleInputChange}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 hidden"
                             required={!isEditMode}
                             minLength={6}
-                            placeholder={isEditMode ? "Leave blank to keep current password" : "Enter password (min 6 characters)"}
+                            placeholder={
+                              isEditMode
+                                ? "Leave blank to keep current password"
+                                : "Enter password (min 6 characters)"
+                            }
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">NIC *</label>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            NIC *
+                          </label>
                           <input
                             type="number"
                             name="nic"
-                            value={formData.nic || ''}
+                            value={formData.nic || ""}
                             onChange={handleInputChange}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                             placeholder="Enter NIC number"
@@ -546,7 +588,9 @@ const Teachers = () => {
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Address
+                          </label>
                           <input
                             type="text"
                             name="address"
@@ -557,17 +601,16 @@ const Teachers = () => {
                             placeholder="Enter address"
                           />
                         </div>
-
                       </div>
-                      <div className='flex-1 flex flex-col gap-4'>
-
-
+                      <div className="flex-1 flex flex-col gap-4">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Phone Number
+                          </label>
                           <input
                             type="tel"
                             name="phone"
-                            value={formData.phone || ''}
+                            value={formData.phone || ""}
                             onChange={handleInputChange}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                             placeholder="Enter phone number"
@@ -575,11 +618,13 @@ const Teachers = () => {
                         </div>
 
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">CV URL (Optional)</label>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            CV URL (Optional)
+                          </label>
                           <input
                             type="url"
                             name="cv"
-                            value={formData.cv || ''}
+                            value={formData.cv || ""}
                             onChange={handleInputChange}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                             placeholder="Enter CV URL"
@@ -587,11 +632,16 @@ const Teachers = () => {
                         </div>
 
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1 hidden">Profile Image URL (Optional)</label>
+                          <label className="block text-sm font-medium text-gray-700 mb-1 hidden">
+                            Profile Image URL (Optional)
+                          </label>
                           <input
                             type="url"
                             name="image"
-                            value={formData.image || 'https://pixabay.com/vectors/blank-profile-picture-mystery-man-973460/'}
+                            value={
+                              formData.image ||
+                              "https://pixabay.com/vectors/blank-profile-picture-mystery-man-973460/"
+                            }
                             onChange={handleInputChange}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 hidden"
                             placeholder="Enter profile image URL"
@@ -613,23 +663,32 @@ const Teachers = () => {
                           ) : (
                             <select
                               name="group_id"
-                              value={formData.group_id || ''}
+                              value={formData.group_id || ""}
                               onChange={handleInputChange}
                               aria-label="Select group for teacher assignment"
                               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                             >
-                              <option value="">Select a group (optional)</option>
+                              <option value="">
+                                Select a group (optional)
+                              </option>
                               {availableGroups.map((group) => (
-                                <option key={group.group_id} value={group.group_id}>
+                                <option
+                                  key={group.group_id}
+                                  value={group.group_id}
+                                >
                                   {group.name} (Age: {group.age_category}) -
-                                  {group.available_position === 'main_teacher' ? ' Main Teacher' : ' Co-Teacher'} position
+                                  {group.available_position === "main_teacher"
+                                    ? " Main Teacher"
+                                    : " Co-Teacher"}{" "}
+                                  position
                                 </option>
                               ))}
                             </select>
                           )}
                           {availableGroups.length > 0 && (
                             <p className="text-xs text-gray-500 mt-1">
-                              Only groups with available teacher positions are shown
+                              Only groups with available teacher positions are
+                              shown
                             </p>
                           )}
                         </div>
@@ -645,19 +704,13 @@ const Teachers = () => {
                             type="submit"
                             className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
                           >
-                            {isEditMode ? 'Update' : 'Add'} Teacher
+                            {isEditMode ? "Update" : "Add"} Teacher
                           </button>
                         </div>
                       </div>
-
-
                     </div>
-
-
                   </div>
                 </div>
-
-
               </form>
             </div>
           </div>
@@ -670,15 +723,23 @@ const Teachers = () => {
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-gray-800">Confirm Deletion</h2>
-                <button onClick={closeModal} className="text-gray-400 hover:text-gray-500" title="Close">
+                <h2 className="text-xl font-bold text-gray-800">
+                  Confirm Deletion
+                </h2>
+                <button
+                  onClick={closeModal}
+                  className="text-gray-400 hover:text-gray-500"
+                  title="Close"
+                >
                   <X className="w-6 h-6" />
                   <span className="sr-only">Close</span>
                 </button>
               </div>
 
               <p className="mb-6 text-gray-600">
-                Are you sure you want to delete teacher <span className="font-semibold">{currentTeacher?.name}</span>? This action cannot be undone.
+                Are you sure you want to delete teacher{" "}
+                <span className="font-semibold">{currentTeacher?.name}</span>?
+                This action cannot be undone.
               </p>
 
               <div className="flex justify-end space-x-3">
