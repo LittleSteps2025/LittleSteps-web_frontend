@@ -16,14 +16,19 @@ class NotificationService {
   // Get unread complaints for supervisor
   async getNewComplaints(): Promise<Notification[]> {
     try {
+      console.log('🔔 [NotificationService] Fetching complaints for supervisor...');
       const complaints = await complaintService.getComplaintsByRecipient('supervisor');
+      console.log('🔔 [NotificationService] Fetched complaints:', complaints);
+      console.log('🔔 [NotificationService] Total complaints:', complaints.length);
       
       // Filter for new/pending complaints (you can adjust the filter logic)
       const newComplaints = complaints.filter(c => 
         c.status === 'Pending' || c.status === 'pending'
       );
+      console.log('🔔 [NotificationService] Pending complaints:', newComplaints);
+      console.log('🔔 [NotificationService] Pending count:', newComplaints.length);
       
-      return newComplaints.map(complaint => ({
+      const notifications = newComplaints.map(complaint => ({
         id: `complaint-${complaint.complaint_id}`,
         type: 'complaint' as const,
         title: 'New Complaint Received',
@@ -33,8 +38,14 @@ class NotificationService {
         data: complaint,
         link: `/supervisor/complaints?complaint_id=${complaint.complaint_id}`
       }));
+      
+      console.log('🔔 [NotificationService] Complaint notifications created:', notifications);
+      return notifications;
     } catch (error) {
-      console.error('Error fetching new complaints:', error);
+      console.error('❌ [NotificationService] Error fetching new complaints:', error);
+      if (error instanceof Error) {
+        console.error('❌ Error details:', error.message);
+      }
       return [];
     }
   }
@@ -42,14 +53,19 @@ class NotificationService {
   // Get pending meetings for supervisor
   async getNewMeetings(): Promise<Notification[]> {
     try {
+      console.log('🔔 [NotificationService] Fetching meetings for supervisor...');
       const meetings = await meetingService.getMeetingsByRecipient('supervisor');
+      console.log('🔔 [NotificationService] Fetched meetings:', meetings);
+      console.log('🔔 [NotificationService] Total meetings:', meetings.length);
       
       // Filter for pending meetings
       const newMeetings = meetings.filter(m => 
         m.status === 'pending'
       );
+      console.log('🔔 [NotificationService] Pending meetings:', newMeetings);
+      console.log('🔔 [NotificationService] Pending count:', newMeetings.length);
       
-      return newMeetings.map(meeting => ({
+      const notifications = newMeetings.map(meeting => ({
         id: `meeting-${meeting.meeting_id}`,
         type: 'meeting' as const,
         title: 'New Meeting Request',
@@ -59,8 +75,14 @@ class NotificationService {
         data: meeting,
         link: `/supervisor/appointments?meeting_id=${meeting.meeting_id}`
       }));
+      
+      console.log('🔔 [NotificationService] Meeting notifications created:', notifications);
+      return notifications;
     } catch (error) {
-      console.error('Error fetching new meetings:', error);
+      console.error('❌ [NotificationService] Error fetching new meetings:', error);
+      if (error instanceof Error) {
+        console.error('❌ Error details:', error.message);
+      }
       return [];
     }
   }
