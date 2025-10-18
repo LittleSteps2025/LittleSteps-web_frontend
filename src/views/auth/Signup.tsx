@@ -1,94 +1,98 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff } from 'lucide-react';
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
+import { API_BASE_URL } from "../../config/api";
 
 const Signup: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [nic, setNic] = useState('');
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [nic, setNic] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [password, setPassword] = useState('');
-  const [confirm, setConfirm] = useState('');
-  const [role, setRole] = useState('admin');
-  const [error, setError] = useState('');
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [role, setRole] = useState("admin");
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError('');
+    setError("");
 
     try {
       // Basic validation
       if (!name.trim()) {
-        throw new Error('Name is required');
+        throw new Error("Name is required");
       }
 
       if (!email.trim()) {
-        throw new Error('Email is required');
+        throw new Error("Email is required");
       }
 
       if (!nic.trim()) {
-        throw new Error('NIC is required');
+        throw new Error("NIC is required");
       }
 
       // NIC format validation (Sri Lankan NIC)
       const nicPattern = /^(?:\d{9}[VXvx]|\d{12})$/;
       if (!nicPattern.test(nic.trim())) {
-        throw new Error('Please enter a valid NIC number (9 digits + V/X or 12 digits)');
+        throw new Error(
+          "Please enter a valid NIC number (9 digits + V/X or 12 digits)"
+        );
       }
 
       if (password.length < 6) {
-        throw new Error('Password must be at least 6 characters');
+        throw new Error("Password must be at least 6 characters");
       }
 
       if (password !== confirm) {
-        throw new Error('Passwords do not match');
+        throw new Error("Passwords do not match");
       }
 
       // Determine the correct endpoint based on role
-      const endpoint = role === 'admin' 
-        ? 'http://localhost:5001/api/supervisors/adminSignup'
-        : 'http://localhost:5001/api/supervisors/supervisorSignup';
+      const endpoint =
+        role === "admin"
+          ? `${API_BASE_URL}/supervisors/adminSignup`
+          : `${API_BASE_URL}/supervisors/supervisorSignup`;
 
       const response = await fetch(endpoint, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ 
-          name, 
+        body: JSON.stringify({
+          name,
           email,
-          nic, 
-          password, 
-          role // Include role for backend processing
+          nic,
+          password,
+          role, // Include role for backend processing
         }),
       });
 
-      const contentType = response.headers.get('content-type');
+      const contentType = response.headers.get("content-type");
       let data;
-      if (contentType && contentType.includes('application/json')) {
+      if (contentType && contentType.includes("application/json")) {
         data = await response.json();
       } else {
-        throw new Error('Server returned an unexpected response');
+        throw new Error("Server returned an unexpected response");
       }
 
       if (!response.ok) {
-        throw new Error(data.message || 'Signup failed');
+        throw new Error(data.message || "Signup failed");
       }
 
-      navigate('/login', { 
-        state: { 
-          success: 'Account created successfully! Please login.',
-          email: data.user.email 
-        } 
+      navigate("/login", {
+        state: {
+          success: "Account created successfully! Please login.",
+          email: data.user.email,
+        },
       });
     } catch (err) {
       const error = err as Error;
       setError(error.message);
-      console.error('Signup error:', error);
+      console.error("Signup error:", error);
     } finally {
       setIsLoading(false);
     }
@@ -97,8 +101,10 @@ const Signup: React.FC = () => {
   return (
     <div className="min-h-[calc(100vh-160px)] flex items-center justify-center bg-gradient-to-br from-[#f9f6ff] to-[#fff] p-4 mt-18">
       <div className="bg-white shadow-2xl rounded-2xl p-8 sm:p-10 w-full max-w-md border-t-8 border-[#6339C0] relative overflow-hidden">
-        <h2 className="text-2xl font-bold mb-6 text-[#6339C0]">Create Admin Account</h2>
-        
+        <h2 className="text-2xl font-bold mb-6 text-[#6339C0]">
+          Create Admin Account
+        </h2>
+
         {error && (
           <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg">
             {error}
@@ -108,14 +114,17 @@ const Signup: React.FC = () => {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Name field */}
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="name"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Name
             </label>
             <input
               id="name"
               type="text"
               value={name}
-              onChange={e => setName(e.target.value)}
+              onChange={(e) => setName(e.target.value)}
               className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6339C0]"
               required
             />
@@ -123,28 +132,34 @@ const Signup: React.FC = () => {
 
           {/* Email field */}
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Email
             </label>
             <input
               id="email"
               type="email"
               value={email}
-              onChange={e => setEmail(e.target.value)}
+              onChange={(e) => setEmail(e.target.value)}
               className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6339C0]"
               required
             />
           </div>
           {/* NIC field */}
           <div>
-            <label htmlFor="nic" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="nic"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               NIC Number
             </label>
             <input
               id="nic"
               type="text"
               value={nic}
-              onChange={e => setNic(e.target.value)}
+              onChange={(e) => setNic(e.target.value)}
               className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6339C0]"
               placeholder="Enter your NIC (e.g., 123456789V or 123456789012)"
               maxLength={12}
@@ -157,13 +172,16 @@ const Signup: React.FC = () => {
 
           {/* Role field - only admin and supervisor options */}
           <div>
-            <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="role"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Role
             </label>
             <select
               id="role"
               value={role}
-              onChange={e => setRole(e.target.value)}
+              onChange={(e) => setRole(e.target.value)}
               className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6339C0]"
               required
             >
@@ -174,15 +192,18 @@ const Signup: React.FC = () => {
 
           {/* Password field */}
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Password
             </label>
             <div className="relative">
               <input
                 id="password"
-                type={showPassword ? 'text' : 'password'}
+                type={showPassword ? "text" : "password"}
                 value={password}
-                onChange={e => setPassword(e.target.value)}
+                onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6339C0] pr-10"
                 required
               />
@@ -199,15 +220,18 @@ const Signup: React.FC = () => {
 
           {/* Confirm Password field */}
           <div>
-            <label htmlFor="confirm" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="confirm"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Confirm Password
             </label>
             <div className="relative">
               <input
                 id="confirm"
-                type={showConfirmPassword ? 'text' : 'password'}
+                type={showConfirmPassword ? "text" : "password"}
                 value={confirm}
-                onChange={e => setConfirm(e.target.value)}
+                onChange={(e) => setConfirm(e.target.value)}
                 className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6339C0] pr-10"
                 required
               />
@@ -221,7 +245,7 @@ const Signup: React.FC = () => {
               </button>
             </div>
           </div>
-          
+
           <button
             type="submit"
             className="w-full bg-gradient-to-r from-[#6339C0] to-[#9F66FF] text-white py-3 rounded-lg font-semibold hover:shadow-lg transition flex justify-center items-center"
@@ -229,19 +253,42 @@ const Signup: React.FC = () => {
           >
             {isLoading ? (
               <>
-                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                <svg
+                  className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
                 </svg>
                 Processing...
               </>
-            ) : 'Sign Up'}
+            ) : (
+              "Sign Up"
+            )}
           </button>
         </form>
-        
+
         <div className="mt-6 text-center text-sm text-gray-600">
-          Already have an account?{' '}
-          <Link to="/login" className="text-[#6339C0] font-semibold hover:underline">Login</Link>
+          Already have an account?{" "}
+          <Link
+            to="/login"
+            className="text-[#6339C0] font-semibold hover:underline"
+          >
+            Login
+          </Link>
         </div>
       </div>
     </div>

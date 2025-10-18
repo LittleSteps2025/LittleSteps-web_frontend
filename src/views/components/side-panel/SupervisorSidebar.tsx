@@ -1,4 +1,5 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../../context/AuthContext';
 import logo from '../../../assets/logo.png';
 
 import {
@@ -9,6 +10,7 @@ import {
   FileText,
   CalendarDays,
   CreditCard,
+  LogOut,
   // ClipboardList
   // Heart,
   // Activity,
@@ -16,20 +18,29 @@ import {
 
 const SupervisorSidebar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+  
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
   
   const navItems = [
     { path: '/supervisor', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/supervisor/parents', icon: Users, label: 'Parents' },
     { path: '/supervisor/childrens', icon: Users, label: 'Childrens' },
     { path: '/supervisor/teachers', icon: Users, label: 'Teachers' },
-    { path: '/supervisor/payments', icon: CreditCard, label: 'Payments' },
+    { path: '/supervisor/complaints', icon: FileText, label: 'Complaints' },
     { path: '/supervisor/announcements', icon: Bell, label: 'Announcements' },
     { path: '/supervisor/events', icon: CalendarDays, label: 'Events' },
     { path: '/supervisor/appointments', icon: Calendar, label: 'Appointments' },
-    // { path: '/supervisor/health-records', icon: Heart, label: 'Health Records' },
+    { path: '/supervisor/reports', icon: FileText, label: 'Reports' },
+    { path: '/supervisor/payments', icon: CreditCard, label: 'Payments' },
+        // { path: '/supervisor/health-records', icon: Heart, label: 'Health Records' },
     // { path: '/supervisor/attendance', icon: ClipboardList, label: 'Attendance' },
         // { path: '/supervisor/activities', icon: Activity, label: 'Activities' },
-    { path: '/supervisor/reports', icon: FileText, label: 'Reports' }
+   
     
   ];
 
@@ -55,7 +66,13 @@ const SupervisorSidebar = () => {
         ))}
       </nav>
       <div className="p-4 border-t border-[#7c73e6]">
-       
+        <button
+          onClick={handleLogout}
+          className="flex items-center p-3 rounded-lg transition-all w-full hover:bg-red-500/20 text-white hover:text-red-200 text-left"
+        >
+          <LogOut className="w-5 h-5 mr-3" />
+          <span>Logout</span>
+        </button>
       </div>
     </div>
   );

@@ -1,149 +1,120 @@
-import { useState, useEffect } from 'react';
-import { Calendar, Search, Plus, User, Check, X, Trash2 } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { Search, User, Eye, Phone, Filter, RefreshCw, X, MessageSquare, Trash2 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-
-type Appointment = {
-  id: string;
-  parent: string;
-  student: string;
-  date: string;
-  time: string;
-  status: 'Confirmed' | 'Pending' | 'Cancelled';
-  notes?: string;
-};
-
-// Mock data for appointments
-const mockAppointments: Appointment[] = [
-  {
-    id: 'appointment-001',
-    parent: 'Amali Perera',
-    student: 'Pathum Nissanka',
-    date: '2023-05-18',
-    time: '10:00 AM',
-    status: 'Confirmed',
-    notes: 'Discuss math performance'
-  },
-  {
-    id: 'appointment-002',
-    parent: 'Kavindu Dulmin',
-    student: 'Chamath gunarathna',
-    date: '2023-05-19',
-    time: '02:30 PM',
-    status: 'Pending'
-  },
-  {
-    id: 'appointment-003',
-    parent: 'Tshadi Thashmika',
-    student: 'Kasun Mendis',
-    date: '2023-05-20',
-    time: '11:15 AM',
-    status: 'Cancelled',
-    notes: 'Parent requested cancellation'
-  }
-];
-
-// Mock API functions
-const fetchMockAppointments = async (): Promise<Appointment[]> => {
-  return new Promise(resolve => {
-    setTimeout(() => {
-      resolve([...mockAppointments]);
-    }, 500);
-  });
-};
-
-const searchMockAppointments = async (term: string): Promise<Appointment[]> => {
-  return new Promise(resolve => {
-    setTimeout(() => {
-      if (!term.trim()) {
-        resolve([...mockAppointments]);
-        return;
-      }
-      const filtered = mockAppointments.filter(appointment => 
-        appointment.parent.toLowerCase().includes(term.toLowerCase()) ||
-        appointment.student.toLowerCase().includes(term.toLowerCase()) ||
-        appointment.date.includes(term) ||
-        appointment.time.toLowerCase().includes(term.toLowerCase()) ||
-        appointment.status.toLowerCase().includes(term.toLowerCase()) ||
-        appointment.id.toLowerCase().includes(term.toLowerCase())
-      );
-      resolve(filtered);
-    }, 300);
-  });
-};
-
-const createMockAppointment = async (appointment: Omit<Appointment, 'id'>): Promise<Appointment> => {
-  return new Promise(resolve => {
-    setTimeout(() => {
-      const newAppointment = { 
-        ...appointment, 
-        id: `appointment-${Math.floor(1000 + Math.random() * 9000)}`
-      };
-      mockAppointments.unshift(newAppointment);
-      resolve(newAppointment);
-    }, 500);
-  });
-};
-
-const updateMockAppointment = async (appointment: Appointment): Promise<Appointment> => {
-  return new Promise(resolve => {
-    setTimeout(() => {
-      const index = mockAppointments.findIndex(a => a.id === appointment.id);
-      if (index !== -1) {
-        mockAppointments[index] = appointment;
-      }
-      resolve(appointment);
-    }, 500);
-  });
-};
-
-const deleteMockAppointment = async (id: string): Promise<void> => {
-  return new Promise(resolve => {
-    setTimeout(() => {
-      const index = mockAppointments.findIndex(a => a.id === id);
-      if (index !== -1) {
-        mockAppointments.splice(index, 1);
-      }
-      resolve();
-    }, 500);
-  });
-};
+import meetingService from '../../services/meetingService';
+import type { Meeting, CreateMeetingData, UpdateMeetingData } from '../../services/meetingService';
 
 const Appointments = () => {
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All Status');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [currentAppointment, setCurrentAppointment] = useState<Appointment | null>(null);
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [formData, setFormData] = useState<Omit<Appointment, 'id'>>({
-    parent: '',
-    student: '',
-    date: '',
-    time: '',
-    status: 'Pending',
-    notes: ''
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [currentMeeting, setCurrentMeeting] = useState<Meeting | null>(null);
+  const [isEditMode] = useState(false);
+  const [formData, setFormData] = useState<CreateMeetingData>({
+    child_id: 0,
+    recipient: 'supervisor',
+    meeting_date: '',
+    meeting_time: '',
+    reason: '',
+    response: ''
   });
   const [isLoading, setIsLoading] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  const [isViewLoading, setIsViewLoading] = useState(false);
+  const [isResponseModalOpen, setIsResponseModalOpen] = useState(false);
+  const [responseModalText, setResponseModalText] = useState('');
+  const [responseMeetingId, setResponseMeetingId] = useState<number | null>(null);
 
-  // Stats calculation
+  // Mock child data for demo purposes (in real app, this would come from child service)
+  const mockChildren = [
+    { child_id: 1, name: 'Damsara Perera', parent_name: 'Malith Perera' },
+    { child_id: 2, name: 'Mohomad Ahmed', parent_name: 'Farshad Ahmed' },
+    { child_id: 3, name: 'Silva Silva', parent_name: 'Chathumini Silva' },
+    { child_id: 4, name: 'Lakshmi Fernando', parent_name: 'Priya Fernando' }
+  ];
+
+  // Stats calculation based on status field
   const stats = {
-    total: appointments.length,
-    confirmed: appointments.filter(a => a.status === 'Confirmed').length,
-    pending: appointments.filter(a => a.status === 'Pending').length,
-    cancelled: appointments.filter(a => a.status === 'Cancelled').length
+    total: meetings.length,
+    confirmed: meetings.filter(m => m.status === 'confirmed').length,
+    pending: meetings.filter(m => m.status === 'pending').length,
+    cancelled: meetings.filter(m => m.status === 'cancelled').length
   };
 
-  // Fetch appointments from mock API
-  useEffect(() => {
-    fetchAppointments();
+  const fetchMeetings = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      // Get only supervisor meetings
+      const data = await meetingService.getMeetingsByRecipient('supervisor');
+      setMeetings(data);
+    } catch (error: unknown) {
+      console.error('Error fetching supervisor meetings:', error);
+      toast.error('Failed to load supervisor meetings');
+    } finally {
+      setIsLoading(false);
+      setIsSearching(false);
+    }
   }, []);
+
+  // Fetch meetings from database (only supervisor meetings)
+  useEffect(() => {
+    fetchMeetings();
+  }, [fetchMeetings]);
+
+  // Handle URL parameter for auto-opening meeting detail
+  useEffect(() => {
+    const meetingId = searchParams.get('meeting_id');
+    if (meetingId && meetings.length > 0) {
+      const meeting = meetings.find(m => m.meeting_id === parseInt(meetingId));
+      if (meeting) {
+        // Open the view modal directly
+        setIsViewModalOpen(true);
+        setCurrentMeeting(meeting);
+        // Fetch full details
+        fetchMeetingDetails(meeting.meeting_id);
+        // Remove the parameter from URL after opening
+        setSearchParams({});
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, meetings]);
+
+  const handleSearch = useCallback(async () => {
+    if (!searchTerm.trim() && statusFilter === 'All Status') {
+      fetchMeetings();
+      return;
+    }
+    setIsLoading(true);
+    setIsSearching(true);
+    try {
+      const searchParams: {
+        searchTerm?: string;
+        response?: string;
+      } = {};
+      if (searchTerm.trim()) searchParams.searchTerm = searchTerm;
+      if (statusFilter !== 'All Status') searchParams.response = statusFilter;
+      
+      // Search only supervisor meetings
+      const data = await meetingService.searchMeetings(searchParams);
+      setMeetings(data);
+    } catch (error: unknown) {
+      console.error('Error searching supervisor meetings:', error);
+      toast.error('Search failed');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [searchTerm, statusFilter, fetchMeetings]);
 
   // Search effect with debounce
   useEffect(() => {
     const timerId = setTimeout(() => {
-      if (searchTerm.trim() || isSearching) {
+      if (searchTerm.trim() || statusFilter !== 'All Status' || isSearching) {
         handleSearch();
       }
     }, 500);
@@ -151,38 +122,7 @@ const Appointments = () => {
     return () => {
       clearTimeout(timerId);
     };
-  }, [searchTerm]);
-
-  const fetchAppointments = async () => {
-    setIsLoading(true);
-    try {
-      const data = await fetchMockAppointments();
-      setAppointments(data);
-    } catch {
-      toast.error('Failed to load appointments');
-    } finally {
-      setIsLoading(false);
-      setIsSearching(false);
-    }
-  };
-
-  // Search appointments
-  const handleSearch = async () => {
-    if (!searchTerm.trim()) {
-      fetchAppointments();
-      return;
-    }
-    setIsLoading(true);
-    setIsSearching(true);
-    try {
-      const data = await searchMockAppointments(searchTerm);
-      setAppointments(data);
-    } catch {
-      toast.error('Search failed');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }, [handleSearch, searchTerm, statusFilter, isSearching]);
 
   // Handle input changes for form
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -193,46 +133,154 @@ const Appointments = () => {
     });
   };
 
-  // Open modal for adding new appointment
-  const openAddModal = () => {
-    setIsModalOpen(true);
-    setIsEditMode(false);
-    setFormData({
-      parent: '',
-      student: '',
-      date: '',
-      time: '',
-      status: 'Pending',
-      notes: ''
-    });
+  
+
+  // Fetch meeting details from database
+  const fetchMeetingDetails = async (meetingId: number) => {
+    setIsViewLoading(true);
+    try {
+      const fullMeetingData = await meetingService.getMeetingById(meetingId);
+      setCurrentMeeting(fullMeetingData);
+      toast.success('Meeting details loaded successfully');
+    } catch (error: unknown) {
+      console.error('Error fetching meeting details:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load meeting details';
+      toast.error(errorMessage);
+    } finally {
+      setIsViewLoading(false);
+    }
   };
 
-  // Open modal for editing appointment
-  const openEditModal = (appointment: Appointment) => {
-    setIsModalOpen(true);
-    setIsEditMode(true);
-    setCurrentAppointment(appointment);
-    setFormData({
-      parent: appointment.parent,
-      student: appointment.student,
-      date: appointment.date,
-      time: appointment.time,
-      status: appointment.status,
-      notes: appointment.notes || ''
-    });
+  // Open view modal for meeting details and fetch real data
+  const openViewModal = async (meeting: Meeting) => {
+    setIsViewModalOpen(true);
+    setCurrentMeeting(meeting); // Set initial data to avoid blank modal
+    await fetchMeetingDetails(meeting.meeting_id);
   };
 
-  // Open delete confirmation modal
-  const openDeleteModal = (appointment: Appointment) => {
-    setIsDeleteModalOpen(true);
-    setCurrentAppointment(appointment);
+  // Refresh meeting details
+  const refreshMeetingDetails = async () => {
+    if (currentMeeting) {
+      await fetchMeetingDetails(currentMeeting.meeting_id);
+    }
   };
+
+  // Open delete confirmation modal (currently disabled)
+  // const openDeleteModal = (meeting: Meeting) => {
+  //   setIsDeleteModalOpen(true);
+  //   setCurrentMeeting(meeting);
+  // };
 
   // Close all modals
   const closeModal = () => {
     setIsModalOpen(false);
     setIsDeleteModalOpen(false);
-    setCurrentAppointment(null);
+    setIsViewModalOpen(false);
+    setIsResponseModalOpen(false);
+    setCurrentMeeting(null);
+    setResponseModalText('');
+    setResponseMeetingId(null);
+  };
+
+  // Open response modal
+  const openResponseModal = (meeting: Meeting) => {
+    if (meeting.status !== 'confirmed' && meeting.status !== 'cancelled') {
+      toast.warning('Can only add notes to Confirmed or Cancelled meetings');
+      return;
+    }
+    setIsResponseModalOpen(true);
+    setCurrentMeeting(meeting);
+    setResponseMeetingId(meeting.meeting_id);
+    setResponseModalText(meeting.response || '');
+  };
+
+  // Save/Update response
+  const handleSaveResponse = async () => {
+    if (!responseModalText.trim()) {
+      toast.error('Please enter a response or note');
+      return;
+    }
+
+    if (responseMeetingId === null) return;
+
+    try {
+      const updatedMeeting = await meetingService.updateMeetingResponse(responseMeetingId, responseModalText.trim());
+      
+      setMeetings(meetings.map(meeting => 
+        meeting.meeting_id === responseMeetingId
+          ? updatedMeeting
+          : meeting
+      ));
+
+      // Update current meeting if it's the one being edited
+      if (currentMeeting && currentMeeting.meeting_id === responseMeetingId) {
+        setCurrentMeeting(updatedMeeting);
+      }
+
+      toast.success('Response updated successfully!');
+      closeModal();
+    } catch (error: unknown) {
+      console.error('Error saving response:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save response';
+      toast.error(errorMessage);
+    }
+  };
+
+  // Delete response
+  const handleDeleteResponse = async () => {
+    if (responseMeetingId === null) return;
+
+    try {
+      // Set empty response
+      const updatedMeeting = await meetingService.updateMeetingResponse(responseMeetingId, '');
+      
+      setMeetings(meetings.map(meeting => 
+        meeting.meeting_id === responseMeetingId
+          ? updatedMeeting
+          : meeting
+      ));
+
+      // Update current meeting if it's the one being edited
+      if (currentMeeting && currentMeeting.meeting_id === responseMeetingId) {
+        setCurrentMeeting(updatedMeeting);
+      }
+
+      toast.success('Response deleted successfully!');
+      closeModal();
+    } catch (error: unknown) {
+      console.error('Error deleting response:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete response';
+      toast.error(errorMessage);
+    }
+  };
+
+  // Update meeting status
+  const updateMeetingStatus = async (meetingId: number, newStatus: 'confirmed' | 'cancelled') => {
+    console.log('=== FRONTEND: updateMeetingStatus ===');
+    console.log('Meeting ID:', meetingId);
+    console.log('New Status:', newStatus);
+    
+    try {
+      const updatedMeeting = await meetingService.updateMeetingStatus(meetingId, newStatus);
+      console.log('Updated meeting received:', updatedMeeting);
+      
+      setMeetings(meetings.map(meeting => 
+        meeting.meeting_id === meetingId ? updatedMeeting : meeting
+      ));
+
+      // Update current meeting if it's the one being viewed
+      if (currentMeeting && currentMeeting.meeting_id === meetingId) {
+        console.log('Updating current meeting in view modal');
+        setCurrentMeeting(updatedMeeting);
+      }
+
+      toast.success(`Meeting ${newStatus} successfully!`);
+      console.log('Status update completed successfully');
+    } catch (error: unknown) {
+      console.error('Error updating status:', error);
+      const errorMessage = error instanceof Error ? error.message : `Failed to update status to ${newStatus}`;
+      toast.error(errorMessage);
+    }
   };
 
   // Handle form submission
@@ -240,56 +288,52 @@ const Appointments = () => {
     e.preventDefault();
     
     try {
-      let result: Appointment;
-      if (isEditMode && currentAppointment) {
-        const updatedAppointment = {
-          ...currentAppointment,
-          ...formData
+      let result: Meeting;
+      if (isEditMode && currentMeeting) {
+        // Supervisor can only update date, time, and reason
+        const updateData: UpdateMeetingData = {
+          meeting_date: formData.meeting_date,
+          meeting_time: formData.meeting_time,
+          reason: formData.reason,
+          response: formData.response
         };
-        result = await updateMockAppointment(updatedAppointment);
-        setAppointments(appointments.map(a => a.id === result.id ? result : a));
-        toast.success('Appointment updated successfully!');
+        result = await meetingService.updateMeeting(currentMeeting.meeting_id, updateData);
+        setMeetings(meetings.map(m => m.meeting_id === result.meeting_id ? result : m));
+        toast.success('Supervisor meeting updated successfully!');
       } else {
-        result = await createMockAppointment(formData);
-        setAppointments([result, ...appointments]);
-        toast.success('Appointment scheduled successfully!');
+        // Only create supervisor meetings
+        result = await meetingService.createMeeting(formData);
+        setMeetings([result, ...meetings]);
+        toast.success('Supervisor meeting scheduled successfully!');
       }
       closeModal();
     } catch (error: unknown) {
-      if (error instanceof Error) {
-        toast.error(error.message || 'An error occurred');
-      } else {
-        toast.error('An error occurred');
-      }
+      console.error('Error submitting meeting:', error);
+      const errorMessage = error instanceof Error ? error.message : 'An error occurred';
+      toast.error(errorMessage);
     }
   };
 
-  // Delete appointment
-  const deleteAppointment = async () => {
-    if (!currentAppointment) return;
+  // Delete meeting
+  const deleteMeeting = async () => {
+    if (!currentMeeting) return;
     try {
-      await deleteMockAppointment(currentAppointment.id);
-      setAppointments(appointments.filter(a => a.id !== currentAppointment.id));
-      toast.success('Appointment deleted successfully!');
+      await meetingService.deleteMeeting(currentMeeting.meeting_id);
+      setMeetings(meetings.filter(m => m.meeting_id !== currentMeeting.meeting_id));
+      toast.success('Supervisor meeting deleted successfully!');
       closeModal();
-    } catch {
-      toast.error('Failed to delete appointment');
+    } catch (error: unknown) {
+      console.error('Error deleting meeting:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete meeting';
+      toast.error(errorMessage);
     }
   };
 
-  // Update appointment status
-  const updateStatus = async (id: string, newStatus: 'Confirmed' | 'Cancelled') => {
-    try {
-      const appointment = appointments.find(a => a.id === id);
-      if (appointment) {
-        const updatedAppointment = { ...appointment, status: newStatus };
-        await updateMockAppointment(updatedAppointment);
-        setAppointments(appointments.map(a => a.id === id ? updatedAppointment : a));
-        toast.success(`Appointment ${newStatus.toLowerCase()} successfully!`);
-      }
-    } catch {
-      toast.error(`Failed to ${newStatus.toLowerCase()} appointment`);
-    }
+  // Clear filters
+  const clearFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('All Status');
+    fetchMeetings();
   };
 
   if (isLoading) {
@@ -306,31 +350,49 @@ const Appointments = () => {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-800 flex items-center">
           <span className="bg-gradient-to-r from-[#4f46e5] to-[#7c73e6] bg-clip-text text-transparent">
-            Appointments
+            Supervisor Appointments
           </span>
         </h1>
       </div>
 
-      {/* Search and Add Appointment */}
+      {/* Search and Filters */}
       <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex flex-col lg:flex-row gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-3 text-gray-400" />
             <input
               type="text"
-              placeholder="Search appointments by parent, student, date or status..."
+              placeholder="Search supervisor appointments by child name, parent name, or reason..."
               className="pl-10 pr-4 py-2 w-full border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          {/* <button
-            onClick={openAddModal}
-            className="btn-primary flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors whitespace-nowrap"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Schedule Appointment
-          </button> */}
+          
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <Filter className="absolute left-3 top-3 text-gray-400 w-4 h-4" />
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="pl-10 pr-8 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none bg-white"
+                title="Filter by status"
+                aria-label="Filter meetings by status"
+              >
+                <option value="All Status">All Status</option>
+                <option value="Pending">Pending</option>
+                <option value="Confirmed">Confirmed</option>
+                <option value="Cancelled">Cancelled</option>
+              </select>
+            </div>
+            
+            <button
+              onClick={clearFilters}
+              className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              Clear
+            </button>
+          </div>
         </div>
       </div>
 
@@ -354,83 +416,115 @@ const Appointments = () => {
         </div>
       </div>
 
-      {/* Appointments Table */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-        {appointments.length > 0 ? (
+      {/* Meetings Table */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        {meetings.length > 0 ? (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
+            <table className="w-full table-auto">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Parent/Student</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date & Time</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/5">
+                    Parent & Child
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[12%]">
+                    Date & Time
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[23%]">
+                    Reason
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%]">
+                    Status
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/4">
+                    Response/Notes
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%]">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {appointments.map((appointment) => (
-                  <tr key={appointment.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center">
-                        <User className="flex-shrink-0 h-8 w-8 text-indigo-600" />
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">{appointment.parent}</div>
-                          <div className="text-sm text-gray-500">{appointment.student}</div>
+                {meetings.map((meeting) => (
+                  <tr key={meeting.meeting_id} className="hover:bg-gray-50">
+                    <td className="px-4 py-4 align-top">
+                      <div className="flex items-start">
+                        <User className="flex-shrink-0 h-8 w-8 text-indigo-600 mt-1" />
+                        <div className="ml-4 min-w-0 flex-1">
+                          <div className="text-sm font-medium text-gray-900 break-words mb-1">
+                            {meeting.parent_name}
+                          </div>
+                          <div className="text-sm text-gray-500 break-words">
+                            {meeting.child_name} ({meeting.child_age} years)
+                          </div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 py-4 align-top">
                       <div className="text-sm text-gray-900">
-                        {new Date(appointment.date).toLocaleDateString()}
+                        {new Date(meeting.meeting_date).toLocaleDateString()}
                       </div>
-                      <div className="text-sm text-gray-500">{appointment.time}</div>
+                      <div className="text-sm text-gray-500">{meeting.meeting_time}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 text-xs rounded-full ${
-                        appointment.status === 'Confirmed' 
+                    <td className="px-4 py-4 align-top">
+                      <div className="text-sm text-gray-900 break-words leading-relaxed">
+                        {meeting.reason}
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 align-top">
+                      <span className={`inline-flex px-2 py-1 text-xs rounded-full font-medium ${
+                        meeting.status === 'confirmed'
                           ? 'bg-green-100 text-green-800' 
-                          : appointment.status === 'Pending'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-red-100 text-red-800'
+                          : meeting.status === 'cancelled'
+                            ? 'bg-red-100 text-red-800'
+                            : 'bg-yellow-100 text-yellow-800'
                       }`}>
-                        {appointment.status}
+                        {meeting.status ? meeting.status.charAt(0).toUpperCase() + meeting.status.slice(1) : 'Pending'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                      {appointment.status === 'Pending' && (
-                        <>
-                          <button
-                            onClick={() => updateStatus(appointment.id, 'Confirmed')}
-                            className="text-green-600 hover:text-green-900 flex items-center"
-                          >
-                            <Check className="w-4 h-4 mr-1" />
-                            Confirm
-                          </button>
-                          <button
-                            onClick={() => updateStatus(appointment.id, 'Cancelled')}
-                            className="text-red-600 hover:text-red-900 flex items-center"
-                          >
-                            <X className="w-4 h-4 mr-1" />
-                            Cancel
-                          </button>
-                        </>
-                      )}
-                      {appointment.status === 'Confirmed' && (
+                    <td className="px-4 py-4 align-top">
+                      <div className="text-sm text-gray-700 break-words max-w-xs">
+                        {meeting.response ? meeting.response : <span className="text-gray-400 italic">No notes</span>}
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 align-top">
+                      <div className="flex flex-col space-y-1">
                         <button
-                          onClick={() => openEditModal(appointment)}
-                          className="text-indigo-600 hover:text-indigo-900 flex items-center"
+                          onClick={() => openViewModal(meeting)}
+                          className="text-blue-600 hover:text-blue-900 flex items-center text-sm"
+                          title="View Details"
                         >
-                          <Calendar className="w-4 h-4 mr-1" />
-                          Reschedule
+                          <Eye className="w-4 h-4 mr-1" />
+                          View
                         </button>
-                      )}
-                      <button
-                        onClick={() => openDeleteModal(appointment)}
-                        className="text-gray-600 hover:text-gray-900 flex items-center"
-                      >
-                        <Trash2 className="w-4 h-4 mr-1" />
-                        Delete
-                      </button>
+                        
+                        {meeting.status === 'pending' ? (
+                          <>
+                            <button
+                              onClick={() => updateMeetingStatus(meeting.meeting_id, 'confirmed')}
+                              className="text-green-600 hover:text-green-900 flex items-center text-sm"
+                              title="Confirm this meeting"
+                            >
+                              ✓ Confirm
+                            </button>
+                            <button
+                              onClick={() => updateMeetingStatus(meeting.meeting_id, 'cancelled')}
+                              className="text-red-600 hover:text-red-900 flex items-center text-sm"
+                              title="Cancel this meeting"
+                            >
+                              ✕ Cancel
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            onClick={() => openResponseModal(meeting)}
+                            className="text-purple-600 hover:text-purple-900 flex items-center text-sm"
+                            title="Add/Edit Response"
+                          >
+                            <MessageSquare className="w-4 h-4 mr-1" />
+                            Response
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -440,27 +534,161 @@ const Appointments = () => {
         ) : (
           <div className="text-center py-10">
             <p className="text-gray-500">
-              {isSearching ? 'No matching appointments found' : 'No appointments found'}
+              {isSearching ? 'No matching supervisor appointments found' : 'No supervisor appointments found'}
             </p>
-            <button
-              onClick={openAddModal}
-              className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Schedule New Appointment
-            </button>
           </div>
         )}
       </div>
 
-      {/* Add/Edit Appointment Modal */}
+      {/* View Meeting Details Modal */}
+      {isViewModalOpen && currentMeeting && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold text-gray-800">
+                  Supervisor Appointment Details
+                  {isViewLoading && (
+                    <span className="ml-2 text-sm text-blue-600">(Loading...)</span>
+                  )}
+                </h2>
+                <div className="flex items-center space-x-2">
+                  <button 
+                    onClick={refreshMeetingDetails}
+                    className="text-blue-600 hover:text-blue-800 p-2 rounded-lg hover:bg-blue-50"
+                    title="Refresh Data"
+                    disabled={isViewLoading}
+                  >
+                    <RefreshCw className={`h-5 w-5 ${isViewLoading ? 'animate-spin' : ''}`} />
+                  </button>
+                  <button 
+                    onClick={closeModal}
+                    className="text-gray-400 hover:text-gray-500"
+                    title="Close"
+                  >
+                    <X className="h-6 w-6" />
+                  </button>
+                </div>
+              </div>
+
+              {isViewLoading && (
+                <div className="flex justify-center items-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500"></div>
+                  <span className="ml-3 text-gray-600">Loading appointment details...</span>
+                </div>
+              )}
+
+              <div className={`space-y-6 ${isViewLoading ? 'opacity-50' : ''}`}>
+                {/* Basic Information */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-3">Basic Information</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600">Parent Name</label>
+                      <p className="text-sm text-gray-900">{currentMeeting.parent_name}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600">Child Name</label>
+                      <p className="text-sm text-gray-900">{currentMeeting.child_name}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600">Child Age</label>
+                      <p className="text-sm text-gray-900">{currentMeeting.child_age} years</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600">Child Gender</label>
+                      <p className="text-sm text-gray-900">{currentMeeting.child_gender}</p>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600">Recipient</label>
+                      <p className="text-sm text-gray-900 capitalize">{currentMeeting.recipient}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600">Status</label>
+                      <span className={`px-2 py-1 text-xs rounded-full font-medium ${
+                        currentMeeting.status === 'confirmed'
+                          ? 'bg-green-100 text-green-800' 
+                          : currentMeeting.status === 'cancelled'
+                            ? 'bg-red-100 text-red-800'
+                            : 'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {currentMeeting.status ? currentMeeting.status.charAt(0).toUpperCase() + currentMeeting.status.slice(1) : 'Pending'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Contact Information */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-3">Contact Information</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex items-center">
+                      <Phone className="w-4 h-4 text-gray-400 mr-2" />
+                      <div>
+                        <label className="block text-sm font-medium text-gray-600">Phone</label>
+                        <p className="text-sm text-gray-900">{currentMeeting.parent_phone}</p>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600">Email</label>
+                      <p className="text-sm text-gray-900">{currentMeeting.parent_email}</p>
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-600">Address</label>
+                      <p className="text-sm text-gray-900">{currentMeeting.parent_address}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Meeting Details */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-3">Meeting Details</h3>
+                  <div className="space-y-3">
+                  <div>
+                      <label className="block text-sm font-medium text-gray-600">Date</label>
+                      <p className="text-sm text-gray-900">{new Date(currentMeeting.meeting_date).toLocaleDateString()}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600">Time</label>
+                      <p className="text-sm text-gray-900">{currentMeeting.meeting_time}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600">Reason</label>
+                      <p className="text-sm text-gray-900">{currentMeeting.reason}</p>
+                    </div>
+                    {currentMeeting.response && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-600">Response</label>
+                        <p className="text-sm text-gray-900">{currentMeeting.response}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+              </div>
+
+              <div className="flex justify-end space-x-3 pt-6">
+                <button
+                  onClick={closeModal}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add/Edit Meeting Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold text-gray-800">
-                  {isEditMode ? 'Edit Appointment' : 'Schedule New Appointment'}
+                  {isEditMode ? 'Edit Supervisor Appointment (Reason Only)' : 'Schedule New Supervisor Appointment'}
                 </h2>
                 <button 
                   onClick={closeModal}
@@ -472,93 +700,131 @@ const Appointments = () => {
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Parent Name</label>
-                    <input
-                      type="text"
-                      name="parent"
-                      value={formData.parent}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      required
-                      placeholder="Enter parent name"
-                      title="Parent Name"
-                    />
-                  </div>
+                {!isEditMode && (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Child *</label>
+                        <select
+                          name="child_id"
+                          value={formData.child_id}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          required
+                          title="Select a child"
+                        >
+                          <option value={0}>Select a child</option>
+                          {mockChildren.map(child => (
+                            <option key={child.child_id} value={child.child_id}>
+                              {child.name} - {child.parent_name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Student Name</label>
-                    <input
-                      type="text"
-                      name="student"
-                      value={formData.student}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      required
-                      placeholder="Enter student name"
-                      title="Student Name"
-                    />
-                  </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Recipient *</label>
+                        <select
+                          name="recipient"
+                          value={formData.recipient}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          required
+                          title="Select recipient"
+                        >
+                          <option value="supervisor">Supervisor</option>
+                        </select>
+                      </div>
+                    </div>
+                  </>
+                )}
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                    <input
-                      type="date"
-                      name="date"
-                      value={formData.date}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      required
-                      placeholder="Select date"
-                      title="Select appointment date"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
-                    <input
-                      type="time"
-                      name="time"
-                      value={formData.time}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      required
-                      placeholder="Select time"
-                      title="Select appointment time"
-                    />
-                  </div>
-
-                  {isEditMode && (
+                {/* Editable fields for both new and edit modes */}
+                {!isEditMode && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label htmlFor="appointment-status" className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                      <select
-                        id="appointment-status"
-                        name="status"
-                        value={formData.status}
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Date *</label>
+                      <input
+                        type="date"
+                        name="meeting_date"
+                        value={formData.meeting_date}
                         onChange={handleInputChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      >
-                        <option value="Pending">Pending</option>
-                        <option value="Confirmed">Confirmed</option>
-                        <option value="Cancelled">Cancelled</option>
-                      </select>
+                        required
+                        placeholder="Select date"
+                        title="Select appointment date"
+                      />
                     </div>
-                  )}
-                </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Time *</label>
+                      <input
+                        type="time"
+                        name="meeting_time"
+                        value={formData.meeting_time}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        required
+                        placeholder="Select time"
+                        title="Select appointment time"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {isEditMode && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Current Date</label>
+                      <input
+                        type="text"
+                        value={new Date(currentMeeting?.meeting_date || '').toLocaleDateString()}
+                        className="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-50 text-gray-600"
+                        readOnly
+                        title="Current appointment date (read-only)"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Current Time</label>
+                      <input
+                        type="text"
+                        value={currentMeeting?.meeting_time || ''}
+                        className="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-50 text-gray-600"
+                        readOnly
+                        title="Current appointment time (read-only)"
+                      />
+                    </div>
+                  </div>
+                )}
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Reason *</label>
                   <textarea
-                    name="notes"
-                    value={formData.notes}
+                    name="reason"
+                    value={formData.reason}
                     onChange={handleInputChange}
                     rows={3}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    placeholder="Add any notes about the appointment"
-                    title="Appointment notes"
+                    required
+                    placeholder="Enter the reason for the meeting"
+                    title="Meeting reason"
                   />
                 </div>
+
+                {!isEditMode && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Response (Optional)</label>
+                    <textarea
+                      name="response"
+                      value={formData.response}
+                      onChange={handleInputChange}
+                      rows={2}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      placeholder="Add any initial response or notes"
+                      title="Initial response or notes"
+                    />
+                  </div>
+                )}
 
                 <div className="flex justify-end space-x-3 pt-4">
                   <button
@@ -583,7 +849,7 @@ const Appointments = () => {
 
       {/* Delete Confirmation Modal */}
       {isDeleteModalOpen && (
-        <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
@@ -595,7 +861,7 @@ const Appointments = () => {
               </div>
 
               <p className="mb-6 text-gray-600">
-                Are you sure you want to delete the appointment with <span className="font-semibold">{currentAppointment?.parent}</span>? This action cannot be undone.
+                Are you sure you want to delete the supervisor appointment with <span className="font-semibold">{currentMeeting?.parent_name}</span>? This action cannot be undone.
               </p>
 
               <div className="flex justify-end space-x-3">
@@ -606,11 +872,111 @@ const Appointments = () => {
                   Cancel
                 </button>
                 <button
-                  onClick={deleteAppointment}
+                  onClick={deleteMeeting}
                   className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700"
                 >
                   Delete
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Response Modal - CRUD for response/notes */}
+      {isResponseModalOpen && currentMeeting && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold text-gray-800">Add/Edit Response & Notes</h2>
+                <button 
+                  onClick={closeModal}
+                  className="text-gray-400 hover:text-gray-500"
+                  title="Close"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+
+              {/* Meeting Summary */}
+              <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+                <h3 className="text-sm font-semibold text-gray-700 mb-3">Meeting Details</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs text-gray-600">Parent</label>
+                    <p className="text-sm font-medium text-gray-900">{currentMeeting.parent_name}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-600">Child</label>
+                    <p className="text-sm font-medium text-gray-900">{currentMeeting.child_name}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-600">Date & Time</label>
+                    <p className="text-sm font-medium text-gray-900">
+                      {new Date(currentMeeting.meeting_date).toLocaleDateString()} at {currentMeeting.meeting_time}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-600">Status</label>
+                    <span className={`inline-flex px-2 py-1 text-xs rounded-full font-medium ${
+                      currentMeeting.status === 'confirmed'
+                        ? 'bg-green-100 text-green-800' 
+                        : currentMeeting.status === 'cancelled'
+                          ? 'bg-red-100 text-red-800'
+                          : 'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {currentMeeting.status ? currentMeeting.status.charAt(0).toUpperCase() + currentMeeting.status.slice(1) : 'Pending'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Response/Notes Input */}
+              <div className="mb-6">
+                <label className="block text-sm font-semibold text-gray-800 mb-2">Response & Notes *</label>
+                <textarea
+                  value={responseModalText}
+                  onChange={(e) => setResponseModalText(e.target.value)}
+                  rows={6}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+                  placeholder="Enter your response or notes for this meeting..."
+                  title="Enter response or notes"
+                />
+                <p className="mt-2 text-xs text-gray-500">
+                  {responseModalText.length} characters
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-between space-x-3 pt-6 border-t border-gray-200">
+                <div>
+                  {currentMeeting.response && (
+                    <button
+                      onClick={handleDeleteResponse}
+                      className="px-4 py-2 border border-red-300 text-red-600 hover:bg-red-50 rounded-md flex items-center text-sm"
+                      title="Delete Response"
+                    >
+                      <Trash2 className="w-4 h-4 mr-1" />
+                      Delete Response
+                    </button>
+                  )}
+                </div>
+                <div className="flex space-x-3">
+                  <button
+                    onClick={closeModal}
+                    className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSaveResponse}
+                    className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 flex items-center"
+                  >
+                    <MessageSquare className="w-4 h-4 mr-1" />
+                    Save Response
+                  </button>
+                </div>
               </div>
             </div>
           </div>
