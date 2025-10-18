@@ -482,13 +482,13 @@ const createAnnouncement = async (announcement: Omit<Announcement, 'ann_id' | 'c
                       <Edit className="w-4 h-4 mr-1" />
                       Edit
                     </button>
-                    <button
+                    {/* <button
                       onClick={() => openDeleteModal(announcement)}
                       className="text-red-600 hover:text-red-900 flex items-center text-sm font-medium hover:bg-red-50 px-2 py-1 rounded transition-colors"
                     >
                       <Trash2 className="w-4 h-4 mr-1" />
                       Delete
-                    </button>
+                    </button> */}
                   </div>
                 </div>
               );
@@ -582,7 +582,7 @@ const createAnnouncement = async (announcement: Omit<Announcement, 'ann_id' | 'c
                     </select>
                   </div>
 
-                <div>
+                {/* <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Attachment (optional)</label>
                   <input
                     type="file"
@@ -600,7 +600,7 @@ const createAnnouncement = async (announcement: Omit<Announcement, 'ann_id' | 'c
                   {formData.attachment && (
                     <p className="mt-1 text-sm text-gray-500">Selected: {formData.attachment}</p>
                   )}
-                </div>
+                </div> */}
 
                 <div className="flex justify-end space-x-3 pt-4">
                   <button

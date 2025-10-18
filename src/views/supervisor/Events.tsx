@@ -130,7 +130,7 @@ const Events = () => {
           : true;
         
         const dateMatch = searchDate 
-          ? event.date.includes(searchDate)
+          ? event.date.slice(0, 10) === searchDate
           : true;
         
         return termMatch && dateMatch;
@@ -201,10 +201,24 @@ const Events = () => {
     setIsModalOpen(true);
     setIsEditMode(true);
     setCurrentEvent(event);
+    
+    // Extract date string without timezone conversion
+    let dateStr = '';
+    if (event.date) {
+      // If the date is already in YYYY-MM-DD format, use it directly
+      if (typeof event.date === 'string' && event.date.match(/^\d{4}-\d{2}-\d{2}/)) {
+        dateStr = event.date.slice(0, 10);
+      } else {
+        // Otherwise, parse it carefully
+        const dateObj = new Date(event.date);
+        dateStr = dateObj.toISOString().split('T')[0];
+      }
+    }
+    
     setFormData({
       topic: event.topic,
       description: event.description,
-      date: event.date ? event.date.slice(0, 10) : '',
+      date: dateStr,
       time: event.time ? event.time.slice(0, 5) : '',
       venue: event.venue,
       image: null
@@ -460,7 +474,15 @@ const Events = () => {
               <span className="text-sm text-gray-500">
                 Showing {filteredEvents.length} results
                 {searchTerm && ` for "${searchTerm}"`}
-                {searchDate && ` on ${new Date(searchDate).toLocaleDateString()}`}
+                {searchDate && ` on ${(() => {
+                  const [year, month, day] = searchDate.split('-').map(Number);
+                  const dateObj = new Date(year, month - 1, day);
+                  return dateObj.toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                  });
+                })()}`}
               </span>
               <button
                 onClick={clearFilters}
@@ -511,11 +533,16 @@ const Events = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap w-1/5">
                         <div className="text-sm text-gray-900">
-                          {new Date(event.date).toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric'
-                          })} at {event.time}
+                          {(() => {
+                            // Parse date string directly without timezone conversion
+                            const [year, month, day] = event.date.split('-').map(Number);
+                            const dateObj = new Date(year, month - 1, day);
+                            return dateObj.toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric'
+                            });
+                          })()} at {event.time}
                         </div>
                         {createdDateTime && (
                           <div className="mt-1 text-xs text-gray-500 flex items-center">
@@ -530,21 +557,21 @@ const Events = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2 w-1/5">
                         <button
                           onClick={() => openEditModal(event)}
-                          className={`text-indigo-600 hover:text-indigo-900 p-1 rounded hover:bg-indigo-50 ${new Date(event.date) < new Date(new Date().toISOString().split('T')[0]) ? 'opacity-50 cursor-not-allowed' : ''}`}
-                          title={new Date(event.date) < new Date(new Date().toISOString().split('T')[0]) ? 'Cannot edit past events' : 'Edit'}
+                          className={`text-indigo-600 hover:text-indigo-900 p-1 rounded hover:bg-indigo-50 ${event.date < new Date().toISOString().split('T')[0] ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          title={event.date < new Date().toISOString().split('T')[0] ? 'Cannot edit past events' : 'Edit'}
                           aria-label="Edit"
-                          disabled={new Date(event.date) < new Date(new Date().toISOString().split('T')[0])}
+                          disabled={event.date < new Date().toISOString().split('T')[0]}
                         >
                           <Edit className="w-4 h-4" />
                         </button>
-                        <button
+                        {/* <button
                           onClick={() => openDeleteModal(event)}
                           className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50"
                           title="Delete"
                           aria-label="Delete"
                         >
                           <Trash2 className="w-4 h-4" />
-                        </button>
+                        </button> */}
                       </td>
                     </tr>
                   );
@@ -633,7 +660,7 @@ const Events = () => {
                       />
                     </div>
 
-                    <div>
+                    {/* <div>
                       <label htmlFor="image" className="block text-sm font-medium text-gray-700 mb-1">
                         Event Image
                       </label>
@@ -658,7 +685,7 @@ const Events = () => {
                           />
                         </div>
                       )}
-                    </div>
+                    </div> */}
                   </div>
 
                   {/* Event Details */}
@@ -674,12 +701,18 @@ const Events = () => {
                           selected={formData.date ? new Date(formData.date) : null}
                           onChange={handleDateChange}
                           minDate={new Date()}
+                          maxDate={(() => {
+                            const maxDate = new Date();
+                            maxDate.setFullYear(maxDate.getFullYear() + 1);
+                            return maxDate;
+                          })()}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 pl-10"
                           required
                           dateFormat="yyyy-MM-dd"
                         />
                         <Calendar className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                       </div>
+                      <p className="mt-1 text-xs text-gray-500">Select a date between today and one year from now</p>
                     </div>
 
                     <div>

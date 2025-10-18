@@ -457,13 +457,13 @@ const Complaints = () => {
                           <Edit className="w-4 h-4 mr-1" />
                           Action
                         </button>
-                        <button
+                        {/* <button
                           onClick={() => openDeleteModal(complaint)}
                           className="text-red-600 hover:text-red-900 flex items-center text-sm"
                         >
                           <Trash2 className="w-4 h-4 mr-1" />
                           Delete
-                        </button>
+                        </button> */}
                       </div>
                     </td>
                   </tr>
