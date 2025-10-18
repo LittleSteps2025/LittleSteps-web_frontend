@@ -1,4 +1,5 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../../context/AuthContext';
 import logo from '../../../assets/sixth-logo.png';
 import {
   LayoutDashboard,
@@ -9,11 +10,18 @@ import {
   Bell,
   Settings,
   PieChart,
-
+  
 } from 'lucide-react';
 
 const AdminSidebar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+  
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
   
   const navItems = [
     { path: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
@@ -53,8 +61,14 @@ const AdminSidebar = () => {
           </Link>
         ))}
       </nav>
-      <div className=" border-t border-[#7e57ff]">
-        
+      <div className="p-4 border-t border-[#7e57ff]">
+        <button
+          onClick={handleLogout}
+          className="flex items-center p-3 rounded-lg transition-all w-full hover:bg-red-500/20 text-white hover:text-red-200 text-left"
+        >
+          {/* <LogOut className="w-5 h-5 mr-3" /> */}
+          <span>Logout</span>
+        </button>
       </div>
     </div>
   );
