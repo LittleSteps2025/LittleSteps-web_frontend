@@ -188,7 +188,11 @@ const SubscriptionManagement = () => {
     <div className="space-y-6">
       {/* Header with actions */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-2xl font-bold text-gray-800">Subscription Plans</h1>
+        <h1 className="text-2xl font-bold text-gray-800">
+          <span className="bg-gradient-to-r from-[#4f46e5] to-[#7c73e6] bg-clip-text text-transparent">
+            Subscription Plans
+          </span>
+        </h1>
         <div className="flex space-x-3 w-full sm:w-auto">
           <button 
             onClick={() => setShowCreateModal(true)}

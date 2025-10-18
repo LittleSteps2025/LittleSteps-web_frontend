@@ -282,31 +282,33 @@ const UsersManagement = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-row justify-between">
-        <h1 className="text-2xl font-bold">Supervisor and Teachers Details</h1>
+      <div className="flex flex-row justify-between items-center">
+        <h1 className="text-2xl font-bold text-gray-800">
+          <span className="bg-gradient-to-r from-[#4f46e5] to-[#7c73e6] bg-clip-text text-transparent">
+            Supervisor and Teachers Details
+          </span>
+        </h1>
 
-        <div className=" p-6 rounded-xl shadow-sm ">
-          <div className="flex gap-3">
-            <button
-              type="button"
-              className="bg-[#6339C0] text-white py-2 px-4 rounded-lg hover:bg-[#5227a3] transition-colors"
-              onClick={() => setShowModal(true)}
-            >
-              Add Supervisor
-            </button>
+        <button
+          type="button"
+          className="bg-[#6339C0] text-white py-2 px-4 rounded-lg hover:bg-[#5227a3] transition-colors"
+          onClick={() => setShowModal(true)}
+        >
+          Add Supervisor
+        </button>
+        
+        {/* <button
+          type="button"
+          className="bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2"
+          onClick={fetchAllUsers}
+          disabled={loadingUsers}
+        >
+          <RefreshCw className={`w-4 h-4 ${loadingUsers ? 'animate-spin' : ''}`} />
+          Refresh
+        </button> */}
+      </div>
 
-            {/* <button
-              type="button"
-              className="bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2"
-              onClick={fetchAllUsers}
-              disabled={loadingUsers}
-            >
-              <RefreshCw className={`w-4 h-4 ${loadingUsers ? 'animate-spin' : ''}`} />
-              Refresh
-            </button> */}
-          </div>
-
-          {showModal && (
+      {showModal && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
               <div className="bg-white rounded-xl shadow-lg w-full max-w-md p-8 relative animate-fade-in">
                 <button
@@ -488,8 +490,6 @@ const UsersManagement = () => {
               </div>
             </div>
           )}
-        </div>
-      </div>
 
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
         <div className="flex justify-between items-center mb-4">
