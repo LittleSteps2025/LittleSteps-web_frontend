@@ -6,7 +6,7 @@ import { X } from "lucide-react";
 // import { redirect } from "react-router-dom";
 import { API_BASE_URL } from "../../config/api";
 
-const API_PARENTS = `${API_BASE_URL}/supervisors/child/parent`;
+const API_PARENTS = `${API_BASE_URL}/supervisor/children/parent`;
 
 type Parent = {
   id: string;
