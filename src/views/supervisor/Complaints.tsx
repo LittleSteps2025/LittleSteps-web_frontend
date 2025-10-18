@@ -1,32 +1,35 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { 
-  Search, AlertCircle, User, Trash2, Filter,Eye, X, Edit
-} from 'lucide-react';
-import { toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import complaintService from '../../services/complaintService';
-import type { Complaint, CreateComplaintData } from '../../services/complaintService';
+import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
+import { Search, AlertCircle, User, Filter, Eye, X, Edit } from "lucide-react";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import complaintService from "../../services/complaintService";
+import type {
+  Complaint,
+  CreateComplaintData,
+} from "../../services/complaintService";
 
 const Complaints = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [complaints, setComplaints] = useState<Complaint[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('All Status');
-  const [recipientFilter, setRecipientFilter] = useState('All Recipients');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All Status");
+  const [recipientFilter, setRecipientFilter] = useState("All Recipients");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [currentComplaint, setCurrentComplaint] = useState<Complaint | null>(null);
+  const [currentComplaint, setCurrentComplaint] = useState<Complaint | null>(
+    null
+  );
   const [isEditMode, setIsEditMode] = useState(false);
   const [formData, setFormData] = useState<CreateComplaintData>({
-    date: '',
-    subject: '',
-    recipient: 'supervisor',
-    description: '',
-    status: 'Pending',
-    action: '',
-    child_id: 0
+    date: "",
+    subject: "",
+    recipient: "supervisor",
+    description: "",
+    status: "Pending",
+    action: "",
+    child_id: 0,
   });
   const [isLoading, setIsLoading] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
@@ -34,10 +37,10 @@ const Complaints = () => {
   // Stats calculation based on status
   const stats = {
     total: complaints.length,
-    pending: complaints.filter(c => c.status === 'Pending').length,
-    inProgress: complaints.filter(c => c.status === 'In Progress').length,
-    solved: complaints.filter(c => c.status === 'Solved').length,
-    closed: complaints.filter(c => c.status === 'Closed').length
+    pending: complaints.filter((c) => c.status === "Pending").length,
+    inProgress: complaints.filter((c) => c.status === "In Progress").length,
+    solved: complaints.filter((c) => c.status === "Solved").length,
+    closed: complaints.filter((c) => c.status === "Closed").length,
   };
 
   // Fetch complaints from database
@@ -47,9 +50,11 @@ const Complaints = () => {
 
   // Handle URL parameter for auto-opening complaint detail
   useEffect(() => {
-    const complaintId = searchParams.get('complaint_id');
+    const complaintId = searchParams.get("complaint_id");
     if (complaintId && complaints.length > 0) {
-      const complaint = complaints.find(c => c.complaint_id === parseInt(complaintId));
+      const complaint = complaints.find(
+        (c) => c.complaint_id === parseInt(complaintId)
+      );
       if (complaint) {
         openViewModal(complaint);
         // Remove the parameter from URL after opening
@@ -60,7 +65,11 @@ const Complaints = () => {
 
   // Search complaints
   const handleSearch = useCallback(async () => {
-    if (!searchTerm.trim() && statusFilter === 'All Status' && recipientFilter === 'All Recipients') {
+    if (
+      !searchTerm.trim() &&
+      statusFilter === "All Status" &&
+      recipientFilter === "All Recipients"
+    ) {
       fetchComplaints();
       return;
     }
@@ -73,17 +82,18 @@ const Complaints = () => {
         recipient?: string;
       } = {};
       if (searchTerm.trim()) searchParams.searchTerm = searchTerm;
-      if (statusFilter !== 'All Status') searchParams.status = statusFilter;
-      if (recipientFilter !== 'All Recipients') searchParams.recipient = recipientFilter;
+      if (statusFilter !== "All Status") searchParams.status = statusFilter;
+      if (recipientFilter !== "All Recipients")
+        searchParams.recipient = recipientFilter;
 
       // Always filter for supervisor complaints
-      searchParams.recipient = 'supervisor';
+      searchParams.recipient = "supervisor";
 
       const data = await complaintService.searchComplaints(searchParams);
       setComplaints(data);
     } catch (error: unknown) {
-      console.error('Error searching complaints:', error);
-      toast.error('Search failed');
+      console.error("Error searching complaints:", error);
+      toast.error("Search failed");
     } finally {
       setIsLoading(false);
     }
@@ -92,7 +102,12 @@ const Complaints = () => {
   // Search effect with debounce
   useEffect(() => {
     const timerId = setTimeout(() => {
-      if (searchTerm.trim() || statusFilter !== 'All Status' || recipientFilter !== 'All Recipients' || isSearching) {
+      if (
+        searchTerm.trim() ||
+        statusFilter !== "All Status" ||
+        recipientFilter !== "All Recipients" ||
+        isSearching
+      ) {
         handleSearch();
       }
     }, 500);
@@ -106,26 +121,31 @@ const Complaints = () => {
     setIsLoading(true);
     try {
       // For supervisor, get complaints where recipient is 'supervisor'
-      console.log('Fetching complaints for supervisor...');
-      const data = await complaintService.getComplaintsByRecipient('supervisor');
-      console.log('Fetched complaints:', data);
+      console.log("Fetching complaints for supervisor...");
+      const data = await complaintService.getComplaintsByRecipient(
+        "supervisor"
+      );
+      console.log("Fetched complaints:", data);
       setComplaints(data);
     } catch (error) {
-      console.error('Error fetching complaints:', error);
-      toast.error('Failed to load complaints');
+      console.error("Error fetching complaints:", error);
+      toast.error("Failed to load complaints");
     } finally {
       setIsLoading(false);
       setIsSearching(false);
     }
-  };  // Handle input changes for form
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  }; // Handle input changes for form
+  const handleInputChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => {
     const { name, value } = e.target;
     setFormData({
       ...formData,
-      [name]: value
+      [name]: value,
     });
   };
-
 
   // Open modal for editing complaint
   const openEditModal = (complaint: Complaint) => {
@@ -138,20 +158,14 @@ const Complaints = () => {
       recipient: complaint.recipient,
       description: complaint.description,
       status: complaint.status,
-      action: complaint.action || '',
-      child_id: complaint.child_id
+      action: complaint.action || "",
+      child_id: complaint.child_id,
     });
   };
 
   // Open view modal for complaint details
   const openViewModal = (complaint: Complaint) => {
     setIsViewModalOpen(true);
-    setCurrentComplaint(complaint);
-  };
-
-  // Open delete confirmation modal
-  const openDeleteModal = (complaint: Complaint) => {
-    setIsDeleteModalOpen(true);
     setCurrentComplaint(complaint);
   };
 
@@ -169,81 +183,96 @@ const Complaints = () => {
 
     if (!isEditMode || !currentComplaint) return;
 
-    const loadingToast = toast.loading('Updating complaint...');
+    const loadingToast = toast.loading("Updating complaint...");
 
     try {
       let statusUpdated = false;
       let actionUpdated = false;
 
       // Normalize values for comparison
-      const currentAction = (currentComplaint.action || '').trim();
-      const newAction = (formData.action || '').trim();
+      const currentAction = (currentComplaint.action || "").trim();
+      const newAction = (formData.action || "").trim();
       const currentStatus = currentComplaint.status;
       const newStatus = formData.status;
 
-      console.log('Current status:', currentStatus, 'New status:', newStatus);
-      console.log('Current action:', currentAction, 'New action:', newAction);
+      console.log("Current status:", currentStatus, "New status:", newStatus);
+      console.log("Current action:", currentAction, "New action:", newAction);
 
       // Update status if changed
       if (newStatus && newStatus !== currentStatus) {
-        console.log(`Updating status from "${currentStatus}" to "${newStatus}"`);
-        const result = await complaintService.updateComplaintStatus(currentComplaint.complaint_id, newStatus);
-        console.log('Status update result:', result);
+        console.log(
+          `Updating status from "${currentStatus}" to "${newStatus}"`
+        );
+        const result = await complaintService.updateComplaintStatus(
+          currentComplaint.complaint_id,
+          newStatus
+        );
+        console.log("Status update result:", result);
         statusUpdated = true;
       }
-      
+
       // Update action if different from current
       if (newAction !== currentAction) {
-        console.log(`Updating action from "${currentAction}" to "${newAction}"`);
-        const result = await complaintService.updateComplaintAction(currentComplaint.complaint_id, newAction);
-        console.log('Action update result:', result);
+        console.log(
+          `Updating action from "${currentAction}" to "${newAction}"`
+        );
+        const result = await complaintService.updateComplaintAction(
+          currentComplaint.complaint_id,
+          newAction
+        );
+        console.log("Action update result:", result);
         actionUpdated = true;
       }
 
       if (!statusUpdated && !actionUpdated) {
         toast.dismiss(loadingToast);
-        toast.info('No changes to update');
+        toast.info("No changes to update");
         closeModal();
         return;
       }
-      
+
       // Fetch updated complaint with full details
-      console.log('Fetching updated complaint...');
-      const updatedComplaint = await complaintService.getComplaintById(currentComplaint.complaint_id);
-      console.log('Updated complaint fetched:', updatedComplaint);
-      
+      console.log("Fetching updated complaint...");
+      const updatedComplaint = await complaintService.getComplaintById(
+        currentComplaint.complaint_id
+      );
+      console.log("Updated complaint fetched:", updatedComplaint);
+
       // Update the complaints list
-      setComplaints(complaints.map(c => 
-        c.complaint_id === updatedComplaint.complaint_id ? updatedComplaint : c
-      ));
-      
+      setComplaints(
+        complaints.map((c) =>
+          c.complaint_id === updatedComplaint.complaint_id
+            ? updatedComplaint
+            : c
+        )
+      );
+
       toast.dismiss(loadingToast);
-      
+
       // Show specific success message
       if (statusUpdated && actionUpdated) {
-        toast.success('✅ Complaint status and action updated successfully!');
+        toast.success("✅ Complaint status and action updated successfully!");
       } else if (statusUpdated) {
-        toast.success('✅ Complaint status updated successfully!');
+        toast.success("✅ Complaint status updated successfully!");
       } else if (actionUpdated) {
-        toast.success('✅ Complaint action updated successfully!');
+        toast.success("✅ Complaint action updated successfully!");
       }
-      
+
       closeModal();
-      
     } catch (error: unknown) {
       toast.dismiss(loadingToast);
-      console.error('Error updating complaint:', error);
-      
-      let errorMessage = 'Failed to update complaint';
+      console.error("Error updating complaint:", error);
+
+      let errorMessage = "Failed to update complaint";
       if (error instanceof Error) {
         errorMessage = error.message;
-      } else if (typeof error === 'object' && error !== null) {
+      } else if (typeof error === "object" && error !== null) {
         const err = error as { response?: { data?: { message?: string } } };
         if (err.response?.data?.message) {
           errorMessage = err.response.data.message;
         }
       }
-      
+
       toast.error(`❌ ${errorMessage}`);
     }
   };
@@ -252,42 +281,44 @@ const Complaints = () => {
   const deleteComplaint = async () => {
     if (!currentComplaint) return;
 
-    const loadingToast = toast.loading('Deleting complaint...');
+    const loadingToast = toast.loading("Deleting complaint...");
 
     try {
       await complaintService.deleteComplaint(currentComplaint.complaint_id);
-      
+
       // Remove from local state
-      setComplaints(complaints.filter(c => c.complaint_id !== currentComplaint.complaint_id));
-      
+      setComplaints(
+        complaints.filter(
+          (c) => c.complaint_id !== currentComplaint.complaint_id
+        )
+      );
+
       toast.dismiss(loadingToast);
-      toast.success('✅ Complaint deleted successfully!');
+      toast.success("✅ Complaint deleted successfully!");
       closeModal();
-      
     } catch (error: unknown) {
       toast.dismiss(loadingToast);
-      console.error('Error deleting complaint:', error);
-      
-      let errorMessage = 'Failed to delete complaint';
+      console.error("Error deleting complaint:", error);
+
+      let errorMessage = "Failed to delete complaint";
       if (error instanceof Error) {
         errorMessage = error.message;
-      } else if (typeof error === 'object' && error !== null) {
+      } else if (typeof error === "object" && error !== null) {
         const err = error as { response?: { data?: { message?: string } } };
         if (err.response?.data?.message) {
           errorMessage = err.response.data.message;
         }
       }
-      
+
       toast.error(`❌ ${errorMessage}`);
     }
   };
 
-
   // Clear filters
   const clearFilters = () => {
-    setSearchTerm('');
-    setStatusFilter('All Status');
-    setRecipientFilter('All Recipients');
+    setSearchTerm("");
+    setStatusFilter("All Status");
+    setRecipientFilter("All Recipients");
     fetchComplaints();
   };
 
@@ -308,7 +339,6 @@ const Complaints = () => {
             Complaints Management
           </span>
         </h1>
-
       </div>
 
       {/* Search and Filters */}
@@ -431,11 +461,17 @@ const Complaints = () => {
                       </div>
                     </td>
                     <td className="px-4 py-4 align-top">
-                      <span className={`inline-flex px-2 py-1 text-xs rounded-full ${complaint.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                          complaint.status === 'In Progress' ? 'bg-blue-100 text-blue-800' :
-                            complaint.status === 'Solved' ? 'bg-green-100 text-green-800' :
-                              'bg-gray-100 text-gray-800'
-                        }`}>
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs rounded-full ${
+                          complaint.status === "Pending"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : complaint.status === "In Progress"
+                            ? "bg-blue-100 text-blue-800"
+                            : complaint.status === "Solved"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-gray-100 text-gray-800"
+                        }`}
+                      >
                         {complaint.status}
                       </span>
                     </td>
@@ -474,7 +510,9 @@ const Complaints = () => {
         ) : (
           <div className="text-center py-10">
             <p className="text-gray-500">
-              {isSearching ? 'No matching complaints found' : 'No complaints found'}
+              {isSearching
+                ? "No matching complaints found"
+                : "No complaints found"}
             </p>
           </div>
         )}
@@ -501,47 +539,78 @@ const Complaints = () => {
               <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Complaint Details (Read-only) */}
                 <div className="bg-gray-50 p-4 rounded-lg space-y-3">
-                  <h3 className="font-semibold text-gray-700 mb-2">Complaint Details</h3>
-                  
+                  <h3 className="font-semibold text-gray-700 mb-2">
+                    Complaint Details
+                  </h3>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-sm font-medium text-gray-500">Date</label>
-                      <p className="text-sm text-gray-900">{new Date(currentComplaint.date).toLocaleDateString()}</p>
+                      <label className="block text-sm font-medium text-gray-500">
+                        Date
+                      </label>
+                      <p className="text-sm text-gray-900">
+                        {new Date(currentComplaint.date).toLocaleDateString()}
+                      </p>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-500">Recipient</label>
-                      <p className="text-sm text-gray-900">{currentComplaint.recipient.charAt(0).toUpperCase() + currentComplaint.recipient.slice(1)}</p>
+                      <label className="block text-sm font-medium text-gray-500">
+                        Recipient
+                      </label>
+                      <p className="text-sm text-gray-900">
+                        {currentComplaint.recipient.charAt(0).toUpperCase() +
+                          currentComplaint.recipient.slice(1)}
+                      </p>
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-500">Subject</label>
-                    <p className="text-sm text-gray-900">{currentComplaint.subject}</p>
+                    <label className="block text-sm font-medium text-gray-500">
+                      Subject
+                    </label>
+                    <p className="text-sm text-gray-900">
+                      {currentComplaint.subject}
+                    </p>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-500">Description</label>
-                    <p className="text-sm text-gray-900">{currentComplaint.description}</p>
+                    <label className="block text-sm font-medium text-gray-500">
+                      Description
+                    </label>
+                    <p className="text-sm text-gray-900">
+                      {currentComplaint.description}
+                    </p>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-sm font-medium text-gray-500">Child</label>
-                      <p className="text-sm text-gray-900">{currentComplaint.child_name}</p>
+                      <label className="block text-sm font-medium text-gray-500">
+                        Child
+                      </label>
+                      <p className="text-sm text-gray-900">
+                        {currentComplaint.child_name}
+                      </p>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-500">Parent</label>
-                      <p className="text-sm text-gray-900">{currentComplaint.parent_name}</p>
+                      <label className="block text-sm font-medium text-gray-500">
+                        Parent
+                      </label>
+                      <p className="text-sm text-gray-900">
+                        {currentComplaint.parent_name}
+                      </p>
                     </div>
                   </div>
                 </div>
 
                 {/* Editable Fields */}
                 <div className="space-y-4 pt-2">
-                  <h3 className="font-semibold text-gray-700">Update Response</h3>
-                  
+                  <h3 className="font-semibold text-gray-700">
+                    Update Response
+                  </h3>
+
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Status *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Status *
+                    </label>
                     <select
                       name="status"
                       value={formData.status}
@@ -558,7 +627,9 @@ const Complaints = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Action Taken</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Action Taken
+                    </label>
                     <textarea
                       name="action"
                       value={formData.action}
@@ -567,7 +638,9 @@ const Complaints = () => {
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       placeholder="Enter action taken or response to the complaint..."
                     />
-                    <p className="text-xs text-gray-500 mt-1">Describe what actions were taken to resolve this complaint</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Describe what actions were taken to resolve this complaint
+                    </p>
                   </div>
                 </div>
 
@@ -598,7 +671,9 @@ const Complaints = () => {
           <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold text-gray-800">Complaint Details</h2>
+                <h2 className="text-xl font-bold text-gray-800">
+                  Complaint Details
+                </h2>
                 <button
                   onClick={closeModal}
                   className="text-gray-400 hover:text-gray-500"
@@ -611,30 +686,60 @@ const Complaints = () => {
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="p-3 bg-gray-50 rounded-lg">
-                    <h3 className="font-semibold text-gray-700 mb-2">Basic Information</h3>
-                    <p><strong>Subject:</strong> {currentComplaint.subject}</p>
-                    <p><strong>Date:</strong> {new Date(currentComplaint.date).toLocaleDateString()}</p>
-                    <p><strong>Recipient:</strong> {currentComplaint.recipient.charAt(0).toUpperCase() + currentComplaint.recipient.slice(1)}</p>
-                    <p><strong>Status:</strong> {currentComplaint.status}</p>
+                    <h3 className="font-semibold text-gray-700 mb-2">
+                      Basic Information
+                    </h3>
+                    <p>
+                      <strong>Subject:</strong> {currentComplaint.subject}
+                    </p>
+                    <p>
+                      <strong>Date:</strong>{" "}
+                      {new Date(currentComplaint.date).toLocaleDateString()}
+                    </p>
+                    <p>
+                      <strong>Recipient:</strong>{" "}
+                      {currentComplaint.recipient.charAt(0).toUpperCase() +
+                        currentComplaint.recipient.slice(1)}
+                    </p>
+                    <p>
+                      <strong>Status:</strong> {currentComplaint.status}
+                    </p>
                   </div>
 
                   <div className="p-3 bg-gray-50 rounded-lg">
-                    <h3 className="font-semibold text-gray-700 mb-2">Child & Parent</h3>
-                    <p><strong>Child:</strong> {currentComplaint.child_name} ({currentComplaint.child_age} years)</p>
-                    <p><strong>Parent:</strong> {currentComplaint.parent_name}</p>
-                    <p><strong>Email:</strong> {currentComplaint.parent_email}</p>
-                    <p><strong>Phone:</strong> {currentComplaint.parent_phone}</p>
+                    <h3 className="font-semibold text-gray-700 mb-2">
+                      Child & Parent
+                    </h3>
+                    <p>
+                      <strong>Child:</strong> {currentComplaint.child_name} (
+                      {currentComplaint.child_age} years)
+                    </p>
+                    <p>
+                      <strong>Parent:</strong> {currentComplaint.parent_name}
+                    </p>
+                    <p>
+                      <strong>Email:</strong> {currentComplaint.parent_email}
+                    </p>
+                    <p>
+                      <strong>Phone:</strong> {currentComplaint.parent_phone}
+                    </p>
                   </div>
                 </div>
 
                 <div className="p-3 bg-gray-50 rounded-lg">
-                  <h3 className="font-semibold text-gray-700 mb-2">Description</h3>
-                  <p className="text-gray-700">{currentComplaint.description}</p>
+                  <h3 className="font-semibold text-gray-700 mb-2">
+                    Description
+                  </h3>
+                  <p className="text-gray-700">
+                    {currentComplaint.description}
+                  </p>
                 </div>
 
                 {currentComplaint.action && (
                   <div className="p-3 bg-gray-50 rounded-lg">
-                    <h3 className="font-semibold text-gray-700 mb-2">Action Taken</h3>
+                    <h3 className="font-semibold text-gray-700 mb-2">
+                      Action Taken
+                    </h3>
                     <p className="text-gray-700">{currentComplaint.action}</p>
                   </div>
                 )}
@@ -646,7 +751,6 @@ const Complaints = () => {
                   >
                     Close
                   </button>
-                  
                 </div>
               </div>
             </div>
@@ -660,15 +764,22 @@ const Complaints = () => {
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-gray-800">Confirm Deletion</h2>
-                <button onClick={closeModal} className="text-gray-400 hover:text-gray-500" title="Close">
+                <h2 className="text-xl font-bold text-gray-800">
+                  Confirm Deletion
+                </h2>
+                <button
+                  onClick={closeModal}
+                  className="text-gray-400 hover:text-gray-500"
+                  title="Close"
+                >
                   <X className="w-6 h-6" />
                   <span className="sr-only">Close</span>
                 </button>
               </div>
 
               <p className="mb-6 text-gray-600">
-                Are you sure you want to delete the complaint "{currentComplaint?.subject}"? This action cannot be undone.
+                Are you sure you want to delete the complaint "
+                {currentComplaint?.subject}"? This action cannot be undone.
               </p>
 
               <div className="flex justify-end space-x-3">

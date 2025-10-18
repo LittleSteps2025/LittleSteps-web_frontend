@@ -1,50 +1,57 @@
-import { HeartPulse, Search, Plus, X, ChevronDown, User, Calendar } from 'lucide-react';
-import { useState } from 'react';
+import {
+  HeartPulse,
+  Search,
+  Plus,
+  X,
+  ChevronDown,
+  Calendar,
+} from "lucide-react";
+import { useState } from "react";
 
 const HealthRecords = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [newRecord, setNewRecord] = useState({
-    child: '',
-    age: '',
-    allergies: '',
-    medications: '',
-    lastCheckup: '',
-    notes: '',
-    immunizationStatus: 'Up to date'
+    child: "",
+    age: "",
+    allergies: "",
+    medications: "",
+    lastCheckup: "",
+    notes: "",
+    immunizationStatus: "Up to date",
   });
 
   const [records, setRecords] = useState([
-    { 
-      id: 1, 
-      child: 'Emma Johnson', 
+    {
+      id: 1,
+      child: "Emma Johnson",
       age: 4,
-      allergies: 'Peanuts', 
-      medications: 'None',
-      lastCheckup: '2023-04-15',
-      status: 'Up to date',
-      notes: 'No issues noted in last checkup'
+      allergies: "Peanuts",
+      medications: "None",
+      lastCheckup: "2023-04-15",
+      status: "Up to date",
+      notes: "No issues noted in last checkup",
     },
-    { 
-      id: 2, 
-      child: 'Liam Chen', 
+    {
+      id: 2,
+      child: "Liam Chen",
       age: 3,
-      allergies: 'None', 
-      medications: 'Asthma inhaler',
-      lastCheckup: '2023-05-10',
-      status: 'Needs update',
-      notes: 'Asthma checkup needed next month'
+      allergies: "None",
+      medications: "Asthma inhaler",
+      lastCheckup: "2023-05-10",
+      status: "Needs update",
+      notes: "Asthma checkup needed next month",
     },
-    { 
-      id: 3, 
-      child: 'Olivia Smith', 
+    {
+      id: 3,
+      child: "Olivia Smith",
       age: 5,
-      allergies: 'Dairy', 
-      medications: 'Antihistamines',
-      lastCheckup: '2023-03-22',
-      status: 'Up to date',
-      notes: 'Managing dairy allergy well'
-    }
+      allergies: "Dairy",
+      medications: "Antihistamines",
+      lastCheckup: "2023-03-22",
+      status: "Up to date",
+      notes: "Managing dairy allergy well",
+    },
   ]);
 
   const openModal = () => {
@@ -54,44 +61,52 @@ const HealthRecords = () => {
   const closeModal = () => {
     setIsModalOpen(false);
     setNewRecord({
-      child: '',
-      age: '',
-      allergies: '',
-      medications: '',
-      lastCheckup: '',
-      notes: '',
-      immunizationStatus: 'Up to date'
+      child: "",
+      age: "",
+      allergies: "",
+      medications: "",
+      lastCheckup: "",
+      notes: "",
+      immunizationStatus: "Up to date",
     });
   };
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
+  ) => {
     const { name, value } = e.target;
-    setNewRecord(prev => ({ ...prev, [name]: value }));
+    setNewRecord((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const status = newRecord.immunizationStatus === 'Up to date' ? 'Up to date' : 'Needs update';
-    
+    const status =
+      newRecord.immunizationStatus === "Up to date"
+        ? "Up to date"
+        : "Needs update";
+
     const record = {
       id: records.length + 1,
       child: newRecord.child,
-      age: newRecord.age,
+      age: parseInt(newRecord.age) || 0,
       allergies: newRecord.allergies,
       medications: newRecord.medications,
       lastCheckup: newRecord.lastCheckup,
       status: status,
-      notes: newRecord.notes
+      notes: newRecord.notes,
     };
-    
+
     setRecords([record, ...records]);
     closeModal();
   };
 
-  const filteredRecords = records.filter(record => 
-    record.child.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    record.allergies.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    record.medications.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredRecords = records.filter(
+    (record) =>
+      record.child.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      record.allergies.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      record.medications.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -102,7 +117,7 @@ const HealthRecords = () => {
           <HeartPulse className="mr-2 text-[#4f46e5]" size={24} />
           Health Records
         </h1>
-        <button 
+        <button
           onClick={openModal}
           className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
         >
@@ -132,12 +147,24 @@ const HealthRecords = () => {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Child</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Allergies</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Medications</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Checkup</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Child
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Allergies
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Medications
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Last Checkup
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -146,8 +173,12 @@ const HealthRecords = () => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">{record.child}</div>
-                        <div className="text-sm text-gray-500">Age: {record.age}</div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {record.child}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          Age: {record.age}
+                        </div>
                       </div>
                     </div>
                   </td>
@@ -161,11 +192,13 @@ const HealthRecords = () => {
                     {record.lastCheckup}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs rounded-full ${
-                      record.status === 'Up to date' 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-yellow-100 text-yellow-800'
-                    }`}>
+                    <span
+                      className={`px-2 py-1 text-xs rounded-full ${
+                        record.status === "Up to date"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-yellow-100 text-yellow-800"
+                      }`}
+                    >
                       {record.status}
                     </span>
                   </td>
@@ -194,7 +227,7 @@ const HealthRecords = () => {
                   <Plus className="mr-2 text-indigo-600" size={20} />
                   New Health Record
                 </h2>
-                <button 
+                <button
                   onClick={closeModal}
                   className="text-gray-400 hover:text-gray-500"
                 >
@@ -205,7 +238,9 @@ const HealthRecords = () => {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Child Name</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Child Name
+                    </label>
                     <input
                       type="text"
                       name="child"
@@ -217,7 +252,9 @@ const HealthRecords = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Age</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Age
+                    </label>
                     <input
                       type="number"
                       name="age"
@@ -229,7 +266,9 @@ const HealthRecords = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Allergies</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Allergies
+                    </label>
                     <input
                       type="text"
                       name="allergies"
@@ -241,7 +280,9 @@ const HealthRecords = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Medications</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Medications
+                    </label>
                     <input
                       type="text"
                       name="medications"
@@ -253,7 +294,9 @@ const HealthRecords = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Last Checkup Date</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Last Checkup Date
+                    </label>
                     <div className="relative">
                       <input
                         type="date"
@@ -267,7 +310,9 @@ const HealthRecords = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Immunization Status</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Immunization Status
+                    </label>
                     <div className="relative">
                       <select
                         name="immunizationStatus"
@@ -283,7 +328,9 @@ const HealthRecords = () => {
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Notes
+                    </label>
                     <textarea
                       name="notes"
                       value={newRecord.notes}

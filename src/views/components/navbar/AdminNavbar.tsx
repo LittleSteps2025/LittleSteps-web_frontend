@@ -1,6 +1,5 @@
-import { Menu, X, User, Bell } from 'lucide-react';
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Menu, X, User, Bell } from "lucide-react";
+import { useState } from "react";
 
 const AdminNavbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -15,12 +14,15 @@ const AdminNavbar = () => {
               className="inline-flex items-center justify-center p-2 rounded-md text-gray-500 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500"
             >
               <span className="sr-only">Open main menu</span>
-              {isOpen ? <X className="block h-6 w-6" /> : <Menu className="block h-6 w-6" />}
+              {isOpen ? (
+                <X className="block h-6 w-6" />
+              ) : (
+                <Menu className="block h-6 w-6" />
+              )}
             </button>
           </div>
           <div className="flex-1 flex items-center justify-end">
             <div className="flex items-center space-x-4">
-              
               <button className="bg-white p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                 <span className="sr-only">View notifications</span>
                 <Bell className="h-6 w-6" />
