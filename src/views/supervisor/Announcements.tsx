@@ -136,7 +136,8 @@ const Announcements = () => {
     try {
       const response = await fetch(ANNOUNCEMENTS_API_URL);
       if (!response.ok) throw new Error("Failed to fetch announcements");
-      const data = await response.json();
+      const result = await response.json();
+      const data = result.data || []; // Extract the data array from the response
       // Map audience integer to string
       const mappedData = data.map((a: { audience: string | number }) => ({
         ...a,
@@ -633,7 +634,7 @@ const Announcements = () => {
 
       {/* Add/Edit Announcement Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
