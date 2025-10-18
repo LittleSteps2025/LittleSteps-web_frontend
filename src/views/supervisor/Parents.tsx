@@ -4,8 +4,9 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { X } from "lucide-react";
 import { redirect } from "react-router-dom";
+import { API_BASE_URL } from "../../config/api";
 
-const API_PARENTS = "http://localhost:5001/api/supervisors/child/parent";
+const API_PARENTS = `${API_BASE_URL}/supervisors/child/parent`;
 
 type Parent = {
   id: string;

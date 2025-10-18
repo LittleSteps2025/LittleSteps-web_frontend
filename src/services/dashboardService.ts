@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:5001/api';
+import { API_BASE_URL } from "../config/api";
 
 export interface DashboardStats {
   totalChildren: number;
@@ -66,24 +66,32 @@ interface DashboardApiResponse {
  */
 export const fetchDashboardStats = async (): Promise<DashboardStats> => {
   try {
-    console.log('� Fetching dashboard statistics from:', `${API_BASE_URL}/dashboard/stats`);
-    
+    console.log(
+      "� Fetching dashboard statistics from:",
+      `${API_BASE_URL}/dashboard/stats`
+    );
+
     const response = await fetch(`${API_BASE_URL}/dashboard/stats`);
-    
+
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('❌ API Error:', {
+      console.error("❌ API Error:", {
         status: response.status,
         statusText: response.statusText,
-        body: errorText
+        body: errorText,
       });
-      throw new Error(`Failed to fetch dashboard stats: ${response.statusText}`);
+      throw new Error(
+        `Failed to fetch dashboard stats: ${response.statusText}`
+      );
     }
 
     const result: DashboardApiResponse = await response.json();
-    
-    console.log('✅ Dashboard stats fetched successfully:', result.data.overview);
-    
+
+    console.log(
+      "✅ Dashboard stats fetched successfully:",
+      result.data.overview
+    );
+
     const stats: DashboardStats = {
       totalChildren: result.data.overview.totalChildren,
       activeParents: result.data.overview.activeParents,
@@ -93,12 +101,12 @@ export const fetchDashboardStats = async (): Promise<DashboardStats> => {
       monthlyRevenue: result.data.overview.monthlyRevenue,
       upcomingEvents: result.data.overview.upcomingEvents,
       pendingComplaints: result.data.overview.pendingComplaints,
-      totalComplaints: result.data.overview.totalComplaints
+      totalComplaints: result.data.overview.totalComplaints,
     };
 
     return stats;
   } catch (error) {
-    console.error('❌ Error fetching dashboard stats:', error);
+    console.error("❌ Error fetching dashboard stats:", error);
     // Return zeros on error to prevent UI crash
     return {
       totalChildren: 0,
@@ -109,7 +117,7 @@ export const fetchDashboardStats = async (): Promise<DashboardStats> => {
       upcomingEvents: 0,
       pendingComplaints: 0,
       activeSupervisors: 0,
-      totalComplaints: 0
+      totalComplaints: 0,
     };
   }
 };
@@ -119,33 +127,36 @@ export const fetchDashboardStats = async (): Promise<DashboardStats> => {
  */
 export const fetchUpcomingEvents = async (): Promise<Event[]> => {
   try {
-    console.log('� Fetching upcoming events from:', `${API_BASE_URL}/dashboard/stats`);
-    
+    console.log(
+      "� Fetching upcoming events from:",
+      `${API_BASE_URL}/dashboard/stats`
+    );
+
     const response = await fetch(`${API_BASE_URL}/dashboard/stats`);
-    
+
     if (!response.ok) {
       throw new Error(`Failed to fetch events: ${response.statusText}`);
     }
 
     const result: DashboardApiResponse = await response.json();
-    
-    const events: Event[] = result.data.events.map(event => ({
+
+    const events: Event[] = result.data.events.map((event) => ({
       id: event.event_id,
       title: event.topic,
       date: event.date,
       time: event.time,
       location: event.venue,
-      description: event.description
+      description: event.description,
     }));
 
-    console.log('📅 Upcoming events fetched:', {
+    console.log("📅 Upcoming events fetched:", {
       count: events.length,
-      events: events
+      events: events,
     });
 
     return events;
   } catch (error) {
-    console.error('❌ Error fetching events:', error);
+    console.error("❌ Error fetching events:", error);
     return [];
   }
 };

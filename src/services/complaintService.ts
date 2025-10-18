@@ -1,12 +1,11 @@
-import axios from 'axios';
-
-const API_BASE_URL = 'http://localhost:5001/api';
+import axios from "axios";
+import { API_BASE_URL } from "../config/api";
 
 export interface Complaint {
   complaint_id: number;
   date: string;
   subject: string;
-  recipient: 'teacher' | 'supervisor';
+  recipient: "teacher" | "supervisor";
   description: string;
   status: string;
   action?: string;
@@ -24,7 +23,7 @@ export interface Complaint {
 export interface CreateComplaintData {
   date: string;
   subject: string;
-  recipient: 'teacher' | 'supervisor';
+  recipient: "teacher" | "supervisor";
   description: string;
   status?: string;
   action?: string;
@@ -34,7 +33,7 @@ export interface CreateComplaintData {
 export interface UpdateComplaintData {
   date: string;
   subject: string;
-  recipient: 'teacher' | 'supervisor';
+  recipient: "teacher" | "supervisor";
   description: string;
   status?: string;
   action?: string;
@@ -55,7 +54,7 @@ class ComplaintService {
       const response = await axios.get(`${API_BASE_URL}/complaints`);
       return response.data.data;
     } catch (error) {
-      console.error('Error fetching complaints:', error);
+      console.error("Error fetching complaints:", error);
       throw error;
     }
   }
@@ -63,10 +62,12 @@ class ComplaintService {
   // Get complaint by ID
   async getComplaintById(complaintId: number): Promise<Complaint> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/complaints/${complaintId}`);
+      const response = await axios.get(
+        `${API_BASE_URL}/complaints/${complaintId}`
+      );
       return response.data.data;
     } catch (error) {
-      console.error('Error fetching complaint:', error);
+      console.error("Error fetching complaint:", error);
       throw error;
     }
   }
@@ -74,65 +75,94 @@ class ComplaintService {
   // Get complaints by child ID
   async getComplaintsByChildId(childId: number): Promise<Complaint[]> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/complaints/child/${childId}`);
+      const response = await axios.get(
+        `${API_BASE_URL}/complaints/child/${childId}`
+      );
       return response.data.data;
     } catch (error) {
-      console.error('Error fetching child complaints:', error);
+      console.error("Error fetching child complaints:", error);
       throw error;
     }
   }
 
   // Get complaints by recipient
-  async getComplaintsByRecipient(recipient: 'teacher' | 'supervisor'): Promise<Complaint[]> {
+  async getComplaintsByRecipient(
+    recipient: "teacher" | "supervisor"
+  ): Promise<Complaint[]> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/complaints/recipient/${recipient}`);
+      const response = await axios.get(
+        `${API_BASE_URL}/complaints/recipient/${recipient}`
+      );
       return response.data.data;
     } catch (error) {
-      console.error('Error fetching recipient complaints:', error);
+      console.error("Error fetching recipient complaints:", error);
       throw error;
     }
   }
 
   // Create new complaint
-  async createComplaint(complaintData: CreateComplaintData): Promise<Complaint> {
+  async createComplaint(
+    complaintData: CreateComplaintData
+  ): Promise<Complaint> {
     try {
-      const response = await axios.post(`${API_BASE_URL}/complaints`, complaintData);
+      const response = await axios.post(
+        `${API_BASE_URL}/complaints`,
+        complaintData
+      );
       return response.data.data;
     } catch (error) {
-      console.error('Error creating complaint:', error);
+      console.error("Error creating complaint:", error);
       throw error;
     }
   }
 
   // Update complaint
-  async updateComplaint(complaintId: number, complaintData: UpdateComplaintData): Promise<Complaint> {
+  async updateComplaint(
+    complaintId: number,
+    complaintData: UpdateComplaintData
+  ): Promise<Complaint> {
     try {
-      const response = await axios.put(`${API_BASE_URL}/complaints/${complaintId}`, complaintData);
+      const response = await axios.put(
+        `${API_BASE_URL}/complaints/${complaintId}`,
+        complaintData
+      );
       return response.data.data;
     } catch (error) {
-      console.error('Error updating complaint:', error);
+      console.error("Error updating complaint:", error);
       throw error;
     }
   }
 
   // Update complaint status only
-  async updateComplaintStatus(complaintId: number, status: string): Promise<Complaint> {
+  async updateComplaintStatus(
+    complaintId: number,
+    status: string
+  ): Promise<Complaint> {
     try {
-      const response = await axios.patch(`${API_BASE_URL}/complaints/${complaintId}/status`, { status });
+      const response = await axios.patch(
+        `${API_BASE_URL}/complaints/${complaintId}/status`,
+        { status }
+      );
       return response.data.data;
     } catch (error) {
-      console.error('Error updating complaint status:', error);
+      console.error("Error updating complaint status:", error);
       throw error;
     }
   }
 
   // Update complaint action only
-  async updateComplaintAction(complaintId: number, action: string): Promise<Complaint> {
+  async updateComplaintAction(
+    complaintId: number,
+    action: string
+  ): Promise<Complaint> {
     try {
-      const response = await axios.patch(`${API_BASE_URL}/complaints/${complaintId}/action`, { action });
+      const response = await axios.patch(
+        `${API_BASE_URL}/complaints/${complaintId}/action`,
+        { action }
+      );
       return response.data.data;
     } catch (error) {
-      console.error('Error updating complaint action:', error);
+      console.error("Error updating complaint action:", error);
       throw error;
     }
   }
@@ -142,7 +172,7 @@ class ComplaintService {
     try {
       await axios.delete(`${API_BASE_URL}/complaints/${complaintId}`);
     } catch (error) {
-      console.error('Error deleting complaint:', error);
+      console.error("Error deleting complaint:", error);
       throw error;
     }
   }
@@ -151,27 +181,29 @@ class ComplaintService {
   async searchComplaints(searchParams: SearchParams): Promise<Complaint[]> {
     try {
       const params = new URLSearchParams();
-      
+
       if (searchParams.searchTerm) {
-        params.append('searchTerm', searchParams.searchTerm);
+        params.append("searchTerm", searchParams.searchTerm);
       }
       if (searchParams.recipient) {
-        params.append('recipient', searchParams.recipient);
+        params.append("recipient", searchParams.recipient);
       }
       if (searchParams.status) {
-        params.append('status', searchParams.status);
+        params.append("status", searchParams.status);
       }
       if (searchParams.dateFrom) {
-        params.append('dateFrom', searchParams.dateFrom);
+        params.append("dateFrom", searchParams.dateFrom);
       }
       if (searchParams.dateTo) {
-        params.append('dateTo', searchParams.dateTo);
+        params.append("dateTo", searchParams.dateTo);
       }
 
-      const response = await axios.get(`${API_BASE_URL}/complaints/search?${params.toString()}`);
+      const response = await axios.get(
+        `${API_BASE_URL}/complaints/search?${params.toString()}`
+      );
       return response.data.data;
     } catch (error) {
-      console.error('Error searching complaints:', error);
+      console.error("Error searching complaints:", error);
       throw error;
     }
   }

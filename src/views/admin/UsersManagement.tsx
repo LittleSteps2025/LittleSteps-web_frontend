@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { User, Mail, Lock } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import { API_BASE_URL } from "../../config/api";
 
 const UsersManagement = () => {
   const { user } = useAuth();
@@ -48,23 +49,20 @@ const UsersManagement = () => {
   const fetchAllUsers = useCallback(async () => {
     setLoadingUsers(true);
     setUsersError("");
-    
+
     try {
       console.log("Fetching all users from API...");
-      
-      const response = await fetch(
-        "http://localhost:5001/api/users/users",
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
+
+      const response = await fetch(`${API_BASE_URL}/users/users`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
 
       console.log("Users API Response Status:", response.status);
-      
+
       if (!response.ok) {
         const contentType = response.headers.get("content-type");
         if (contentType && contentType.includes("application/json")) {
@@ -83,7 +81,7 @@ const UsersManagement = () => {
       console.log("Users fetched successfully:", result);
       console.log("Result type:", typeof result);
       console.log("Is array:", Array.isArray(result));
-      
+
       // Handle different response structures
       let usersData;
       if (Array.isArray(result)) {
@@ -96,29 +94,42 @@ const UsersManagement = () => {
         console.log("Unexpected response structure:", result);
         usersData = [];
       }
-      
+
       // Map data to ensure consistent field names
       const mappedUsers = usersData.map((user: Record<string, unknown>) => ({
-        id: (user.id || user.user_id || user.supervisor_id || Math.random().toString()) as string,
-        name: (user.name || user.username || 'Unknown') as string,
-        email: (user.email || 'No email') as string,
-        role: (user.role || 'supervisor') as string,
-        created_at: (user.created_at || user.createdAt || new Date().toISOString()) as string
+        id: (user.id ||
+          user.user_id ||
+          user.supervisor_id ||
+          Math.random().toString()) as string,
+        name: (user.name || user.username || "Unknown") as string,
+        email: (user.email || "No email") as string,
+        role: (user.role || "supervisor") as string,
+        created_at: (user.created_at ||
+          user.createdAt ||
+          new Date().toISOString()) as string,
       }));
-      
+
       // Filter to show only supervisors and teachers
-      const filteredUsers = mappedUsers.filter((user: UserType) => 
-        user.role === 'supervisor' || user.role === 'teacher'
+      const filteredUsers = mappedUsers.filter(
+        (user: UserType) =>
+          user.role === "supervisor" || user.role === "teacher"
       );
-      
+
       console.log("Final mapped users data:", mappedUsers);
-      console.log("Filtered users (supervisors & teachers only):", filteredUsers);
-      console.log("About to set users state with:", filteredUsers.length, "users");
+      console.log(
+        "Filtered users (supervisors & teachers only):",
+        filteredUsers
+      );
+      console.log(
+        "About to set users state with:",
+        filteredUsers.length,
+        "users"
+      );
       setUsers(filteredUsers);
       console.log("Users state should now be updated");
-      
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to fetch users";
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to fetch users";
       setUsersError(errorMessage);
       console.error("Error fetching users:", err);
     } finally {
@@ -181,7 +192,7 @@ const UsersManagement = () => {
 
       // Call the supervisorSignup API endpoint
       const response = await fetch(
-        "http://localhost:5001/api/supervisors/supervisorSignup",
+        `${API_BASE_URL}/supervisors/supervisorSignup`,
         {
           method: "POST",
           headers: {
@@ -231,7 +242,7 @@ const UsersManagement = () => {
       });
       setShowModal(false);
       setSuccess("User created successfully!");
-      
+
       // Refresh the users list
       await fetchAllUsers();
     } catch (err) {
@@ -244,32 +255,28 @@ const UsersManagement = () => {
     }
   };
 
-
   React.useEffect(() => {
     const fetchUsers = async () => {
       try {
-        setError('');
-        const response = await fetch('http://localhost:5001/api/getEveryone', {
+        setError("");
+        const response = await fetch(`${API_BASE_URL}/getEveryone`, {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
         });
         if (!response.ok) {
-          throw new Error('Failed to fetch users');
+          throw new Error("Failed to fetch users");
         }
         const data = await response.json();
         setUsers(data.data || []);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch users');
+        setError(err instanceof Error ? err.message : "Failed to fetch users");
       }
     };
     fetchUsers();
   }, [success]);
 
-  if (user?.role !== 'admin') {
-
-
-
+  if (user?.role !== "admin") {
     return <div>Unauthorized access</div>;
   }
 
@@ -279,8 +286,6 @@ const UsersManagement = () => {
         <h1 className="text-2xl font-bold">Supervisor and Teachers Details</h1>
 
         <div className=" p-6 rounded-xl shadow-sm ">
-
-
           <div className="flex gap-3">
             <button
               type="button"
@@ -289,7 +294,7 @@ const UsersManagement = () => {
             >
               Add Supervisor
             </button>
-            
+
             {/* <button
               type="button"
               className="bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2"
@@ -491,16 +496,15 @@ const UsersManagement = () => {
           <h2 className="text-lg font-semibold">Supervisors & Teachers</h2>
           <div className="text-sm text-gray-500">
             <div>Total: {users.length} users</div>
-            
           </div>
         </div>
-        
+
         {usersError && (
           <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg">
             {usersError}
           </div>
         )}
-        
+
         {loadingUsers ? (
           <div className="flex justify-center items-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#6339C0]"></div>
@@ -536,28 +540,33 @@ const UsersManagement = () => {
                         {user.email}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          user.role === 'supervisor' 
-                            ? 'bg-blue-100 text-blue-800' 
-                            : user.role === 'teacher'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
+                        <span
+                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            user.role === "supervisor"
+                              ? "bg-blue-100 text-blue-800"
+                              : user.role === "teacher"
+                              ? "bg-green-100 text-green-800"
+                              : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
                           {user.role}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-gray-600">
-                        {user.created_at ? 
-                          new Date(user.created_at).toLocaleDateString() : 
-                          'N/A'
-                        }
+                        {user.created_at
+                          ? new Date(user.created_at).toLocaleDateString()
+                          : "N/A"}
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
-                      No supervisors or teachers found. Try refreshing or create a new supervisor.
+                    <td
+                      colSpan={4}
+                      className="px-6 py-8 text-center text-gray-500"
+                    >
+                      No supervisors or teachers found. Try refreshing or create
+                      a new supervisor.
                     </td>
                   </tr>
                 )}
