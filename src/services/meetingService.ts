@@ -1,16 +1,15 @@
-import axios from 'axios';
-
-const API_BASE_URL = 'http://localhost:5001/api';
+import axios from "axios";
+import { API_BASE_URL } from "../config/api";
 
 export interface Meeting {
   meeting_id: number;
   child_id: number;
-  recipient: 'teacher' | 'supervisor';
+  recipient: "teacher" | "supervisor";
   meeting_date: string;
   meeting_time: string;
   reason: string;
   response?: string;
-  status?: 'pending' | 'confirmed' | 'cancelled';
+  status?: "pending" | "confirmed" | "cancelled";
   child_name: string;
   child_age: number;
   child_gender: string;
@@ -23,7 +22,7 @@ export interface Meeting {
 
 export interface CreateMeetingData {
   child_id: number;
-  recipient: 'teacher' | 'supervisor';
+  recipient: "teacher" | "supervisor";
   meeting_date: string;
   meeting_time: string;
   reason: string;
@@ -52,7 +51,7 @@ class MeetingService {
       const response = await axios.get(`${API_BASE_URL}/meetings`);
       return response.data.data;
     } catch (error) {
-      console.error('Error fetching meetings:', error);
+      console.error("Error fetching meetings:", error);
       throw error;
     }
   }
@@ -63,7 +62,7 @@ class MeetingService {
       const response = await axios.get(`${API_BASE_URL}/meetings/${meetingId}`);
       return response.data.data;
     } catch (error) {
-      console.error('Error fetching meeting:', error);
+      console.error("Error fetching meeting:", error);
       throw error;
     }
   }
@@ -71,21 +70,27 @@ class MeetingService {
   // Get meetings by child ID
   async getMeetingsByChildId(childId: number): Promise<Meeting[]> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/meetings/child/${childId}`);
+      const response = await axios.get(
+        `${API_BASE_URL}/meetings/child/${childId}`
+      );
       return response.data.data;
     } catch (error) {
-      console.error('Error fetching child meetings:', error);
+      console.error("Error fetching child meetings:", error);
       throw error;
     }
   }
 
   // Get meetings by recipient
-  async getMeetingsByRecipient(recipient: 'teacher' | 'supervisor'): Promise<Meeting[]> {
+  async getMeetingsByRecipient(
+    recipient: "teacher" | "supervisor"
+  ): Promise<Meeting[]> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/meetings/recipient/${recipient}`);
+      const response = await axios.get(
+        `${API_BASE_URL}/meetings/recipient/${recipient}`
+      );
       return response.data.data;
     } catch (error) {
-      console.error('Error fetching recipient meetings:', error);
+      console.error("Error fetching recipient meetings:", error);
       throw error;
     }
   }
@@ -93,52 +98,73 @@ class MeetingService {
   // Create new meeting
   async createMeeting(meetingData: CreateMeetingData): Promise<Meeting> {
     try {
-      const response = await axios.post(`${API_BASE_URL}/meetings`, meetingData);
+      const response = await axios.post(
+        `${API_BASE_URL}/meetings`,
+        meetingData
+      );
       return response.data.data;
     } catch (error) {
-      console.error('Error creating meeting:', error);
+      console.error("Error creating meeting:", error);
       throw error;
     }
   }
 
   // Update meeting
-  async updateMeeting(meetingId: number, meetingData: UpdateMeetingData): Promise<Meeting> {
+  async updateMeeting(
+    meetingId: number,
+    meetingData: UpdateMeetingData
+  ): Promise<Meeting> {
     try {
-      const response = await axios.put(`${API_BASE_URL}/meetings/${meetingId}`, meetingData);
+      const response = await axios.put(
+        `${API_BASE_URL}/meetings/${meetingId}`,
+        meetingData
+      );
       return response.data.data;
     } catch (error) {
-      console.error('Error updating meeting:', error);
+      console.error("Error updating meeting:", error);
       throw error;
     }
   }
 
   // Update meeting response only
-  async updateMeetingResponse(meetingId: number, response: string): Promise<Meeting> {
+  async updateMeetingResponse(
+    meetingId: number,
+    response: string
+  ): Promise<Meeting> {
     try {
-      const response_data = await axios.patch(`${API_BASE_URL}/meetings/${meetingId}/response`, { response });
+      const response_data = await axios.patch(
+        `${API_BASE_URL}/meetings/${meetingId}/response`,
+        { response }
+      );
       return response_data.data.data;
     } catch (error) {
-      console.error('Error updating meeting response:', error);
+      console.error("Error updating meeting response:", error);
       throw error;
     }
   }
 
   // Update meeting status
-  async updateMeetingStatus(meetingId: number, status: 'pending' | 'confirmed' | 'cancelled'): Promise<Meeting> {
+  async updateMeetingStatus(
+    meetingId: number,
+    status: "pending" | "confirmed" | "cancelled"
+  ): Promise<Meeting> {
     try {
-      console.log('=== SERVICE: updateMeetingStatus ===');
-      console.log('Meeting ID:', meetingId);
-      console.log('Status:', status);
-      console.log('URL:', `${API_BASE_URL}/meetings/${meetingId}/status`);
-      console.log('Payload:', { status });
-      
-      const response = await axios.patch(`${API_BASE_URL}/meetings/${meetingId}/status`, { status });
-      console.log('Response:', response.data);
+      console.log("=== SERVICE: updateMeetingStatus ===");
+      console.log("Meeting ID:", meetingId);
+      console.log("Status:", status);
+      console.log("URL:", `${API_BASE_URL}/meetings/${meetingId}/status`);
+      console.log("Payload:", { status });
+
+      const response = await axios.patch(
+        `${API_BASE_URL}/meetings/${meetingId}/status`,
+        { status }
+      );
+      console.log("Response:", response.data);
       return response.data.data;
     } catch (error) {
-      console.error('Error updating meeting status:', error);
+      console.error("Error updating meeting status:", error);
       if (axios.isAxiosError(error) && error.response) {
-        console.error('Error response:', error.response.data);
+        console.error("Error response:", error.response.data);
       }
       throw error;
     }
@@ -149,7 +175,7 @@ class MeetingService {
     try {
       await axios.delete(`${API_BASE_URL}/meetings/${meetingId}`);
     } catch (error) {
-      console.error('Error deleting meeting:', error);
+      console.error("Error deleting meeting:", error);
       throw error;
     }
   }
@@ -158,27 +184,29 @@ class MeetingService {
   async searchMeetings(searchParams: SearchParams): Promise<Meeting[]> {
     try {
       const params = new URLSearchParams();
-      
+
       if (searchParams.searchTerm) {
-        params.append('searchTerm', searchParams.searchTerm);
+        params.append("searchTerm", searchParams.searchTerm);
       }
       if (searchParams.recipient) {
-        params.append('recipient', searchParams.recipient);
+        params.append("recipient", searchParams.recipient);
       }
       if (searchParams.response) {
-        params.append('response', searchParams.response);
+        params.append("response", searchParams.response);
       }
       if (searchParams.dateFrom) {
-        params.append('dateFrom', searchParams.dateFrom);
+        params.append("dateFrom", searchParams.dateFrom);
       }
       if (searchParams.dateTo) {
-        params.append('dateTo', searchParams.dateTo);
+        params.append("dateTo", searchParams.dateTo);
       }
 
-      const response = await axios.get(`${API_BASE_URL}/meetings/search?${params.toString()}`);
+      const response = await axios.get(
+        `${API_BASE_URL}/meetings/search?${params.toString()}`
+      );
       return response.data.data;
     } catch (error) {
-      console.error('Error searching meetings:', error);
+      console.error("Error searching meetings:", error);
       throw error;
     }
   }

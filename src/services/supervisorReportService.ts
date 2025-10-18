@@ -1,18 +1,19 @@
-import axios from 'axios';
+import axios from "axios";
+import { API_BASE_URL } from "../config/api";
 
-const API_BASE_URL = 'http://localhost:5001/api/supervisor-reports';
+const SUPERVISOR_REPORTS_URL = `${API_BASE_URL}/supervisor-reports`;
 
 export interface SupervisorReport {
   report_id: number | string;
   report_name: string;
-  report_type: 'monthly_summary' | 'custom';
+  report_type: "monthly_summary" | "custom";
   month: number;
   year: number;
   generated_by: number | null;
   generated_date: string;
   report_data: MonthlyReportData;
   pdf_path?: string | null;
-  status: 'generating' | 'completed' | 'failed';
+  status: "generating" | "completed" | "failed";
   generated_by_name?: string;
   generated_by_email?: string;
 }
@@ -64,10 +65,10 @@ class SupervisorReportService {
   // Get all supervisor reports
   async getAllReports(): Promise<SupervisorReport[]> {
     try {
-      const response = await axios.get(API_BASE_URL);
+      const response = await axios.get(SUPERVISOR_REPORTS_URL);
       return response.data.data;
     } catch (error) {
-      console.error('Error fetching supervisor reports:', error);
+      console.error("Error fetching supervisor reports:", error);
       throw error;
     }
   }
@@ -75,54 +76,75 @@ class SupervisorReportService {
   // Get report by ID
   async getReportById(reportId: number | string): Promise<SupervisorReport> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/${reportId}`);
+      const response = await axios.get(`${SUPERVISOR_REPORTS_URL}/${reportId}`);
       return response.data.data;
     } catch (error) {
-      console.error('Error fetching supervisor report:', error);
+      console.error("Error fetching supervisor report:", error);
       throw error;
     }
   }
 
   // Get reports by month and year
-  async getReportsByMonthYear(month: number, year: number): Promise<SupervisorReport[]> {
+  async getReportsByMonthYear(
+    month: number,
+    year: number
+  ): Promise<SupervisorReport[]> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/month/${month}/year/${year}`);
+      const response = await axios.get(
+        `${SUPERVISOR_REPORTS_URL}/month/${month}/year/${year}`
+      );
       return response.data.data;
     } catch (error) {
-      console.error('Error fetching reports by month/year:', error);
+      console.error("Error fetching reports by month/year:", error);
       throw error;
     }
   }
 
   // Get monthly data preview (without saving)
-  async getMonthlyDataPreview(month: number, year: number): Promise<MonthlyReportData> {
+  async getMonthlyDataPreview(
+    month: number,
+    year: number
+  ): Promise<MonthlyReportData> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/preview/${month}/${year}`);
+      const response = await axios.get(
+        `${SUPERVISOR_REPORTS_URL}/preview/${month}/${year}`
+      );
       return response.data.data;
     } catch (error) {
-      console.error('Error fetching monthly data preview:', error);
+      console.error("Error fetching monthly data preview:", error);
       throw error;
     }
   }
 
   // Generate new monthly report
-  async generateMonthlyReport(reportData: GenerateReportData): Promise<SupervisorReport> {
+  async generateMonthlyReport(
+    reportData: GenerateReportData
+  ): Promise<SupervisorReport> {
     try {
-      const response = await axios.post(`${API_BASE_URL}/generate`, reportData);
+      const response = await axios.post(
+        `${SUPERVISOR_REPORTS_URL}/generate`,
+        reportData
+      );
       return response.data.data;
     } catch (error) {
-      console.error('Error generating monthly report:', error);
+      console.error("Error generating monthly report:", error);
       throw error;
     }
   }
 
   // Update report PDF path
-  async updateReportPdf(reportId: number | string, pdfPath: string): Promise<SupervisorReport> {
+  async updateReportPdf(
+    reportId: number | string,
+    pdfPath: string
+  ): Promise<SupervisorReport> {
     try {
-      const response = await axios.patch(`${API_BASE_URL}/${reportId}/pdf`, { pdf_path: pdfPath });
+      const response = await axios.patch(
+        `${SUPERVISOR_REPORTS_URL}/${reportId}/pdf`,
+        { pdf_path: pdfPath }
+      );
       return response.data.data;
     } catch (error) {
-      console.error('Error updating report PDF path:', error);
+      console.error("Error updating report PDF path:", error);
       throw error;
     }
   }
@@ -130,9 +152,9 @@ class SupervisorReportService {
   // Delete report
   async deleteReport(reportId: number | string): Promise<void> {
     try {
-      await axios.delete(`${API_BASE_URL}/${reportId}`);
+      await axios.delete(`${SUPERVISOR_REPORTS_URL}/${reportId}`);
     } catch (error) {
-      console.error('Error deleting supervisor report:', error);
+      console.error("Error deleting supervisor report:", error);
       throw error;
     }
   }
@@ -140,29 +162,39 @@ class SupervisorReportService {
   // Helper function to format month name
   getMonthName(month: number): string {
     const monthNames = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
     ];
-    return monthNames[month - 1] || '';
+    return monthNames[month - 1] || "";
   }
 
   // Helper function to format date
   formatDate(dateString: string): string {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   }
 
   // Helper function to format file size
   formatFileSize(bytes: number): string {
-    if (bytes === 0) return '0 Bytes';
+    if (bytes === 0) return "0 Bytes";
     const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const sizes = ["Bytes", "KB", "MB", "GB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
   }
 }
 
