@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { User, Edit, Trash2, Plus, Search, X } from "lucide-react";
+import { User, Edit, Plus, Search, X } from "lucide-react";
 
 interface Student {
   id: string;
@@ -17,6 +17,7 @@ interface Student {
   parentContact: string;
   profileImage?: string;
   packageName?: string;
+  isActive?: boolean;
 }
 
 interface ApiStudent {
@@ -33,6 +34,7 @@ interface ApiStudent {
   parent_phone: string;
   image?: string;
   package_name?: string;
+  is_active?: boolean;
 }
 
 interface ClassGroup {
@@ -310,12 +312,8 @@ const updateStudent = async (student: Student): Promise<Student> => {
     parentContact: item.parent_phone || student.parentContact,
     profileImage: item.image,
     packageName: item.package_name || student.packageName,
+    isActive: item.is_active !== undefined ? item.is_active : true,
   };
-};
-
-const deleteStudentApi = async (id: string): Promise<void> => {
-  const res = await fetch(`${API_URL}${id}`, { method: "DELETE" });
-  if (!res.ok) throw new Error("Failed to delete student");
 };
 
 export default function Childrens() {
@@ -338,8 +336,6 @@ export default function Childrens() {
   });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [currentChild, setCurrentChild] = useState<Student | null>(null);
   const [isCheckingNIC, setIsCheckingNIC] = useState(false);
 
   // Prevent showing add form for admins - only allow edit mode
@@ -602,30 +598,8 @@ export default function Childrens() {
     setNicCheckMessage("");
   };
 
-  const handleDelete = (student: Student) => {
-    setCurrentChild(student);
-    setIsDeleteModalOpen(true);
-  };
-
-  const deleteChild = async () => {
-    if (!currentChild) return;
-    try {
-      await deleteStudentApi(currentChild.id);
-      toast.success("Deleted successfully");
-      setIsDeleteModalOpen(false);
-      setCurrentChild(null);
-      await loadStudents();
-    } catch (err: unknown) {
-      const errorMessage =
-        err instanceof Error ? err.message : "An unknown error occurred";
-      toast.error(errorMessage);
-    }
-  };
-
   const closeModal = () => {
     setShowAddForm(false);
-    setIsDeleteModalOpen(false);
-    setCurrentChild(null);
     setForm({
       name: "",
       age: 1,
@@ -645,7 +619,8 @@ export default function Childrens() {
   };
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6">
+      {/* Header */}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-800">
           <span className="bg-gradient-to-r from-[#4f46e5] to-[#7c73e6] bg-clip-text text-transparent">
@@ -653,8 +628,9 @@ export default function Childrens() {
           </span>
         </h1>
       </div>
+
       {!showAddForm && (
-        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-3 text-gray-400" />
@@ -672,7 +648,7 @@ export default function Childrens() {
       )}
 
       {showAddForm ? (
-        <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
           <div className="flex justify-between items-center mb-6">
             <div>
               <h2 className="text-xl font-bold text-gray-800">
@@ -1002,7 +978,7 @@ export default function Childrens() {
           </form>
         </div>
       ) : (
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
@@ -1086,68 +1062,16 @@ export default function Childrens() {
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <button
                           onClick={() => handleEdit(student)}
-                          className="text-indigo-600 hover:text-indigo-900 mr-4 flex items-center"
+                          className="text-indigo-600 hover:text-indigo-900 flex items-center"
                         >
                           <Edit className="w-4 h-4 mr-1" />
                           Edit
-                        </button>
-                        <button
-                          onClick={() => handleDelete(student)}
-                          className="text-red-600 hover:text-red-900 flex items-center"
-                        >
-                          <Trash2 className="w-4 h-4 mr-1" />
-                          Delete
                         </button>
                       </td>
                     </tr>
                   ))}
               </tbody>
             </table>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Confirmation Modal */}
-      {isDeleteModalOpen && (
-        <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-gray-800">
-                  Confirm Deletion
-                </h2>
-                <button
-                  onClick={closeModal}
-                  className="text-gray-400 hover:text-gray-500 rounded-full p-1 hover:bg-gray-100"
-                  title="Close"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <p className="mb-6 text-gray-600">
-                Are you sure you want to delete child{" "}
-                <span className="font-semibold text-gray-800">
-                  {currentChild?.name}
-                </span>
-                ? This action cannot be undone.
-              </p>
-
-              <div className="flex justify-end gap-3">
-                <button
-                  onClick={closeModal}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={deleteChild}
-                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
           </div>
         </div>
       )}
