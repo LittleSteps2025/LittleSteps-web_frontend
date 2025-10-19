@@ -1,39 +1,30 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from "react";
 
-
-import { 
-  CreditCard, 
-  Search, 
-  DollarSign, 
-  CheckCircle, 
-  Clock, 
-  AlertCircle, 
-  X, 
+import {
+  Search,
+  DollarSign,
+  CheckCircle,
+  Clock,
+  AlertCircle,
+  X,
   Filter,
   Download,
   FileText,
   ChevronUp,
-  ChevronDown
-} from 'lucide-react';
+  ChevronDown,
+} from "lucide-react";
 
 interface Payment {
-  payment_id: string;
-  amount: number;
+  payment_id: number;
+  amount: string;
   created_at: string;
-  parent_id: string;
-  child_id: string;
-  package_id: string;
-  month: string;
-  method: string;
-  status: 'Pending' | 'Paid';
-  transaction_ref: string;
-  notes: string;
+  parent_email: string;
+  child_id: number;
+  status: "pending" | "paid";
   order_id: string;
-  parent_first_name: string;
-  parent_last_name: string;
-  child_first_name: string;
-  child_last_name: string;
-  package_name: string;
+  currency: string;
+  child_name: string;
+  parent_name: string;
 }
 
 interface PaymentStats {
@@ -43,12 +34,13 @@ interface PaymentStats {
 }
 
 interface ProcessPaymentData {
-  method: 'Cash' | 'Card' | 'Online';
+  method: "Cash" | "Card" | "Online";
   transaction_ref?: string;
   notes?: string;
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001';
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
 const ITEMS_PER_PAGE = 10;
 
 const Payments = () => {
@@ -57,129 +49,147 @@ const Payments = () => {
   const [stats, setStats] = useState<PaymentStats>({
     totalRevenue: 0,
     paidAmount: 0,
-    pendingAmount: 0
+    pendingAmount: 0,
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string>('');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [error, setError] = useState<string>("");
+  const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<'all' | 'Paid' | 'Pending'>('all');
+  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "paid">(
+    "all"
+  );
   const [showProcessModal, setShowProcessModal] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
   const [showExportModal, setShowExportModal] = useState(false);
   const [sortConfig, setSortConfig] = useState<{
     key: keyof Payment;
-    direction: 'asc' | 'desc';
+    direction: "asc" | "desc";
   }>({
-    key: 'created_at',
-    direction: 'desc'
+    key: "created_at",
+    direction: "desc",
   });
-  const [processPaymentData, setProcessPaymentData] = useState<ProcessPaymentData>({
-    method: 'Cash',
-    transaction_ref: '',
-    notes: ''
-  });
+  const [processPaymentData, setProcessPaymentData] =
+    useState<ProcessPaymentData>({
+      method: "Cash",
+      transaction_ref: "",
+      notes: "",
+    });
 
   // Helper: read stored token from localStorage
   const getStoredToken = (): string | null => {
-    return localStorage.getItem('token');
+    return localStorage.getItem("token");
   };
 
   // Fetch payments data
-  const fetchPayments = async () => {
+  const fetchPayments = useCallback(async () => {
     setLoading(true);
-    setError('');
-    try {
-     const token = await auth.currentUser.getIdToken();
-
-const response = await fetch(`${API_BASE_URL}/api/supervisor/payments`, {
-  headers: {
-    'Authorization': `Bearer ${token}`,
-    'Accept': 'application/json'
-  }
-});
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch payments');
-      }
-
-      const data = await response.json();
-      if (data.success) {
-        setPayments(data.data);
-      } else {
-        throw new Error(data.message || 'Failed to fetch payments');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Fetch payment statistics
-  const fetchPaymentStats = async () => {
+    setError("");
     try {
       const token = getStoredToken();
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
 
-      const response = await fetch(`${API_BASE_URL}/api/supervisor/payments/stats`, {
+      const response = await fetch(`${API_BASE_URL}/supervisor/payments`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json'
-        }
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch payment statistics');
+        const errorText = await response.text();
+        throw new Error(
+          `Failed to fetch payments: ${response.status} ${errorText}`
+        );
+      }
+
+      const data = await response.json();
+
+      if (data.success) {
+        setPayments(data.data);
+      } else {
+        throw new Error(data.message || "Failed to fetch payments");
+      }
+    } catch (err) {
+      console.error("Error in fetchPayments:", err);
+      setError(err instanceof Error ? err.message : "An error occurred");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Fetch payment statistics
+  const fetchPaymentStats = useCallback(async () => {
+    try {
+      const token = getStoredToken();
+      if (!token) {
+        throw new Error("No authentication token found");
+      }
+
+      const response = await fetch(
+        `${API_BASE_URL}/supervisor/payments/stats`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch payment statistics");
       }
 
       const data = await response.json();
       if (data.success) {
-        const stats = data.data.reduce((acc: PaymentStats, curr: any) => {
-          const amount = parseFloat(curr.total_amount) || 0;
-          if (curr.status === 'Paid') {
-            acc.paidAmount = amount;
-          } else {
-            acc.pendingAmount = amount;
-          }
-          acc.totalRevenue = acc.paidAmount + acc.pendingAmount;
-          return acc;
-        }, { totalRevenue: 0, paidAmount: 0, pendingAmount: 0 });
+        const stats = data.data.reduce(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (acc: PaymentStats, curr: any) => {
+            const amount = parseFloat(curr.total_amount) || 0;
+            if (curr.status === "Paid") {
+              acc.paidAmount = amount;
+            } else {
+              acc.pendingAmount = amount;
+            }
+            acc.totalRevenue = acc.paidAmount + acc.pendingAmount;
+            return acc;
+          },
+          { totalRevenue: 0, paidAmount: 0, pendingAmount: 0 }
+        );
         setStats(stats);
       }
     } catch (err) {
-      console.error('Error fetching payment stats:', err);
+      console.error("Error fetching payment stats:", err);
     }
-  };
+  }, []);
 
   // Process payment
   const handleProcessPayment = async () => {
     if (!selectedPayment) return;
-    
+
     try {
       const token = getStoredToken();
       if (!token) {
-        throw new Error('No authentication token found');
+        throw new Error("No authentication token found");
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/supervisor/payments/${selectedPayment.payment_id}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          status: 'Paid',
-          ...processPaymentData
-        })
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/supervisor/payments/${selectedPayment.payment_id}`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            status: "Paid",
+            ...processPaymentData,
+          }),
+        }
+      );
 
       if (!response.ok) {
-        throw new Error('Failed to process payment');
+        throw new Error("Failed to process payment");
       }
 
       const data = await response.json();
@@ -187,26 +197,28 @@ const response = await fetch(`${API_BASE_URL}/api/supervisor/payments`, {
         setShowProcessModal(false);
         setSelectedPayment(null);
         setProcessPaymentData({
-          method: 'Cash',
-          transaction_ref: '',
-          notes: ''
+          method: "Cash",
+          transaction_ref: "",
+          notes: "",
         });
         fetchPayments();
         fetchPaymentStats();
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to process payment');
+      setError(
+        err instanceof Error ? err.message : "Failed to process payment"
+      );
     }
   };
 
   // Export payments
-  const handleExport = async (format: 'csv' | 'pdf') => {
+  const handleExport = async (format: "csv" | "pdf") => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/supervisor/payments`, {
-  headers: {
-    'Accept': 'application/json'
-  }
-});
+      const response = await fetch(`${API_BASE_URL}/supervisor/payments`, {
+        headers: {
+          Accept: "application/json",
+        },
+      });
 
       if (!response.ok) {
         throw new Error(`Failed to export payments as ${format}`);
@@ -214,15 +226,21 @@ const response = await fetch(`${API_BASE_URL}/api/supervisor/payments`, {
 
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
-      a.download = `payments-${new Date().toISOString().split('T')[0]}.${format}`;
+      a.download = `payments-${
+        new Date().toISOString().split("T")[0]
+      }.${format}`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
     } catch (err) {
-      setError(err instanceof Error ? err.message : `Failed to export payments as ${format}`);
+      setError(
+        err instanceof Error
+          ? err.message
+          : `Failed to export payments as ${format}`
+      );
     }
     setShowExportModal(false);
   };
@@ -231,25 +249,27 @@ const response = await fetch(`${API_BASE_URL}/api/supervisor/payments`, {
   useEffect(() => {
     fetchPayments();
     fetchPaymentStats();
-  }, []);
+  }, [fetchPayments, fetchPaymentStats]);
 
   // Filter and sort payments
   const filteredAndSortedPayments = payments
-    .filter(payment => {
-      const matchesSearch = searchTerm === '' || 
-        `${payment.parent_first_name} ${payment.parent_last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        `${payment.child_first_name} ${payment.child_last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        payment.payment_id.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      const matchesStatus = statusFilter === 'all' || payment.status === statusFilter;
-      
+    .filter((payment) => {
+      const matchesSearch =
+        searchTerm === "" ||
+        payment.parent_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        payment.child_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        payment.payment_id.toString().includes(searchTerm);
+
+      const matchesStatus =
+        statusFilter === "all" || payment.status === statusFilter;
+
       return matchesSearch && matchesStatus;
     })
     .sort((a, b) => {
       const aValue = a[sortConfig.key];
       const bValue = b[sortConfig.key];
-      
-      if (sortConfig.direction === 'asc') {
+
+      if (sortConfig.direction === "asc") {
         return aValue < bValue ? -1 : 1;
       } else {
         return aValue > bValue ? -1 : 1;
@@ -257,7 +277,9 @@ const response = await fetch(`${API_BASE_URL}/api/supervisor/payments`, {
     });
 
   // Pagination
-  const totalPages = Math.ceil(filteredAndSortedPayments.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(
+    filteredAndSortedPayments.length / ITEMS_PER_PAGE
+  );
   const paginatedPayments = filteredAndSortedPayments.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
@@ -265,17 +287,17 @@ const response = await fetch(`${API_BASE_URL}/api/supervisor/payments`, {
 
   // Format currency
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-LK', {
-      style: 'currency',
-      currency: 'LKR'
+    return new Intl.NumberFormat("en-LK", {
+      style: "currency",
+      currency: "LKR",
     }).format(amount);
   };
 
   // Sort handler
   const handleSort = (key: keyof Payment) => {
-    setSortConfig(prev => ({
+    setSortConfig((prev) => ({
       key,
-      direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
+      direction: prev.key === key && prev.direction === "asc" ? "desc" : "asc",
     }));
   };
 
@@ -290,18 +312,18 @@ const response = await fetch(`${API_BASE_URL}/api/supervisor/payments`, {
             </span>
           </h1>
           <p className="text-sm text-gray-500 mt-1">
-            {loading ? 'Loading...' : `${payments.length} total payments`}
+            {loading ? "Loading..." : `${payments.length} total payments`}
           </p>
         </div>
         <div className="flex space-x-3">
-          <button 
+          <button
             onClick={() => setShowExportModal(true)}
             className="btn-outline"
           >
             <Download className="w-4 h-4 mr-2" />
             Export
           </button>
-          <button 
+          <button
             onClick={() => {
               fetchPayments();
               fetchPaymentStats();
@@ -309,7 +331,7 @@ const response = await fetch(`${API_BASE_URL}/api/supervisor/payments`, {
             className="btn-primary"
             disabled={loading}
           >
-            <CreditCard className="w-4 h-4 mr-2" />
+            
             Refresh
           </button>
         </div>
@@ -323,8 +345,8 @@ const response = await fetch(`${API_BASE_URL}/api/supervisor/payments`, {
             <h3 className="text-sm font-medium text-red-800">Error</h3>
             <p className="text-sm text-red-700 mt-1">{error}</p>
           </div>
-          <button 
-            onClick={() => setError('')}
+          <button
+            onClick={() => setError("")}
             className="text-red-400 hover:text-red-500"
           >
             <X className="w-5 h-5" />
@@ -340,21 +362,27 @@ const response = await fetch(`${API_BASE_URL}/api/supervisor/payments`, {
               <DollarSign className="text-indigo-600 mr-2" />
               <h3 className="font-medium">Total Revenue</h3>
             </div>
-            <p className="text-2xl font-bold mt-2">{formatCurrency(stats.totalRevenue)}</p>
+            <p className="text-2xl font-bold mt-2">
+              {formatCurrency(stats.totalRevenue)}
+            </p>
           </div>
           <div className="bg-green-50 p-4 rounded-lg">
             <div className="flex items-center">
               <CheckCircle className="text-green-600 mr-2" />
               <h3 className="font-medium">Paid</h3>
             </div>
-            <p className="text-2xl font-bold mt-2">{formatCurrency(stats.paidAmount)}</p>
+            <p className="text-2xl font-bold mt-2">
+              {formatCurrency(stats.paidAmount)}
+            </p>
           </div>
           <div className="bg-yellow-50 p-4 rounded-lg">
             <div className="flex items-center">
               <Clock className="text-yellow-600 mr-2" />
               <h3 className="font-medium">Pending</h3>
             </div>
-            <p className="text-2xl font-bold mt-2">{formatCurrency(stats.pendingAmount)}</p>
+            <p className="text-2xl font-bold mt-2">
+              {formatCurrency(stats.pendingAmount)}
+            </p>
           </div>
         </div>
 
@@ -370,7 +398,7 @@ const response = await fetch(`${API_BASE_URL}/api/supervisor/payments`, {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          
+
           <div className="flex space-x-2">
             <div className="relative">
               <button
@@ -378,23 +406,29 @@ const response = await fetch(`${API_BASE_URL}/api/supervisor/payments`, {
                 onClick={() => setShowFilterDropdown(!showFilterDropdown)}
               >
                 <Filter className="w-4 h-4 mr-2" />
-                {statusFilter === 'all' ? 'All Status' : statusFilter}
+                {statusFilter === "all"
+                  ? "All Status"
+                  : statusFilter === "paid"
+                  ? "Paid"
+                  : "Pending"}
                 {showFilterDropdown ? (
                   <ChevronUp className="w-4 h-4 ml-2" />
                 ) : (
                   <ChevronDown className="w-4 h-4 ml-2" />
                 )}
               </button>
-              
+
               {showFilterDropdown && (
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-200">
                   <div className="p-2 space-y-1">
                     <button
                       className={`w-full text-left px-4 py-2 text-sm rounded hover:bg-gray-50 ${
-                        statusFilter === 'all' ? 'bg-indigo-50 text-indigo-600' : ''
+                        statusFilter === "all"
+                          ? "bg-indigo-50 text-indigo-600"
+                          : ""
                       }`}
                       onClick={() => {
-                        setStatusFilter('all');
+                        setStatusFilter("all");
                         setShowFilterDropdown(false);
                       }}
                     >
@@ -402,10 +436,12 @@ const response = await fetch(`${API_BASE_URL}/api/supervisor/payments`, {
                     </button>
                     <button
                       className={`w-full text-left px-4 py-2 text-sm rounded hover:bg-gray-50 ${
-                        statusFilter === 'Paid' ? 'bg-indigo-50 text-indigo-600' : ''
+                        statusFilter === "paid"
+                          ? "bg-indigo-50 text-indigo-600"
+                          : ""
                       }`}
                       onClick={() => {
-                        setStatusFilter('Paid');
+                        setStatusFilter("paid");
                         setShowFilterDropdown(false);
                       }}
                     >
@@ -413,10 +449,12 @@ const response = await fetch(`${API_BASE_URL}/api/supervisor/payments`, {
                     </button>
                     <button
                       className={`w-full text-left px-4 py-2 text-sm rounded hover:bg-gray-50 ${
-                        statusFilter === 'Pending' ? 'bg-indigo-50 text-indigo-600' : ''
+                        statusFilter === "pending"
+                          ? "bg-indigo-50 text-indigo-600"
+                          : ""
                       }`}
                       onClick={() => {
-                        setStatusFilter('Pending');
+                        setStatusFilter("pending");
                         setShowFilterDropdown(false);
                       }}
                     >
@@ -434,17 +472,18 @@ const response = await fetch(`${API_BASE_URL}/api/supervisor/payments`, {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th 
+                <th
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('payment_id')}
+                  onClick={() => handleSort("payment_id")}
                 >
                   <div className="flex items-center">
                     Payment ID
-                    {sortConfig.key === 'payment_id' && (
-                      sortConfig.direction === 'asc' ? 
-                        <ChevronUp className="ml-1 w-4 h-4" /> : 
+                    {sortConfig.key === "payment_id" &&
+                      (sortConfig.direction === "asc" ? (
+                        <ChevronUp className="ml-1 w-4 h-4" />
+                      ) : (
                         <ChevronDown className="ml-1 w-4 h-4" />
-                    )}
+                      ))}
                   </div>
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -453,43 +492,46 @@ const response = await fetch(`${API_BASE_URL}/api/supervisor/payments`, {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Child
                 </th>
-                <th 
+                <th
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('amount')}
+                  onClick={() => handleSort("amount")}
                 >
                   <div className="flex items-center">
                     Amount
-                    {sortConfig.key === 'amount' && (
-                      sortConfig.direction === 'asc' ? 
-                        <ChevronUp className="ml-1 w-4 h-4" /> : 
+                    {sortConfig.key === "amount" &&
+                      (sortConfig.direction === "asc" ? (
+                        <ChevronUp className="ml-1 w-4 h-4" />
+                      ) : (
                         <ChevronDown className="ml-1 w-4 h-4" />
-                    )}
+                      ))}
                   </div>
                 </th>
-                <th 
+                <th
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('created_at')}
+                  onClick={() => handleSort("created_at")}
                 >
                   <div className="flex items-center">
                     Date
-                    {sortConfig.key === 'created_at' && (
-                      sortConfig.direction === 'asc' ? 
-                        <ChevronUp className="ml-1 w-4 h-4" /> : 
+                    {sortConfig.key === "created_at" &&
+                      (sortConfig.direction === "asc" ? (
+                        <ChevronUp className="ml-1 w-4 h-4" />
+                      ) : (
                         <ChevronDown className="ml-1 w-4 h-4" />
-                    )}
+                      ))}
                   </div>
                 </th>
-                <th 
+                <th
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('status')}
+                  onClick={() => handleSort("status")}
                 >
                   <div className="flex items-center">
                     Status
-                    {sortConfig.key === 'status' && (
-                      sortConfig.direction === 'asc' ? 
-                        <ChevronUp className="ml-1 w-4 h-4" /> : 
+                    {sortConfig.key === "status" &&
+                      (sortConfig.direction === "asc" ? (
+                        <ChevronUp className="ml-1 w-4 h-4" />
+                      ) : (
                         <ChevronDown className="ml-1 w-4 h-4" />
-                    )}
+                      ))}
                   </div>
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -513,32 +555,37 @@ const response = await fetch(`${API_BASE_URL}/api/supervisor/payments`, {
                       {payment.payment_id}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {`${payment.parent_first_name} ${payment.parent_last_name}`}
+                      {payment.parent_name}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {`${payment.child_first_name} ${payment.child_last_name}`}
+                      {payment.child_name || `Child ${payment.child_id}`}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatCurrency(payment.amount)}
+                      {formatCurrency(parseFloat(payment.amount))}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(payment.created_at).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric'
-                      })}
+                      {new Date(payment.created_at).toLocaleDateString(
+                        "en-US",
+                        {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        }
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 text-xs rounded-full ${
-                        payment.status === 'Paid' 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {payment.status}
+                      <span
+                        className={`px-2 py-1 text-xs rounded-full ${
+                          payment.status === "paid"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-yellow-100 text-yellow-800"
+                        }`}
+                      >
+                        {payment.status === "paid" ? "Paid" : "Pending"}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      {payment.status === 'Pending' && (
+                      {payment.status === "pending" && (
                         <button
                           onClick={() => {
                             setSelectedPayment(payment);
@@ -554,7 +601,10 @@ const response = await fetch(`${API_BASE_URL}/api/supervisor/payments`, {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={7} className="px-6 py-4 text-center text-sm text-gray-500">
+                  <td
+                    colSpan={7}
+                    className="px-6 py-4 text-center text-sm text-gray-500"
+                  >
                     No payments found
                   </td>
                 </tr>
@@ -568,14 +618,16 @@ const response = await fetch(`${API_BASE_URL}/api/supervisor/payments`, {
           <div className="flex items-center justify-between border-t border-gray-200 px-4 py-3 sm:px-6 mt-4">
             <div className="flex flex-1 justify-between sm:hidden">
               <button
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
                 className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
               >
                 Previous
               </button>
               <button
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                onClick={() =>
+                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                }
                 disabled={currentPage === totalPages}
                 className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
               >
@@ -585,21 +637,33 @@ const response = await fetch(`${API_BASE_URL}/api/supervisor/payments`, {
             <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm text-gray-700">
-                  Showing{' '}
-                  <span className="font-medium">{((currentPage - 1) * ITEMS_PER_PAGE) + 1}</span>
-                  {' '}to{' '}
+                  Showing{" "}
                   <span className="font-medium">
-                    {Math.min(currentPage * ITEMS_PER_PAGE, filteredAndSortedPayments.length)}
-                  </span>
-                  {' '}of{' '}
-                  <span className="font-medium">{filteredAndSortedPayments.length}</span>
-                  {' '}results
+                    {(currentPage - 1) * ITEMS_PER_PAGE + 1}
+                  </span>{" "}
+                  to{" "}
+                  <span className="font-medium">
+                    {Math.min(
+                      currentPage * ITEMS_PER_PAGE,
+                      filteredAndSortedPayments.length
+                    )}
+                  </span>{" "}
+                  of{" "}
+                  <span className="font-medium">
+                    {filteredAndSortedPayments.length}
+                  </span>{" "}
+                  results
                 </p>
               </div>
               <div>
-                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                <nav
+                  className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
+                  aria-label="Pagination"
+                >
                   <button
-                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.max(prev - 1, 1))
+                    }
                     disabled={currentPage === 1}
                     className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
                   >
@@ -612,15 +676,17 @@ const response = await fetch(`${API_BASE_URL}/api/supervisor/payments`, {
                       onClick={() => setCurrentPage(idx + 1)}
                       className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
                         currentPage === idx + 1
-                          ? 'z-10 bg-indigo-50 border-indigo-500 text-indigo-600'
-                          : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                          ? "z-10 bg-indigo-50 border-indigo-500 text-indigo-600"
+                          : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
                       }`}
                     >
                       {idx + 1}
                     </button>
                   ))}
                   <button
-                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                    }
                     disabled={currentPage === totalPages}
                     className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
                   >
@@ -639,7 +705,9 @@ const response = await fetch(`${API_BASE_URL}/api/supervisor/payments`, {
         <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-md w-full p-6">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-gray-900">Process Payment</h2>
+              <h2 className="text-xl font-bold text-gray-900">
+                Process Payment
+              </h2>
               <button onClick={() => setShowProcessModal(false)}>
                 <X className="w-6 h-6 text-gray-400 hover:text-gray-500" />
               </button>
@@ -647,28 +715,36 @@ const response = await fetch(`${API_BASE_URL}/api/supervisor/payments`, {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Parent</label>
+                <label className="block text-sm font-medium text-gray-700">
+                  Parent
+                </label>
                 <p className="mt-1 text-sm text-gray-900">
-                  {`${selectedPayment.parent_first_name} ${selectedPayment.parent_last_name}`}
+                  {selectedPayment.parent_name}
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">Amount</label>
+                <label className="block text-sm font-medium text-gray-700">
+                  Amount
+                </label>
                 <p className="mt-1 text-sm text-gray-900">
-                  {formatCurrency(selectedPayment.amount)}
+                  {formatCurrency(parseFloat(selectedPayment.amount))}
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">Payment Method</label>
+                <label className="block text-sm font-medium text-gray-700">
+                  Payment Method
+                </label>
                 <select
                   className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
                   value={processPaymentData.method}
-                  onChange={(e) => setProcessPaymentData(prev => ({
-                    ...prev,
-                    method: e.target.value as ProcessPaymentData['method']
-                  }))}
+                  onChange={(e) =>
+                    setProcessPaymentData((prev) => ({
+                      ...prev,
+                      method: e.target.value as ProcessPaymentData["method"],
+                    }))
+                  }
                 >
                   <option value="Cash">Cash</option>
                   <option value="Card">Card</option>
@@ -684,24 +760,30 @@ const response = await fetch(`${API_BASE_URL}/api/supervisor/payments`, {
                   type="text"
                   className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                   value={processPaymentData.transaction_ref}
-                  onChange={(e) => setProcessPaymentData(prev => ({
-                    ...prev,
-                    transaction_ref: e.target.value
-                  }))}
+                  onChange={(e) =>
+                    setProcessPaymentData((prev) => ({
+                      ...prev,
+                      transaction_ref: e.target.value,
+                    }))
+                  }
                   placeholder="Enter transaction reference"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">Notes</label>
+                <label className="block text-sm font-medium text-gray-700">
+                  Notes
+                </label>
                 <textarea
                   rows={3}
                   className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                   value={processPaymentData.notes}
-                  onChange={(e) => setProcessPaymentData(prev => ({
-                    ...prev,
-                    notes: e.target.value
-                  }))}
+                  onChange={(e) =>
+                    setProcessPaymentData((prev) => ({
+                      ...prev,
+                      notes: e.target.value,
+                    }))
+                  }
                   placeholder="Add any additional notes"
                 />
               </div>
@@ -719,7 +801,7 @@ const response = await fetch(`${API_BASE_URL}/api/supervisor/payments`, {
                 className="btn-primary"
                 disabled={loading}
               >
-                {loading ? 'Processing...' : 'Process Payment'}
+                {loading ? "Processing..." : "Process Payment"}
               </button>
             </div>
           </div>
@@ -731,7 +813,9 @@ const response = await fetch(`${API_BASE_URL}/api/supervisor/payments`, {
         <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-md w-full p-6">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-gray-900">Export Payments</h2>
+              <h2 className="text-xl font-bold text-gray-900">
+                Export Payments
+              </h2>
               <button onClick={() => setShowExportModal(false)}>
                 <X className="w-6 h-6 text-gray-400 hover:text-gray-500" />
               </button>
@@ -744,20 +828,24 @@ const response = await fetch(`${API_BASE_URL}/api/supervisor/payments`, {
 
               <div className="grid grid-cols-2 gap-4">
                 <button
-                  onClick={() => handleExport('csv')}
+                  onClick={() => handleExport("csv")}
                   className="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:border-indigo-500 hover:bg-indigo-50"
                 >
                   <FileText className="w-8 h-8 text-gray-400 mb-2" />
-                  <span className="text-sm font-medium text-gray-900">CSV Format</span>
+                  <span className="text-sm font-medium text-gray-900">
+                    CSV Format
+                  </span>
                   <span className="text-xs text-gray-500">Spreadsheet</span>
                 </button>
 
                 <button
-                  onClick={() => handleExport('pdf')}
+                  onClick={() => handleExport("pdf")}
                   className="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:border-indigo-500 hover:bg-indigo-50"
                 >
                   <FileText className="w-8 h-8 text-gray-400 mb-2" />
-                  <span className="text-sm font-medium text-gray-900">PDF Format</span>
+                  <span className="text-sm font-medium text-gray-900">
+                    PDF Format
+                  </span>
                   <span className="text-xs text-gray-500">Document</span>
                 </button>
               </div>
