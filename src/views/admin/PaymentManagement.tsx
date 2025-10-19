@@ -15,6 +15,9 @@ interface Payment {
   transaction_ref: string;
   notes: string | null;
   order_id: string;
+  status: 'paid' | 'unpaid';
+  parent_name?: string;
+  child_name?: string;
 }
 
 interface ApiResponse<T> {
@@ -26,7 +29,7 @@ interface ApiResponse<T> {
 // API endpoints
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001';
 const API_ENDPOINTS = {
-  PAYMENTS: `${API_BASE_URL}/api/payments`,
+  PAYMENTS: `${API_BASE_URL}/api/admin/payments`,  // Changed from /api/payment
 } as const;
 
 const PaymentManagement = () => {
@@ -104,7 +107,9 @@ const PaymentManagement = () => {
     direction: 'desc' 
   });
   const [activeFilter, setActiveFilter] = useState('all');
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState<'all' | 'paid' | 'unpaid'>('all');
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
+  const [showStatusFilterDropdown, setShowStatusFilterDropdown] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
   const [showExportModal, setShowExportModal] = useState(false);
@@ -116,8 +121,11 @@ const PaymentManagement = () => {
        payment.transaction_ref.toLowerCase().includes(searchTerm.toLowerCase()) ||
        payment.parent_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
        payment.child_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+       (payment.parent_name && payment.parent_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+       (payment.child_name && payment.child_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
        payment.method.toLowerCase().includes(searchTerm.toLowerCase())) &&
-      (activeFilter === 'all' || payment.method === activeFilter)
+      (activeFilter === 'all' || payment.method === activeFilter) &&
+      (paymentStatusFilter === 'all' || payment.status === paymentStatusFilter)
     )
     .sort((a, b) => {
       const key = sortConfig.key;
@@ -184,15 +192,22 @@ const PaymentManagement = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Payment Management</h1>
+          <h1 className="text-2xl font-bold text-gray-800">
+            <span className="bg-gradient-to-r from-[#4f46e5] to-[#7c73e6] bg-clip-text text-transparent">
+              Payment Management
+            </span>
+          </h1>
           <p className="text-sm text-gray-500 mt-1">
-            Total Payments: {filteredPayments.length} | Total Amount: {formatCurrency(filteredPayments.reduce((sum, p) => sum + p.amount, 0))}
+            Total: {filteredPayments.length} | 
+            Paid: {filteredPayments.filter(p => p.status === 'paid').length} | 
+            Unpaid: {filteredPayments.filter(p => p.status === 'unpaid').length} | 
+            Amount: {formatCurrency(filteredPayments.reduce((sum, p) => sum + p.amount, 0))}
           </p>
         </div>
         <div className="flex space-x-3 w-full sm:w-auto">
           <button 
             onClick={() => setShowExportModal(true)} 
-            className="btn-secondary"
+            className="bg-[#6339C0] text-white py-2 px-4 rounded-lg hover:bg-[#5227a3] transition-colors flex items-center"
           >
             <Download className="w-4 h-4 mr-2" />
             Export
@@ -224,13 +239,54 @@ const PaymentManagement = () => {
           </div>
           
           <div className="flex space-x-2">
+            {/* Payment Status Filter */}
+            <div className="dropdown relative">
+              <button
+                className="btn-outline flex items-center"
+                onClick={() => setShowStatusFilterDropdown((prev) => !prev)}
+              >
+                <Filter className="w-4 h-4 mr-2" />
+                Status: {paymentStatusFilter === 'all' ? 'All' : paymentStatusFilter === 'paid' ? 'Paid' : 'Unpaid'}
+                {showStatusFilterDropdown ? (
+                  <ChevronUp className="w-4 h-4 ml-2" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 ml-2" />
+                )}
+              </button>
+              {showStatusFilterDropdown && (
+                <div className="dropdown-menu absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-200">
+                  <div className="p-2 space-y-1">
+                    <button 
+                      className={`w-full text-left px-4 py-2 text-sm rounded ${paymentStatusFilter === 'all' ? 'bg-[#f3eeff] text-[#6339C0]' : 'hover:bg-gray-50'}`}
+                      onClick={() => { setPaymentStatusFilter('all'); setShowStatusFilterDropdown(false); }}
+                    >
+                      All Status
+                    </button>
+                    <button 
+                      className={`w-full text-left px-4 py-2 text-sm rounded ${paymentStatusFilter === 'paid' ? 'bg-[#f3eeff] text-[#6339C0]' : 'hover:bg-gray-50'}`}
+                      onClick={() => { setPaymentStatusFilter('paid'); setShowStatusFilterDropdown(false); }}
+                    >
+                      ✓ Paid
+                    </button>
+                    <button 
+                      className={`w-full text-left px-4 py-2 text-sm rounded ${paymentStatusFilter === 'unpaid' ? 'bg-[#f3eeff] text-[#6339C0]' : 'hover:bg-gray-50'}`}
+                      onClick={() => { setPaymentStatusFilter('unpaid'); setShowStatusFilterDropdown(false); }}
+                    >
+                      ✗ Unpaid
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {/* Payment Method Filter */}
             <div className="dropdown relative">
               <button
                 className="btn-outline flex items-center"
                 onClick={() => setShowFilterDropdown((prev) => !prev)}
               >
                 <Filter className="w-4 h-4 mr-2" />
-                Filter by Method
+                Method: {activeFilter === 'all' ? 'All' : activeFilter}
                 {showFilterDropdown ? (
                   <ChevronUp className="w-4 h-4 ml-2" />
                 ) : (
@@ -272,6 +328,9 @@ const PaymentManagement = () => {
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Order ID
                 </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
                 <th 
                   scope="col" 
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
@@ -301,10 +360,10 @@ const PaymentManagement = () => {
                   </div>
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Parent ID
+                  Parent
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Child ID
+                  Child
                 </th>
                 <th 
                   scope="col" 
@@ -319,9 +378,6 @@ const PaymentManagement = () => {
                         <ChevronDown className="ml-1 w-4 h-4" />
                     )}
                   </div>
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Transaction Ref
                 </th>
                 <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
@@ -341,6 +397,15 @@ const PaymentManagement = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {payment.order_id}
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                        payment.status === 'paid' 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {payment.status === 'paid' ? '✓ Paid' : '✗ Unpaid'}
+                      </span>
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {formatDate(payment.created_at)}
                     </td>
@@ -348,18 +413,17 @@ const PaymentManagement = () => {
                       {formatCurrency(payment.amount)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {payment.parent_id}
+                      <div>{payment.parent_name || 'N/A'}</div>
+                      <div className="text-xs text-gray-400">ID: {payment.parent_id}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {payment.child_id}
+                      <div>{payment.child_name || 'N/A'}</div>
+                      <div className="text-xs text-gray-400">ID: {payment.child_id}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
                         {payment.method}
                       </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {payment.transaction_ref}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <button
@@ -473,14 +537,28 @@ const PaymentManagement = () => {
                   
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <div className="flex items-center mb-2">
+                      <span className="w-5 h-5 text-gray-500 mr-2">●</span>
+                      <h4 className="text-sm font-medium text-gray-700">Payment Status</h4>
+                    </div>
+                    <span className={`inline-block px-3 py-1 text-sm font-semibold rounded-full ${
+                      selectedPayment.status === 'paid' 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-red-100 text-red-800'
+                    }`}>
+                      {selectedPayment.status === 'paid' ? '✓ Paid' : '✗ Unpaid'}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <div className="flex items-center mb-2">
                       <DollarSign className="w-5 h-5 text-gray-500 mr-2" />
                       <h4 className="text-sm font-medium text-gray-700">Amount</h4>
                     </div>
                     <p className="text-lg font-bold text-gray-900">{formatCurrency(selectedPayment.amount)}</p>
                   </div>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <div className="flex items-center mb-2">
                       <Calendar className="w-5 h-5 text-gray-500 mr-2" />
@@ -488,7 +566,9 @@ const PaymentManagement = () => {
                     </div>
                     <p className="text-sm text-gray-900">{formatDate(selectedPayment.created_at)}</p>
                   </div>
-                  
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <div className="flex items-center mb-2">
                       <CreditCard className="w-5 h-5 text-gray-500 mr-2" />
@@ -496,23 +576,33 @@ const PaymentManagement = () => {
                     </div>
                     <p className="text-sm text-gray-900">{selectedPayment.method}</p>
                   </div>
+                  
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <div className="flex items-center mb-2">
+                      <CreditCard className="w-5 h-5 text-gray-500 mr-2" />
+                      <h4 className="text-sm font-medium text-gray-700">Transaction Reference</h4>
+                    </div>
+                    <p className="text-sm text-gray-900 font-mono">{selectedPayment.transaction_ref}</p>
+                  </div>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <div className="flex items-center mb-2">
                       <User className="w-5 h-5 text-gray-500 mr-2" />
-                      <h4 className="text-sm font-medium text-gray-700">Parent ID</h4>
+                      <h4 className="text-sm font-medium text-gray-700">Parent</h4>
                     </div>
-                    <p className="text-sm text-gray-900">{selectedPayment.parent_id}</p>
+                    <p className="text-sm text-gray-900 font-medium">{selectedPayment.parent_name || 'N/A'}</p>
+                    <p className="text-xs text-gray-500 mt-1">ID: {selectedPayment.parent_id}</p>
                   </div>
                   
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <div className="flex items-center mb-2">
                       <User className="w-5 h-5 text-gray-500 mr-2" />
-                      <h4 className="text-sm font-medium text-gray-700">Child ID</h4>
+                      <h4 className="text-sm font-medium text-gray-700">Child</h4>
                     </div>
-                    <p className="text-sm text-gray-900">{selectedPayment.child_id}</p>
+                    <p className="text-sm text-gray-900 font-medium">{selectedPayment.child_name || 'N/A'}</p>
+                    <p className="text-xs text-gray-500 mt-1">ID: {selectedPayment.child_id}</p>
                   </div>
                 </div>
                 
@@ -532,14 +622,6 @@ const PaymentManagement = () => {
                     </div>
                     <p className="text-sm text-gray-900">{selectedPayment.month}</p>
                   </div>
-                </div>
-                
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <div className="flex items-center mb-2">
-                    <CreditCard className="w-5 h-5 text-gray-500 mr-2" />
-                    <h4 className="text-sm font-medium text-gray-700">Transaction Reference</h4>
-                  </div>
-                  <p className="text-sm text-gray-900 font-mono">{selectedPayment.transaction_ref}</p>
                 </div>
                 
                 {selectedPayment.notes && (

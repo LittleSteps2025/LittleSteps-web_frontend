@@ -372,7 +372,11 @@ const ComplaintsManagement = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Complaints Management</h1>
+          <h1 className="text-2xl font-bold text-gray-800">
+            <span className="bg-gradient-to-r from-[#4f46e5] to-[#7c73e6] bg-clip-text text-transparent">
+              Complaints Management
+            </span>
+          </h1>
           <p className="text-sm text-gray-500 mt-1">
             {loading ? 'Loading...' : `Total: ${complaints.length} complaint${complaints.length !== 1 ? 's' : ''}`}
           </p>
@@ -381,7 +385,7 @@ const ComplaintsManagement = () => {
           <button 
             onClick={fetchComplaints}
             disabled={loading}
-            className="btn-outline"
+            className="bg-[#6339C0] text-white py-2 px-4 rounded-lg hover:bg-[#5227a3] transition-colors flex items-center disabled:opacity-50"
           >
             <svg className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -390,7 +394,7 @@ const ComplaintsManagement = () => {
           </button>
           <button 
             onClick={() => setShowExportModal(true)} 
-            className="btn-secondary"
+            className="bg-[#6339C0] text-white py-2 px-4 rounded-lg hover:bg-[#5227a3] transition-colors flex items-center"
           >
             <Download className="w-4 h-4 mr-2" />
             Export
