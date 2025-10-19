@@ -9,7 +9,6 @@ import 'react-toastify/dist/ReactToastify.css';
 
 
 const SupervisorDashboard = () => {
-  const navigate = useNavigate();
   const [stats, setStats] = useState<DashboardStats>({
     totalChildren: 0,
     activeParents: 0,
@@ -397,12 +396,7 @@ const SupervisorDashboard = () => {
                 <Calendar className="mr-2 text-[#4f46e5]" size={20} />
                 Upcoming Events
               </h2>
-              <button 
-                onClick={handleViewCalendar}
-                className="text-sm text-[#4f46e5] hover:underline"
-              >
-                View All Events
-              </button>
+              <button className="text-sm text-[#4f46e5] hover:underline">View Calendar</button>
             </div>
             {events.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -414,12 +408,9 @@ const SupervisorDashboard = () => {
                     {event.description && (
                       <p className="text-xs text-gray-400 mt-2 line-clamp-2">{event.description}</p>
                     )}
-                    <button 
-                      onClick={() => handleViewEventDetails(event.id)}
-                      className="mt-3 text-xs text-[#4f46e5] hover:underline font-medium"
-                    >
+                    <button className="mt-3 text-xs text-[#4f46e5] hover:underline">
                       View Details
-                    </button>
+                    </button> */}
                   </div>
                 ))}
               </div>

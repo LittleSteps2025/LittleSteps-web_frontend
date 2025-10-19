@@ -128,7 +128,9 @@ const SettingsPage = () => {
           <div className="flex justify-between items-center mb-8">
             <div>
               <h1 className="text-2xl font-bold text-gray-800">
-                {tabs.find(t => t.id === activeTab)?.name} Settings
+                <span className="bg-gradient-to-r from-[#4f46e5] to-[#7c73e6] bg-clip-text text-transparent">
+                  {tabs.find(t => t.id === activeTab)?.name} Settings
+                </span>
               </h1>
               <p className="text-gray-500">
                 Configure your daycare system {tabs.find(t => t.id === activeTab)?.name.toLowerCase()} preferences
@@ -139,7 +141,7 @@ const SettingsPage = () => {
               <button
                 onClick={handleSubmit}
                 disabled={isSaving}
-                className="btn-primary bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg font-medium flex items-center transition-colors"
+                className="bg-[#6339C0] text-white py-2 px-6 rounded-lg hover:bg-[#5227a3] transition-colors font-medium flex items-center disabled:opacity-50"
               >
                 {isSaving ? (
                   <>
@@ -700,11 +702,11 @@ const SettingsPage = () => {
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <button className="btn-primary bg-purple-600 hover:bg-purple-700 text-white">
+                  <button className="bg-[#6339C0] text-white py-2 px-4 rounded-lg hover:bg-[#5227a3] transition-colors flex items-center justify-center">
                     <Database className="w-4 h-4 mr-2" />
                     Create Backup Now
                   </button>
-                  <button className="btn-secondary border-purple-200 text-purple-700 hover:bg-purple-50">
+                  <button className="bg-[#6339C0] text-white py-2 px-4 rounded-lg hover:bg-[#5227a3] transition-colors flex items-center justify-center">
                     <Download className="w-4 h-4 mr-2" />
                     Download Latest Backup
                   </button>

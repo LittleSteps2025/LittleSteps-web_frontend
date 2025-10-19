@@ -4,8 +4,7 @@ import type { ReactNode } from 'react';
 
 interface User {
   id: number;
-  user_id: number; // Added for backend compatibility
-  firebaseUid: string;
+  user_id: number;
   name: string;
   email: string;
   role: 'admin' | 'supervisor' | 'teacher' | 'parent';

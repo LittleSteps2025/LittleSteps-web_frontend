@@ -127,6 +127,39 @@ const teacherApi = {
 
     return await response.json();
   },
+
+  // Update teacher
+  async updateTeacher(
+    id: number,
+    teacherData: Partial<CreateTeacherRequest>
+  ): Promise<ApiResponse<Teacher>> {
+    const response = await fetch(`${TEACHERS_API_URL}/teachers/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(teacherData),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  },
+
+  // Delete teacher
+  async deleteTeacher(id: number): Promise<ApiResponse<Teacher>> {
+    const response = await fetch(`${TEACHERS_API_URL}/teachers/${id}`, {
+      method: "DELETE",
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  },
 };
 
 const Teachers = () => {
@@ -235,9 +268,21 @@ const Teachers = () => {
     setIsLoading(true);
 
     try {
-      if (isEditMode) {
-        // For edit mode, you might want to implement an update endpoint
-        toast.info("Edit functionality not implemented yet");
+      if (isEditMode && currentTeacher) {
+        // Update existing teacher (exclude password from update)
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { password, ...updateData } = formData;
+        const response = await teacherApi.updateTeacher(
+          currentTeacher.id,
+          updateData
+        );
+        if (response.success) {
+          toast.success("Teacher updated successfully!");
+          closeModal();
+          fetchTeachers(); // Refresh the list
+        } else {
+          toast.error(response.message || "Failed to update teacher");
+        }
       } else {
         // Create new teacher
         const response = await teacherApi.createTeacher(formData);
@@ -259,9 +304,23 @@ const Teachers = () => {
 
   // Delete teacher function (placeholder)
   const deleteTeacher = async () => {
-    // You might want to implement a delete endpoint
-    toast.info("Delete functionality not implemented yet");
-    closeModal();
+    if (!currentTeacher) return;
+    setIsLoading(true);
+    try {
+      const response = await teacherApi.deleteTeacher(currentTeacher.id);
+      if (response.success) {
+        toast.success("Teacher deleted successfully!");
+        closeModal();
+        fetchTeachers(); // Refresh the list
+      } else {
+        toast.error(response.message || "Failed to delete teacher");
+      }
+    } catch (error) {
+      console.error("Error deleting teacher:", error);
+      toast.error("Failed to delete teacher");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Close all modals
