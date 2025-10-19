@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Search, Plus, Edit, Trash2, X, Calendar } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext'; // Assuming you have an auth context
+import { useState, useEffect, useCallback } from "react";
+import { Search, Plus, Edit, Trash2, X, Calendar } from "lucide-react";
+import { useAuth } from "../../context/AuthContext"; // Assuming you have an auth context
+import { API_BASE_URL } from "../../config/api";
 
 interface AuthUser {
   id: string | number;
@@ -11,13 +12,13 @@ interface AuthUser {
 }
 
 type Announcement = {
-   ann_id: string;
+  ann_id: string;
   title: string;
   details: string;
   date: string;
   time: string;
-  audience: 'All' | 'Teachers' | 'Parents';
-  type: 'announcement' | 'event'; // New field to distinguish
+  audience: "All" | "Teachers" | "Parents";
+  type: "announcement" | "event"; // Type field to distinguish
   created_at: string;
   attachment?: string;
   session_id?: string | number;
@@ -32,31 +33,45 @@ type Announcement = {
 
 // Audience mapping
 const audienceMap: { [key: number]: string } = {
-  1: 'All',
-  2: 'Teachers',
-  3: 'Parents',
+  1: "All",
+  2: "Teachers",
+  3: "Parents",
 };
 
 const audienceReverseMap = {
-  'All': 1,
-  'Teachers': 2,
-  'Parents': 3,
+  All: 1,
+  Teachers: 2,
+  Parents: 3,
 };
 
 // Toast notification component
-const Toast = ({ message, type, onClose }: { message: string; type: 'success' | 'error'; onClose: () => void }) => {
+const Toast = ({
+  message,
+  type,
+  onClose,
+}: {
+  message: string;
+  type: "success" | "error";
+  onClose: () => void;
+}) => {
   useEffect(() => {
     const timer = setTimeout(onClose, 3000);
     return () => clearTimeout(timer);
   }, [onClose]);
 
   return (
-    <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transition-all duration-300 ${
-      type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
-    }`}>
+    <div
+      className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transition-all duration-300 ${
+        type === "success" ? "bg-green-500 text-white" : "bg-red-500 text-white"
+      }`}
+    >
       <div className="flex items-center">
         <span>{message}</span>
-        <button onClick={onClose} className="ml-2 text-white hover:text-gray-200" title="Close notification">
+        <button
+          onClick={onClose}
+          className="ml-2 text-white hover:text-gray-200"
+          title="Close notification"
+        >
           <X className="w-4 h-4" />
         </button>
       </div>
@@ -66,51 +81,61 @@ const Toast = ({ message, type, onClose }: { message: string; type: 'success' | 
 
 const Announcements = () => {
   const { user } = useAuth() as { user: AuthUser | null };
-   // Get current user from auth context
+  // Get current user from auth context
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  const [filteredAnnouncements, setFilteredAnnouncements] = useState<Announcement[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [searchDate, setSearchDate] = useState('');
-  const [filterType, setFilterType] = useState<'all' | 'announcement' | 'event'>('all'); // New filter state
+  const [filteredAnnouncements, setFilteredAnnouncements] = useState<
+    Announcement[]
+  >([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchDate, setSearchDate] = useState("");
+  const [filterType, setFilterType] = useState<'all' | 'announcement' | 'event'>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [currentAnnouncement, setCurrentAnnouncement] = useState<Announcement | null>(null);
+  const [currentAnnouncement, setCurrentAnnouncement] =
+    useState<Announcement | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [formData, setFormData] = useState<Omit<Announcement, 'ann_id' | 'created_at' | 'session_id'>>({
-    title: '',
-    details: '',
-    date: '',
-    time: '',
-    audience: 'All',
-    type: 'announcement', // Default to announcement
-    user_id: '',
-    attachment: '',
+
+  const [formData, setFormData] = useState<
+    Omit<Announcement, "ann_id" | "created_at" | "session_id">
+  >({
+    title: "",
+    details: "",
+    date: new Date().toISOString().split("T")[0],
+    time: new Date().toTimeString().slice(0, 5), // Fix time format
+    audience: "All",
+    type: "announcement", // Default to announcement
+    user_id: "",
+    attachment: "",
+
   });
   const [isLoading, setIsLoading] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [toast, setToast] = useState<{
+    message: string;
+    type: "success" | "error";
+  } | null>(null);
 
   // API base URL
- const API_BASE_URL = 'http://localhost:5001/api/announcements';
+  const ANNOUNCEMENTS_API_URL = `${API_BASE_URL}/announcements`;
 
   // Format date and time for display
   const formatDateTime = (dateString: string) => {
     const date = new Date(dateString);
     return {
-      date: date.toLocaleDateString('en-US', { 
-        year: 'numeric', 
-        month: 'short', 
-        day: 'numeric' 
+      date: date.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
       }),
-      time: date.toLocaleTimeString('en-US', { 
-        hour: '2-digit', 
-        minute: '2-digit' 
-      })
+      time: date.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
     };
   };
 
   // Show toast notification
-  const showToast = (message: string, type: 'success' | 'error') => {
+  const showToast = (message: string, type: "success" | "error") => {
     setToast({ message, type });
   };
 
@@ -118,26 +143,23 @@ const Announcements = () => {
   const fetchAnnouncements = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(API_BASE_URL, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      if (!response.ok) throw new Error('Failed to fetch announcements');
+      const response = await fetch(ANNOUNCEMENTS_API_URL);
+      if (!response.ok) throw new Error("Failed to fetch announcements");
       const data = await response.json();
-      
+
       // Check if data is an array directly or nested in a data property
       const announcements = Array.isArray(data) ? data : data.data || [];
-      
+
       // Map the announcements
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const mappedAnnouncements = announcements.map((a: any) => ({
         ann_id: a.ann_id,
         title: a.title,
         details: a.details,
-        date: a.date || '',
-        time: a.time || '',
-        audience: audienceMap[Number(a.audience)] || 'All',
-        type: a.type || 'announcement', // Default to announcement if not specified
+        date: a.date,
+        time: a.time,
+        audience: audienceMap[Number(a.audience)] || "All",
+        type: a.type || "announcement", // Default to announcement
         created_at: a.created_at,
         attachment: a.attachment,
         session_id: a.session_id,
@@ -149,8 +171,8 @@ const Announcements = () => {
       setAnnouncements(mappedAnnouncements);
       setFilteredAnnouncements(mappedAnnouncements);
     } catch (error) {
-      console.error('Error fetching announcements:', error);
-      showToast('Failed to load announcements', 'error');
+      console.error("Error fetching announcements:", error);
+      showToast("Failed to load announcements", "error");
     } finally {
       setIsLoading(false);
       setIsSearching(false);
@@ -165,25 +187,25 @@ const Announcements = () => {
     }
 
     setIsSearching(true);
-    
+
     const timer = setTimeout(() => {
-      const filtered = announcements.filter(announcement => {
-        const termMatch = searchTerm 
-          ? announcement.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-            announcement.details.toLowerCase().includes(searchTerm.toLowerCase())
+      const filtered = announcements.filter((announcement) => {
+        const termMatch = searchTerm
+          ? announcement.title
+              .toLowerCase()
+              .includes(searchTerm.toLowerCase()) ||
+            announcement.details
+              .toLowerCase()
+              .includes(searchTerm.toLowerCase())
           : true;
-        
-        const dateMatch = searchDate 
-          ? announcement.date && announcement.date.includes(searchDate)
+
+        const dateMatch = searchDate
+          ? announcement.date.includes(searchDate)
           : true;
-        
-        const typeMatch = filterType === 'all' 
-          ? true 
-          : announcement.type === filterType;
-        
-        return termMatch && dateMatch && typeMatch;
+
+        return termMatch && dateMatch;
       });
-      
+
       setFilteredAnnouncements(filtered);
       setIsSearching(false);
     }, 300);
@@ -192,12 +214,14 @@ const Announcements = () => {
   }, [searchTerm, searchDate, filterType, announcements]);
 
   // Create announcement
-  const createAnnouncement = async (announcement: Omit<Announcement, 'ann_id' | 'created_at'>) => {
-    const response = await fetch(API_BASE_URL, {
-      method: 'POST',
+  const createAnnouncement = async (
+    announcement: Omit<Announcement, "ann_id" | "created_at">
+  ) => {
+    const response = await fetch(ANNOUNCEMENTS_API_URL, {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
       },
       body: JSON.stringify({
         ...announcement,
@@ -205,68 +229,76 @@ const Announcements = () => {
         time: announcement.time || null,
         published_by: {
           id: user?.id,
-          name: user?.name || 'Unknown',
-          role: user?.role || 'Admin'
+          name: user?.name || "Unknown",
+          role: user?.role || "Admin",
         },
         audience: audienceReverseMap[announcement.audience] || 1,
-      })
+      }),
     });
-    
+
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.message || 'Failed to create announcement');
+      throw new Error(error.message || "Failed to create announcement");
     }
-    
+
     return await response.json();
   };
 
   // Update announcement
-  const updateAnnouncement = async (id: string, announcement: Partial<Announcement>) => {
-    const sessionId = user?.session_id ? 
-      (typeof user.session_id === 'number' ? user.session_id : Number(user.session_id)) 
+  const updateAnnouncement = async (
+    id: string,
+    announcement: Partial<Announcement>
+  ) => {
+    const sessionId = user?.session_id
+      ? typeof user.session_id === "number"
+        ? user.session_id
+        : Number(user.session_id)
       : null;
-      
+
     const payload = {
       ...announcement,
-      audience: audienceReverseMap[announcement.audience as 'All' | 'Teachers' | 'Parents'] || 1,
+      audience:
+        audienceReverseMap[
+          announcement.audience as "All" | "Teachers" | "Parents"
+        ] || 1,
       session_id: sessionId,
     };
-    
+
     try {
-      const response = await fetch(`${API_BASE_URL}/${id}`, {
-        method: 'PUT',
+      const response = await fetch(`${ANNOUNCEMENTS_API_URL}/${id}`, {
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Failed to update announcement');
+        throw new Error(errorData.message || "Failed to update announcement");
       }
-      
+
       return await response.json();
     } catch (error) {
-      console.error('Update announcement error:', error);
+      console.error("Update announcement error:", error);
       throw error;
     }
   };
 
   // Delete announcement
   const deleteAnnouncement = async (id: string) => {
-    const response = await fetch(`${API_BASE_URL}/${id}`, {
-      method: 'DELETE',
+    const response = await fetch(`${ANNOUNCEMENTS_API_URL}/${id}`, {
+      method: "DELETE",
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      }
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
     });
-    
+
     if (!response.ok) {
-      throw new Error('Failed to delete announcement');
+      throw new Error("Failed to delete announcement");
     }
-    
+
     return await response.json();
   };
 
@@ -283,19 +315,23 @@ const Announcements = () => {
   // Update formData when user changes
   useEffect(() => {
     if (user?.id) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        user_id: String(user.id)
+        user_id: String(user.id),
       }));
     }
   }, [user]);
 
   // Handle input changes for form
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => {
     const { name, value } = e.target;
     setFormData({
       ...formData,
-      [name]: value
+      [name]: value,
     });
   };
 
@@ -304,14 +340,14 @@ const Announcements = () => {
     setIsModalOpen(true);
     setIsEditMode(false);
     setFormData({
-      title: '',
-      details: '',
-      date: '',
-      time: '',
-      audience: 'All',
-      type: 'announcement',
-      user_id: user?.id ? String(user.id) : '',
-      attachment: '',
+      title: "",
+      details: "",
+      date: new Date().toISOString().split("T")[0],
+      time: new Date().toTimeString().slice(0, 5), // Fix time format
+      audience: "All",
+      type: "announcement",
+      user_id: user?.id ? String(user.id) : "",
+      attachment: "",
     });
   };
 
@@ -327,8 +363,8 @@ const Announcements = () => {
       time: announcement.time,
       audience: announcement.audience,
       type: announcement.type,
-      user_id: announcement.user_id ? String(announcement.user_id) : '',
-      attachment: announcement.attachment || '',
+      user_id: announcement.user_id ? String(announcement.user_id) : "",
+      attachment: announcement.attachment || "",
     });
   };
 
@@ -353,24 +389,26 @@ const Announcements = () => {
       const itemType = formData.type === 'event' ? 'Event' : 'Announcement';
       if (isEditMode && currentAnnouncement) {
         result = await updateAnnouncement(currentAnnouncement.ann_id, {
-          ...formData
+          ...formData,
         });
-        setAnnouncements(announcements.map(a => a.ann_id === result.ann_id ? result : a));
-        showToast(`${itemType} updated successfully!`, 'success');
+        setAnnouncements(
+          announcements.map((a) => (a.ann_id === result.ann_id ? result : a))
+        );
+        showToast(`${itemType} updated successfully!`, "success");
       } else {
         result = await createAnnouncement({
-          ...formData
+          ...formData,
         });
         setAnnouncements([result, ...announcements]);
-        showToast(`${itemType} added successfully!`, 'success');
+        showToast(`${itemType} added successfully!`, "success");
       }
       closeModal();
       fetchAnnouncements();
     } catch (error: unknown) {
       if (error instanceof Error) {
-        showToast(error.message || 'An error occurred', 'error');
+        showToast(error.message || "An error occurred", "error");
       } else {
-        showToast('An error occurred', 'error');
+        showToast("An error occurred", "error");
       }
     }
   };
@@ -381,20 +419,25 @@ const Announcements = () => {
     try {
       const itemType = currentAnnouncement.type === 'event' ? 'Event' : 'Announcement';
       await deleteAnnouncement(currentAnnouncement.ann_id);
-      setAnnouncements(announcements.filter(a => a.ann_id !== currentAnnouncement.ann_id));
-      showToast(`${itemType} deleted successfully!`, 'success');
+      setAnnouncements(
+        announcements.filter((a) => a.ann_id !== currentAnnouncement.ann_id)
+      );
+      showToast(`${itemType} deleted successfully!`, "success");
       closeModal();
       fetchAnnouncements();
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to delete';
-      showToast(errorMessage, 'error');
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to delete";
+      showToast(errorMessage, "error");
     }
   };
 
   // Clear search filters
   const clearFilters = () => {
-    setSearchTerm('');
-    setSearchDate('');
+    setSearchTerm("");
+    setSearchDate("");
     setFilterType('all');
   };
 
@@ -419,7 +462,7 @@ const Announcements = () => {
 
       {/* Header */}
       <div className="flex justify-between items-center">
-       <h1 className="text-2xl font-bold text-gray-800 flex items-center">
+        <h1 className="text-2xl font-bold text-gray-800 flex items-center">
           <span className="bg-gradient-to-r from-[#4f46e5] to-[#7c73e6] bg-clip-text text-transparent">
             Announcements & Events
           </span>
@@ -470,21 +513,37 @@ const Announcements = () => {
       {/* Search and Add Announcement */}
       <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
         <div className="flex flex-col gap-4">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-3 text-gray-400" />
-            <input
-              type="text"
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-3 text-gray-400" />
+              <input
+                type="text"
                 placeholder="Search by topic or content..."
                 className="pl-10 pr-10 py-2 w-full border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
               {isSearching && (
                 <span className="absolute right-3 top-3">
-                  <svg className="animate-spin h-5 w-5 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+                  <svg
+                    className="animate-spin h-5 w-5 text-indigo-500"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v8z"
+                    ></path>
                   </svg>
                 </span>
               )}
@@ -498,22 +557,22 @@ const Announcements = () => {
                 value={searchDate}
                 onChange={(e) => setSearchDate(e.target.value)}
               />
+            </div>
+            <button
+              onClick={openAddModal}
+              className="btn-primary flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors whitespace-nowrap"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              New Post
+            </button>
           </div>
-          <button
-            onClick={openAddModal}
-            className="btn-primary flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors whitespace-nowrap"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            New Post
-          </button>
-          </div>
-          
           {(searchTerm || searchDate) && (
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-500">
                 Showing {filteredAnnouncements.length} results
                 {searchTerm && ` for "${searchTerm}"`}
-                {searchDate && ` on ${new Date(searchDate).toLocaleDateString()}`}
+                {searchDate &&
+                  ` on ${new Date(searchDate).toLocaleDateString()}`}
               </span>
               <button
                 onClick={clearFilters}
@@ -531,11 +590,16 @@ const Announcements = () => {
         {filteredAnnouncements.length > 0 ? (
           <div className="space-y-4">
             {filteredAnnouncements.map((announcement) => (
-              <div key={announcement.ann_id} className="p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
+              <div
+                key={announcement.ann_id}
+                className="p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow"
+              >
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <h3 className="text-lg font-medium text-gray-900">{announcement.title}</h3>
+                      <h3 className="text-lg font-medium text-gray-900">
+                        {announcement.title}
+                      </h3>
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         announcement.type === 'event' 
                           ? 'bg-purple-100 text-purple-800' 
@@ -544,7 +608,9 @@ const Announcements = () => {
                         {announcement.type === 'event' ? '📅 Event' : '📢 Announcement'}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-600 mt-1">{announcement.details}</p>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {announcement.details}
+                    </p>
                     <div className="mt-2 flex flex-wrap gap-2">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                         To: {announcement.audience}
@@ -589,13 +655,22 @@ const Announcements = () => {
                     </button>
                   )}
                 </div>
-                
-                {announcement.updated_at && (
-                  <div className="mt-2 text-xs text-gray-500">
-                    <span>Last updated: {formatDateTime(announcement.updated_at).date} at {formatDateTime(announcement.updated_at).time}</span>
+
+                <div className="mt-4 text-xs text-gray-500">
+                  <div className="flex items-center">
+                    {/* <Clock className="w-3 h-3 mr-1" />
+                    <span>Posted: {createdDateTime.date} at {createdDateTime.time}</span> */}
                   </div>
-                )}
-                
+                  {announcement.updated_at && (
+                    <div className="flex items-center mt-1">
+                      <span>
+                        Updated: {formatDateTime(announcement.updated_at).date}{" "}
+                        at {formatDateTime(announcement.updated_at).time}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
                 <div className="flex mt-4 space-x-3">
                   <button
                     onClick={() => openEditModal(announcement)}
@@ -618,10 +693,13 @@ const Announcements = () => {
         ) : (
           <div className="text-center py-10">
             <p className="text-gray-500">
-              {isSearching ? 'Searching...' : 
-               (searchTerm || searchDate || filterType !== 'all') ? 'No matching items found' : 'No announcements or events found'}
+              {isSearching
+                ? "Searching..."
+                : searchTerm || searchDate || filterType !== 'all'
+                ? "No matching items found"
+                : "No announcements or events found"}
             </p>
-            {(searchTerm || searchDate || filterType !== 'all') ? (
+            {searchTerm || searchDate || filterType !== 'all' ? (
               <button
                 onClick={clearFilters}
                 className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
@@ -629,13 +707,13 @@ const Announcements = () => {
                 Clear all filters
               </button>
             ) : (
-            <button
-              onClick={openAddModal}
-              className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Create New Post
-            </button>
+              <button
+                onClick={openAddModal}
+                className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Create New Post
+              </button>
             )}
           </div>
         )}
@@ -648,9 +726,9 @@ const Announcements = () => {
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold text-gray-800">
-                  {isEditMode ? 'Edit Announcement/Event' : 'New Announcement/Event'}
+                  {isEditMode ? "Edit Announcement/Event" : "New Announcement/Event"}
                 </h2>
-                <button 
+                <button
                   onClick={closeModal}
                   className="text-gray-400 hover:text-gray-500"
                   title="Close"
@@ -661,7 +739,9 @@ const Announcements = () => {
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Type*</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Type*
+                  </label>
                   <select
                     name="type"
                     value={formData.type}
@@ -680,7 +760,9 @@ const Announcements = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Title*</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Title*
+                  </label>
                   <input
                     type="text"
                     name="title"
@@ -694,7 +776,9 @@ const Announcements = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Details*</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Details*
+                  </label>
                   <textarea
                     name="details"
                     value={formData.details}
@@ -706,20 +790,22 @@ const Announcements = () => {
                   />
                 </div>
 
-                  <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Audience*</label>
-                    <select
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Audience*
+                  </label>
+                  <select
                     name="audience"
                     value={formData.audience}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      required
-                    >
-                      <option value="All">All</option>
-                      <option value="Teachers">Teachers</option>
-                      <option value="Parents">Parents</option>
-                    </select>
-                  </div>
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    required
+                  >
+                    <option value="All">All</option>
+                    <option value="Teachers">Teachers</option>
+                    <option value="Parents">Parents</option>
+                  </select>
+                </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -753,12 +839,14 @@ const Announcements = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Attachment (optional)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Attachment (optional)
+                  </label>
                   <input
                     type="file"
                     name="attachment"
                     accept="*"
-                    onChange={e => {
+                    onChange={(e) => {
                       const file = e.target.files && e.target.files[0];
                       if (file) {
                         setFormData({ ...formData, attachment: file.name });
@@ -767,7 +855,9 @@ const Announcements = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                   {formData.attachment && (
-                    <p className="mt-1 text-sm text-gray-500">Selected: {formData.attachment}</p>
+                    <p className="mt-1 text-sm text-gray-500">
+                      Selected: {formData.attachment}
+                    </p>
                   )}
                 </div>
 
@@ -783,7 +873,7 @@ const Announcements = () => {
                     type="submit"
                     className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
                   >
-                    {isEditMode ? 'Update' : 'Create'} {formData.type === 'event' ? 'Event' : 'Announcement'}
+                    {isEditMode ? "Update" : "Create"} {formData.type === 'event' ? 'Event' : 'Announcement'}
                   </button>
                 </div>
               </form>
@@ -798,15 +888,25 @@ const Announcements = () => {
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-gray-800">Confirm Deletion</h2>
-                <button onClick={closeModal} className="text-gray-400 hover:text-gray-500" title="Close">
+                <h2 className="text-xl font-bold text-gray-800">
+                  Confirm Deletion
+                </h2>
+                <button
+                  onClick={closeModal}
+                  className="text-gray-400 hover:text-gray-500"
+                  title="Close"
+                >
                   <X className="w-6 h-6" />
                   <span className="sr-only">Close</span>
                 </button>
               </div>
 
               <p className="mb-6 text-gray-600">
-                Are you sure you want to delete {currentAnnouncement?.type === 'event' ? 'event' : 'announcement'} <span className="font-semibold">"{currentAnnouncement?.title}"</span>? This action cannot be undone.
+                Are you sure you want to delete {currentAnnouncement?.type === 'event' ? 'event' : 'announcement'}{" "}
+                <span className="font-semibold">
+                  "{currentAnnouncement?.title}"
+                </span>
+                ? This action cannot be undone.
               </p>
 
               <div className="flex justify-end space-x-3">

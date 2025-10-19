@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { User, Edit, Plus, Search, X } from "lucide-react";
+import { User, Edit, Trash2, Plus, Search, X } from "lucide-react";
+import { API_BASE_URL } from "../../config/api";
 
 interface Student {
   id: string;
@@ -41,11 +42,10 @@ interface ClassGroup {
   group_name: string;
 }
 
-const API_URL = "http://localhost:5001/api/supervisors/child/";
-const GROUPS_API_URL = "http://localhost:5001/api/supervisors/child/groups"; // Correct groups endpoint
-const PACKAGES_API_URL = "http://localhost:5001/api/supervisors/child/packages"; // Placeholder for future packages API
-const CHECK_NIC_API_URL =
-  "http://localhost:5001/api/supervisors/child/check-nic"; // Placeholder for NIC check API
+const API_URL = `${API_BASE_URL}/supervisors/child/`;
+const GROUPS_API_URL = `${API_BASE_URL}/supervisors/child/groups`; // Correct groups endpoint
+const PACKAGES_API_URL = `${API_BASE_URL}/supervisors/child/packages`; // Placeholder for future packages API
+const CHECK_NIC_API_URL = `${API_BASE_URL}/supervisors/child/check-nic`; // Placeholder for NIC check API
 // Utility function to calculate age from date of birth
 const calculateAge = (dob: string): number => {
   if (!dob) return 0;
@@ -264,17 +264,16 @@ const updateStudent = async (student: Student): Promise<Student> => {
   console.log("Updating student with data:", student);
 
   // Ensure age is calculated from DOB if available
-  const ageFromDob = student.dob ? calculateAge(student.dob) : student.age;
 
   const res = await fetch(`${API_URL}${student.id}`, {
     method: "PUT",
-    headers: { 
+    headers: {
       "Content-Type": "application/json",
-      "Accept": "application/json"
+      Accept: "application/json",
     },
     body: JSON.stringify({
       name: student.name,
-      package_name: student.packageName || null
+      package_name: student.packageName || null,
     }),
   });
 
@@ -500,7 +499,7 @@ export default function Childrens() {
     try {
       if (editingId) {
         // Get current student data
-        const currentStudent = students.find(s => s.id === editingId);
+        const currentStudent = students.find((s) => s.id === editingId);
         if (!currentStudent) {
           throw new Error("Student not found");
         }
@@ -509,8 +508,8 @@ export default function Childrens() {
         const updateData: Student = {
           ...currentStudent, // Keep all existing data
           id: editingId,
-          name: form.name,        // Can edit name
-          packageName: form.packageName  // Can edit package
+          name: form.name, // Can edit name
+          packageName: form.packageName, // Can edit package
         };
 
         console.log("Sending update with data:", updateData);
@@ -674,7 +673,9 @@ export default function Childrens() {
             <div className="bg-blue-50 p-6 rounded-lg">
               <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                 <User className="mr-2 text-blue-600" size={20} />
-                {editingId ? "Child Information (Admin Edit Mode)" : "Child Information"}
+                {editingId
+                  ? "Child Information (Admin Edit Mode)"
+                  : "Child Information"}
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div className="space-y-2">

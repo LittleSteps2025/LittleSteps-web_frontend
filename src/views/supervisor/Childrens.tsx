@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { User, Edit, Trash2, Plus, Search, X } from "lucide-react";
+import { API_BASE_URL } from "../../config/api";
 
 interface Student {
   id: string;
@@ -39,11 +40,10 @@ interface ClassGroup {
   group_name: string;
 }
 
-const API_URL = "http://localhost:5001/api/supervisors/child/";
-const GROUPS_API_URL = "http://localhost:5001/api/supervisors/child/groups"; // Correct groups endpoint
-const PACKAGES_API_URL = "http://localhost:5001/api/supervisors/child/packages"; // Placeholder for future packages API
-const CHECK_NIC_API_URL =
-  "http://localhost:5001/api/supervisors/child/check-nic"; // Placeholder for NIC check API
+const API_URL = `${API_BASE_URL}/supervisors/child/`;
+const GROUPS_API_URL = `${API_BASE_URL}/supervisors/child/groups`; // Correct groups endpoint
+const PACKAGES_API_URL = `${API_BASE_URL}/supervisors/child/packages`; // Placeholder for future packages API
+const CHECK_NIC_API_URL = `${API_BASE_URL}/supervisors/child/check-nic`; // Placeholder for NIC check API
 // Utility function to calculate age from date of birth
 const calculateAge = (dob: string): number => {
   if (!dob) return 0;
@@ -1116,20 +1116,22 @@ export default function Childrens() {
                         {student.parentName}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button
-                          onClick={() => handleEdit(student)}
-                          className="text-indigo-600 hover:text-indigo-900 mr-4 flex items-center"
-                        >
-                          <Edit className="w-4 h-4 mr-1" />
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDelete(student)}
-                          className="text-red-600 hover:text-red-900 flex items-center"
-                        >
-                          <Trash2 className="w-4 h-4 mr-1" />
-                          Delete
-                        </button>
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleEdit(student)}
+                            className="p-2 text-indigo-600 hover:text-indigo-900 hover:bg-indigo-50 rounded-full transition-colors"
+                            title="Edit"
+                          >
+                            <Edit className="w-5 h-5" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(student)}
+                            className="p-2 text-red-600 hover:text-red-900 hover:bg-red-50 rounded-full transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-5 h-5" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
