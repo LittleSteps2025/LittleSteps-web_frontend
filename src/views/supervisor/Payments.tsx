@@ -18,13 +18,17 @@ interface Payment {
   payment_id: number;
   amount: string;
   created_at: string;
-  parent_email: string;
+  parent_id: string;
   child_id: number;
   status: "pending" | "paid";
   order_id: string;
   currency: string;
-  child_name: string;
   parent_name: string;
+  child_name: string;
+  package_name?: string;
+  method?: string;
+  transaction_ref?: string;
+  notes?: string;
 }
 
 interface PaymentStats {
@@ -33,14 +37,19 @@ interface PaymentStats {
   pendingAmount: number;
 }
 
+interface PaymentStatsData {
+  status: string;
+  count: string;
+  total_amount: string;
+}
+
 interface ProcessPaymentData {
   method: "Cash" | "Card" | "Online";
   transaction_ref?: string;
   notes?: string;
 }
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const ITEMS_PER_PAGE = 10;
 
 const Payments = () => {
@@ -76,21 +85,13 @@ const Payments = () => {
       notes: "",
     });
 
-  // Helper: read stored token from localStorage
-  const getStoredToken = (): string | null => {
-    return localStorage.getItem("token");
-  };
-
   // Fetch payments data
   const fetchPayments = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const token = getStoredToken();
-
       const response = await fetch(`${API_BASE_URL}/supervisor/payments`, {
         headers: {
-          Authorization: `Bearer ${token}`,
           Accept: "application/json",
         },
       });
@@ -120,16 +121,10 @@ const Payments = () => {
   // Fetch payment statistics
   const fetchPaymentStats = useCallback(async () => {
     try {
-      const token = getStoredToken();
-      if (!token) {
-        throw new Error("No authentication token found");
-      }
-
       const response = await fetch(
         `${API_BASE_URL}/supervisor/payments/stats`,
         {
           headers: {
-            Authorization: `Bearer ${token}`,
             Accept: "application/json",
           },
         }
@@ -141,13 +136,13 @@ const Payments = () => {
 
       const data = await response.json();
       if (data.success) {
+        // Process stats: data.data is an array of {status, count, total_amount}
         const stats = data.data.reduce(
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (acc: PaymentStats, curr: any) => {
+          (acc: PaymentStats, curr: PaymentStatsData) => {
             const amount = parseFloat(curr.total_amount) || 0;
-            if (curr.status === "Paid") {
+            if (curr.status.toLowerCase() === "paid") {
               acc.paidAmount = amount;
-            } else {
+            } else if (curr.status.toLowerCase() === "pending") {
               acc.pendingAmount = amount;
             }
             acc.totalRevenue = acc.paidAmount + acc.pendingAmount;
@@ -167,17 +162,11 @@ const Payments = () => {
     if (!selectedPayment) return;
 
     try {
-      const token = getStoredToken();
-      if (!token) {
-        throw new Error("No authentication token found");
-      }
-
       const response = await fetch(
         `${API_BASE_URL}/supervisor/payments/${selectedPayment.payment_id}`,
         {
           method: "PUT",
           headers: {
-            Authorization: `Bearer ${token}`,
             Accept: "application/json",
             "Content-Type": "application/json",
           },
@@ -269,6 +258,10 @@ const Payments = () => {
       const aValue = a[sortConfig.key];
       const bValue = b[sortConfig.key];
 
+      if (aValue === undefined && bValue === undefined) return 0;
+      if (aValue === undefined) return 1;
+      if (bValue === undefined) return -1;
+
       if (sortConfig.direction === "asc") {
         return aValue < bValue ? -1 : 1;
       } else {
@@ -331,7 +324,6 @@ const Payments = () => {
             className="btn-primary"
             disabled={loading}
           >
-            
             Refresh
           </button>
         </div>
