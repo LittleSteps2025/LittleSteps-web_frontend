@@ -17,6 +17,7 @@ type Announcement = {
   date: string;
   time: string;
   audience: 'All' | 'Teachers' | 'Parents';
+  type: 'announcement' | 'event'; // New field to distinguish
   created_at: string;
   attachment?: string;
   session_id?: string | number;
@@ -70,6 +71,7 @@ const Announcements = () => {
   const [filteredAnnouncements, setFilteredAnnouncements] = useState<Announcement[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [searchDate, setSearchDate] = useState('');
+  const [filterType, setFilterType] = useState<'all' | 'announcement' | 'event'>('all'); // New filter state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [currentAnnouncement, setCurrentAnnouncement] = useState<Announcement | null>(null);
@@ -80,6 +82,7 @@ const Announcements = () => {
     date: '',
     time: '',
     audience: 'All',
+    type: 'announcement', // Default to announcement
     user_id: '',
     attachment: '',
   });
@@ -134,6 +137,7 @@ const Announcements = () => {
         date: a.date || '',
         time: a.time || '',
         audience: audienceMap[Number(a.audience)] || 'All',
+        type: a.type || 'announcement', // Default to announcement if not specified
         created_at: a.created_at,
         attachment: a.attachment,
         session_id: a.session_id,
@@ -155,7 +159,7 @@ const Announcements = () => {
 
   // Search announcements with debounce
   const searchAnnouncements = useCallback(() => {
-    if (!searchTerm && !searchDate) {
+    if (!searchTerm && !searchDate && filterType === 'all') {
       setFilteredAnnouncements(announcements);
       return;
     }
@@ -173,7 +177,11 @@ const Announcements = () => {
           ? announcement.date && announcement.date.includes(searchDate)
           : true;
         
-        return termMatch && dateMatch;
+        const typeMatch = filterType === 'all' 
+          ? true 
+          : announcement.type === filterType;
+        
+        return termMatch && dateMatch && typeMatch;
       });
       
       setFilteredAnnouncements(filtered);
@@ -181,7 +189,7 @@ const Announcements = () => {
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [searchTerm, searchDate, announcements]);
+  }, [searchTerm, searchDate, filterType, announcements]);
 
   // Create announcement
   const createAnnouncement = async (announcement: Omit<Announcement, 'ann_id' | 'created_at'>) => {
@@ -270,7 +278,7 @@ const Announcements = () => {
   // Effect to handle search when search term or date changes
   useEffect(() => {
     searchAnnouncements();
-  }, [searchTerm, searchDate, searchAnnouncements]);
+  }, [searchTerm, searchDate, filterType, searchAnnouncements]);
 
   // Update formData when user changes
   useEffect(() => {
@@ -301,6 +309,7 @@ const Announcements = () => {
       date: '',
       time: '',
       audience: 'All',
+      type: 'announcement',
       user_id: user?.id ? String(user.id) : '',
       attachment: '',
     });
@@ -317,6 +326,7 @@ const Announcements = () => {
       date: announcement.date,
       time: announcement.time,
       audience: announcement.audience,
+      type: announcement.type,
       user_id: announcement.user_id ? String(announcement.user_id) : '',
       attachment: announcement.attachment || '',
     });
@@ -340,18 +350,19 @@ const Announcements = () => {
     e.preventDefault();
     try {
       let result: Announcement;
+      const itemType = formData.type === 'event' ? 'Event' : 'Announcement';
       if (isEditMode && currentAnnouncement) {
         result = await updateAnnouncement(currentAnnouncement.ann_id, {
           ...formData
         });
         setAnnouncements(announcements.map(a => a.ann_id === result.ann_id ? result : a));
-        showToast('Announcement updated successfully!', 'success');
+        showToast(`${itemType} updated successfully!`, 'success');
       } else {
         result = await createAnnouncement({
           ...formData
         });
         setAnnouncements([result, ...announcements]);
-        showToast('Announcement added successfully!', 'success');
+        showToast(`${itemType} added successfully!`, 'success');
       }
       closeModal();
       fetchAnnouncements();
@@ -368,13 +379,14 @@ const Announcements = () => {
   const handleDelete = async () => {
     if (!currentAnnouncement) return;
     try {
+      const itemType = currentAnnouncement.type === 'event' ? 'Event' : 'Announcement';
       await deleteAnnouncement(currentAnnouncement.ann_id);
       setAnnouncements(announcements.filter(a => a.ann_id !== currentAnnouncement.ann_id));
-      showToast('Announcement deleted successfully!', 'success');
+      showToast(`${itemType} deleted successfully!`, 'success');
       closeModal();
       fetchAnnouncements();
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to delete announcement';
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete';
       showToast(errorMessage, 'error');
     }
   };
@@ -383,6 +395,7 @@ const Announcements = () => {
   const clearFilters = () => {
     setSearchTerm('');
     setSearchDate('');
+    setFilterType('all');
   };
 
   if (isLoading) {
@@ -408,7 +421,7 @@ const Announcements = () => {
       <div className="flex justify-between items-center">
        <h1 className="text-2xl font-bold text-gray-800 flex items-center">
           <span className="bg-gradient-to-r from-[#4f46e5] to-[#7c73e6] bg-clip-text text-transparent">
-            Announcements
+            Announcements & Events
           </span>
         </h1>
         {user?.session_id && (
@@ -416,6 +429,42 @@ const Announcements = () => {
             Session: {user.session_id}
           </span>
         )}
+      </div>
+
+      {/* Type Filter Tabs */}
+      <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+        <div className="flex space-x-2">
+          <button
+            onClick={() => setFilterType('all')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              filterType === 'all'
+                ? 'bg-indigo-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            All ({announcements.length})
+          </button>
+          <button
+            onClick={() => setFilterType('announcement')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              filterType === 'announcement'
+                ? 'bg-indigo-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            Announcements ({announcements.filter(a => a.type === 'announcement').length})
+          </button>
+          <button
+            onClick={() => setFilterType('event')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              filterType === 'event'
+                ? 'bg-indigo-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            Events ({announcements.filter(a => a.type === 'event').length})
+          </button>
+        </div>
       </div>
 
       {/* Search and Add Announcement */}
@@ -455,7 +504,7 @@ const Announcements = () => {
             className="btn-primary flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors whitespace-nowrap"
           >
             <Plus className="w-4 h-4 mr-2" />
-            New Announcement
+            New Post
           </button>
           </div>
           
@@ -485,7 +534,16 @@ const Announcements = () => {
               <div key={announcement.ann_id} className="p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
-                    <h3 className="text-lg font-medium text-gray-900">{announcement.title}</h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-lg font-medium text-gray-900">{announcement.title}</h3>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        announcement.type === 'event' 
+                          ? 'bg-purple-100 text-purple-800' 
+                          : 'bg-blue-100 text-blue-800'
+                      }`}>
+                        {announcement.type === 'event' ? '📅 Event' : '📢 Announcement'}
+                      </span>
+                    </div>
                     <p className="text-sm text-gray-600 mt-1">{announcement.details}</p>
                     <div className="mt-2 flex flex-wrap gap-2">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
@@ -561,14 +619,14 @@ const Announcements = () => {
           <div className="text-center py-10">
             <p className="text-gray-500">
               {isSearching ? 'Searching...' : 
-               (searchTerm || searchDate) ? 'No matching announcements found' : 'No announcements found'}
+               (searchTerm || searchDate || filterType !== 'all') ? 'No matching items found' : 'No announcements or events found'}
             </p>
-            {(searchTerm || searchDate) ? (
+            {(searchTerm || searchDate || filterType !== 'all') ? (
               <button
                 onClick={clearFilters}
                 className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
               >
-                Clear search filters
+                Clear all filters
               </button>
             ) : (
             <button
@@ -576,7 +634,7 @@ const Announcements = () => {
               className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
             >
               <Plus className="w-4 h-4 mr-2" />
-              Create New Announcement
+              Create New Post
             </button>
             )}
           </div>
@@ -590,7 +648,7 @@ const Announcements = () => {
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold text-gray-800">
-                  {isEditMode ? 'Edit Announcement' : 'New Announcement'}
+                  {isEditMode ? 'Edit Announcement/Event' : 'New Announcement/Event'}
                 </h2>
                 <button 
                   onClick={closeModal}
@@ -602,6 +660,25 @@ const Announcements = () => {
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Type*</label>
+                  <select
+                    name="type"
+                    value={formData.type}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    required
+                  >
+                    <option value="announcement">📢 Announcement</option>
+                    <option value="event">📅 Event</option>
+                  </select>
+                  <p className="mt-1 text-xs text-gray-500">
+                    {formData.type === 'event' 
+                      ? 'Events require date and time details' 
+                      : 'General announcements for the community'}
+                  </p>
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Title*</label>
                   <input
@@ -647,7 +724,8 @@ const Announcements = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Event Date <span className="text-gray-400 text-xs">(Optional - for event announcements)</span>
+                      {formData.type === 'event' ? 'Event Date*' : 'Date'} 
+                      {formData.type !== 'event' && <span className="text-gray-400 text-xs"> (Optional)</span>}
                     </label>
                     <input
                       type="date"
@@ -655,11 +733,13 @@ const Announcements = () => {
                       value={formData.date}
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      required={formData.type === 'event'}
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Event Time <span className="text-gray-400 text-xs">(Optional)</span>
+                      {formData.type === 'event' ? 'Event Time*' : 'Time'}
+                      {formData.type !== 'event' && <span className="text-gray-400 text-xs"> (Optional)</span>}
                     </label>
                     <input
                       type="time"
@@ -667,6 +747,7 @@ const Announcements = () => {
                       value={formData.time}
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      required={formData.type === 'event'}
                     />
                   </div>
                 </div>
@@ -702,7 +783,7 @@ const Announcements = () => {
                     type="submit"
                     className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
                   >
-                    {isEditMode ? 'Update' : 'Create'} Announcement
+                    {isEditMode ? 'Update' : 'Create'} {formData.type === 'event' ? 'Event' : 'Announcement'}
                   </button>
                 </div>
               </form>
@@ -725,7 +806,7 @@ const Announcements = () => {
               </div>
 
               <p className="mb-6 text-gray-600">
-                Are you sure you want to delete announcement <span className="font-semibold">"{currentAnnouncement?.title}"</span>? This action cannot be undone.
+                Are you sure you want to delete {currentAnnouncement?.type === 'event' ? 'event' : 'announcement'} <span className="font-semibold">"{currentAnnouncement?.title}"</span>? This action cannot be undone.
               </p>
 
               <div className="flex justify-end space-x-3">
