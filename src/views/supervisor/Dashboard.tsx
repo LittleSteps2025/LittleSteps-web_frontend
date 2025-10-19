@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { BarChart, Download, Calendar, TrendingUp, Users, AlertCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { BarChart, Calendar, TrendingUp, AlertCircle } from 'lucide-react';
 import StatsCards from '../components/stats/StatsCards';
 import { fetchDashboardStats, fetchUpcomingEvents, fetchStatsByPeriod, fetchChartData } from '../../services/dashboardService';
 import type { DashboardStats, Event, PeriodStats, ChartData } from '../../services/dashboardService';
@@ -8,12 +9,11 @@ import 'react-toastify/dist/ReactToastify.css';
 
 
 const SupervisorDashboard = () => {
-
   const [stats, setStats] = useState<DashboardStats>({
     totalChildren: 0,
     activeParents: 0,
     activeTeachers: 0,
-    todayCheckIns: 0,
+    todayAttendance: 0,
     monthlyRevenue: 0,
     upcomingEvents: 0,
     pendingComplaints: 0
@@ -125,6 +125,17 @@ const SupervisorDashboard = () => {
     setChartPeriod(period);
   };
 
+  const handleViewEventDetails = (eventId: string) => {
+    // Navigate to events page with the specific event ID
+    navigate('/supervisor/events', { 
+      state: { eventId, scrollToEvent: true } 
+    });
+  };
+
+  const handleViewCalendar = () => {
+    navigate('/supervisor/events');
+  };
+
   // Enhanced bar chart component with proper styling
   const SimpleBarChart = ({ 
     data, 
@@ -139,50 +150,70 @@ const SupervisorDashboard = () => {
   }) => {
     const maxValue = Math.max(...data, 1);
     // Round up to nearest nice number for y-axis max
-    const yAxisMax = Math.ceil(maxValue * 1.1 / 10) * 10;
+    const yAxisMax = Math.ceil(maxValue * 1.2 / 10) * 10;
     
     return (
       <div className="h-full flex flex-col">
         <h3 className="text-sm font-semibold text-gray-800 text-center mb-4">{label}</h3>
         <div className="flex-1 flex flex-col">
           {/* Chart area with y-axis */}
-          <div className="relative flex items-end justify-between gap-2 h-56 px-4">
+          <div className="relative flex items-end justify-between gap-3 h-64 px-6 pb-2">
             {/* Y-axis scale */}
-            <div className="absolute left-0 top-0 bottom-8 flex flex-col justify-between text-[10px] text-gray-500 pr-2">
-              <span>{yAxisMax}</span>
-              <span>{Math.round(yAxisMax * 0.75)}</span>
-              <span>{Math.round(yAxisMax * 0.5)}</span>
-              <span>{Math.round(yAxisMax * 0.25)}</span>
-              <span>0</span>
+            <div className="absolute left-0 top-0 bottom-10 flex flex-col justify-between text-xs text-gray-500 pr-2 w-8">
+              <span className="text-right w-full">{yAxisMax}</span>
+              <span className="text-right w-full">{Math.round(yAxisMax * 0.75)}</span>
+              <span className="text-right w-full">{Math.round(yAxisMax * 0.5)}</span>
+              <span className="text-right w-full">{Math.round(yAxisMax * 0.25)}</span>
+              <span className="text-right w-full">0</span>
+            </div>
+            
+            {/* Horizontal grid lines */}
+            <div className="absolute left-8 right-0 top-0 bottom-10 pointer-events-none">
+              {[0, 0.25, 0.5, 0.75, 1].map((ratio, idx) => (
+                <div 
+                  key={idx}
+                  className="absolute w-full border-t border-gray-100"
+                  style={{ bottom: `${ratio * 100}%` }}
+                />
+              ))}
             </div>
             
             {/* Bars */}
-            {data.map((value, index) => {
-              const height = (value / yAxisMax) * 100;
-              return (
-                <div key={index} className="flex-1 flex flex-col items-center gap-1 relative">
-                  {/* Value label on top of bar */}
-                  {value > 0 && (
-                    <div className="text-xs font-semibold text-blue-600 mb-1">
-                      {value}
+            <div className="relative flex-1 flex items-end justify-around gap-2 h-full ml-8">
+              {data.map((value, index) => {
+                const heightPercent = yAxisMax > 0 ? (value / yAxisMax) * 100 : 0;
+                const minHeight = value > 0 ? 4 : 0;
+                
+                return (
+                  <div key={index} className="flex-1 flex flex-col items-center justify-end h-full max-w-[60px]">
+                    {/* Value label on top of bar */}
+                    {value > 0 && (
+                      <div className="text-xs font-bold text-gray-700 mb-1">
+                        {value.toLocaleString()}
+                      </div>
+                    )}
+                    {/* Bar - using CSS custom property instead of inline style */}
+                    <div 
+                      className={`w-full ${color} rounded-t-lg transition-all duration-300 hover:opacity-80 cursor-pointer shadow-md relative`}
+                      style={{ 
+                        height: `max(${heightPercent}%, ${minHeight}px)`,
+                      }}
+                      title={`${labels[index]}: ${value.toLocaleString()}`}
+                    >
+                      {/* Glossy effect */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-transparent via-white/10 to-white/20 rounded-t-lg" />
                     </div>
-                  )}
-                  {/* Bar */}
-                  <div 
-                    className={`w-full ${color} rounded-t-sm transition-all hover:opacity-90 cursor-pointer shadow-sm`}
-                    style={{ height: `${height}%`, minHeight: value > 0 ? '8px' : '2px' }}
-                    title={`${labels[index]}: ${value}`}
-                  />
-                </div>
-              );
-            })}
+                  </div>
+                );
+              })}
+            </div>
           </div>
           
           {/* X-axis labels */}
-          <div className="flex justify-between px-4 mt-2 border-t border-gray-200 pt-2">
+          <div className="flex justify-around px-6 mt-3 border-t border-gray-200 pt-2 ml-8">
             {labels.map((label, index) => (
-              <div key={index} className="flex-1 text-center">
-                <span className="text-[10px] text-gray-600 font-medium">
+              <div key={index} className="flex-1 text-center max-w-[60px]">
+                <span className="text-xs text-gray-600 font-medium">
                   {label}
                 </span>
               </div>
@@ -229,20 +260,11 @@ const SupervisorDashboard = () => {
           
           {/* Period Stats Display */}
           {periodStats && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-500">Children ({selectedPeriod})</p>
-                    <p className="text-2xl font-bold text-gray-800">{periodStats.totalChildren}</p>
-                  </div>
-                  <Users className="text-blue-500" size={32} />
-                </div>
-              </div>
-              <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-500">Check-ins ({selectedPeriod})</p>
+                    <p className="text-sm text-gray-500">Attendance ({selectedPeriod})</p>
                     <p className="text-2xl font-bold text-gray-800">{periodStats.checkIns}</p>
                   </div>
                   <AlertCircle className="text-green-500" size={32} />
@@ -265,7 +287,7 @@ const SupervisorDashboard = () => {
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-lg font-semibold text-gray-800 flex items-center">
                   <BarChart className="mr-2 text-[#4f46e5]" size={20} />
-                  Weekly Overview
+                  Weekly/Monthly Overview
                 </h2>
                 <div className="flex space-x-2">
                   <select 
@@ -277,9 +299,7 @@ const SupervisorDashboard = () => {
                     <option value="week">This Week</option>
                     <option value="month">This Month</option>
                   </select>
-                  <button className="btn-icon-small" title="Download Report">
-                    <Download className="w-4 h-4" />
-                  </button>
+                 
                 </div>
               </div>
               
@@ -292,7 +312,7 @@ const SupervisorDashboard = () => {
                   {/* Three charts in one row with 3 columns */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {/* Revenue Chart */}
-                    <div className="bg-white p-5 rounded-lg border border-gray-200 shadow-sm">
+                    <div className="bg-gradient-to-br from-blue-50 to-white p-5 rounded-lg border border-blue-100 shadow-sm">
                       <SimpleBarChart 
                         data={chartData.revenue.map(item => item.revenue)}
                         labels={chartData.revenue.map((item, index, arr) => {
@@ -309,12 +329,12 @@ const SupervisorDashboard = () => {
                           return '';
                         })}
                         label="Revenue (Rs.)"
-                        color="bg-gradient-to-t from-blue-500 to-blue-400"
+                        color="bg-gradient-to-t from-blue-600 to-blue-400"
                       />
                     </div>
                     
                     {/* Attendance Chart */}
-                    <div className="bg-white p-5 rounded-lg border border-gray-200 shadow-sm">
+                    <div className="bg-gradient-to-br from-green-50 to-white p-5 rounded-lg border border-green-100 shadow-sm">
                       <SimpleBarChart 
                         data={chartData.attendance.map(item => item.check_ins)}
                         labels={chartData.attendance.map((item, index, arr) => {
@@ -331,12 +351,12 @@ const SupervisorDashboard = () => {
                           return '';
                         })}
                         label="Attendance (Check-ins)"
-                        color="bg-gradient-to-t from-blue-500 to-blue-400"
+                        color="bg-gradient-to-t from-green-600 to-green-400"
                       />
                     </div>
                     
                     {/* Complaints Chart */}
-                    <div className="bg-white p-5 rounded-lg border border-gray-200 shadow-sm">
+                    <div className="bg-gradient-to-br from-purple-50 to-white p-5 rounded-lg border border-purple-100 shadow-sm">
                       <SimpleBarChart 
                         data={chartData.complaints.map(item => item.complaint_count)}
                         labels={chartData.complaints.map((item, index, arr) => {
@@ -353,7 +373,7 @@ const SupervisorDashboard = () => {
                           return '';
                         })}
                         label="Complaints"
-                        color="bg-gradient-to-t from-blue-500 to-blue-400"
+                        color="bg-gradient-to-t from-purple-600 to-purple-400"
                       />
                     </div>
                   </div>
@@ -376,7 +396,7 @@ const SupervisorDashboard = () => {
                 <Calendar className="mr-2 text-[#4f46e5]" size={20} />
                 Upcoming Events
               </h2>
-              {/* <button className="text-sm text-[#4f46e5] hover:underline">View Calendar</button> */}
+              <button className="text-sm text-[#4f46e5] hover:underline">View Calendar</button>
             </div>
             {events.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -388,7 +408,7 @@ const SupervisorDashboard = () => {
                     {event.description && (
                       <p className="text-xs text-gray-400 mt-2 line-clamp-2">{event.description}</p>
                     )}
-                    {/* <button className="mt-3 text-xs text-[#4f46e5] hover:underline" onClick={handleClick}>
+                    <button className="mt-3 text-xs text-[#4f46e5] hover:underline">
                       View Details
                     </button> */}
                   </div>

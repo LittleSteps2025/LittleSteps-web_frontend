@@ -18,7 +18,6 @@ type Announcement = {
   date: string;
   time: string;
   audience: "All" | "Teachers" | "Parents";
-  type: "announcement" | "event"; // Type field to distinguish
   created_at: string;
   attachment?: string;
   session_id?: string | number;
@@ -88,13 +87,11 @@ const Announcements = () => {
   >([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchDate, setSearchDate] = useState("");
-  const [filterType, setFilterType] = useState<'all' | 'announcement' | 'event'>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [currentAnnouncement, setCurrentAnnouncement] =
     useState<Announcement | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
-
   const [formData, setFormData] = useState<
     Omit<Announcement, "ann_id" | "created_at" | "session_id">
   >({
@@ -103,10 +100,8 @@ const Announcements = () => {
     date: new Date().toISOString().split("T")[0],
     time: new Date().toTimeString().slice(0, 5), // Fix time format
     audience: "All",
-    type: "announcement", // Default to announcement
     user_id: "",
     attachment: "",
-
   });
   const [isLoading, setIsLoading] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
@@ -119,19 +114,51 @@ const Announcements = () => {
   const ANNOUNCEMENTS_API_URL = `${API_BASE_URL}/announcements`;
 
   // Format date and time for display
-  const formatDateTime = (dateString: string) => {
-    const date = new Date(dateString);
+ // Format date and time for display - handle backend normalized dates
+const formatDateTime = (dateString: string) => {
+  // Backend already returns dates as YYYY-MM-DD strings, so parse accordingly
+  if (!dateString) return { date: "N/A", time: "N/A" };
+  
+  try {
+    // If it's already in YYYY-MM-DD format, parse it directly
+    let date: Date;
+    if (typeof dateString === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+      // Parse as UTC to avoid timezone shift
+      date = new Date(dateString + 'T00:00:00Z');
+    } else {
+      date = new Date(dateString);
+    }
+    
+    if (isNaN(date.getTime())) {
+      return { date: "Invalid Date", time: "N/A" };
+    }
+    
     return {
       date: date.toLocaleDateString("en-US", {
         year: "numeric",
         month: "short",
         day: "numeric",
+        timeZone: 'UTC' // Use UTC to match backend
       }),
       time: date.toLocaleTimeString("en-US", {
         hour: "2-digit",
         minute: "2-digit",
+        timeZone: 'UTC'
       }),
     };
+  } catch (error) {
+    console.error('Error formatting date:', error, dateString);
+    return { date: String(dateString), time: "N/A" };
+  }
+};
+
+  // Format date without timezone issues (returns YYYY-MM-DD)
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "N/A";
+    if (typeof dateString === "string" && dateString.includes("T")) {
+      return dateString.split("T")[0];
+    }
+    return String(dateString);
   };
 
   // Show toast notification
@@ -159,13 +186,11 @@ const Announcements = () => {
         date: a.date,
         time: a.time,
         audience: audienceMap[Number(a.audience)] || "All",
-        type: a.type || "announcement", // Default to announcement
         created_at: a.created_at,
         attachment: a.attachment,
         session_id: a.session_id,
         user_id: a.user_id,
         updated_at: a.updated_at,
-        published_by: a.published_by || null
       }));
 
       setAnnouncements(mappedAnnouncements);
@@ -177,11 +202,11 @@ const Announcements = () => {
       setIsLoading(false);
       setIsSearching(false);
     }
-  }, []);
+  }, [ANNOUNCEMENTS_API_URL]);
 
   // Search announcements with debounce
   const searchAnnouncements = useCallback(() => {
-    if (!searchTerm && !searchDate && filterType === 'all') {
+    if (!searchTerm && !searchDate) {
       setFilteredAnnouncements(announcements);
       return;
     }
@@ -199,9 +224,9 @@ const Announcements = () => {
               .includes(searchTerm.toLowerCase())
           : true;
 
-        const dateMatch = searchDate
-          ? announcement.date.includes(searchDate)
-          : true;
+       const dateMatch = searchDate
+  ? announcement.date && announcement.date.includes(searchDate)
+  : true;
 
         return termMatch && dateMatch;
       });
@@ -211,7 +236,7 @@ const Announcements = () => {
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [searchTerm, searchDate, filterType, announcements]);
+  }, [searchTerm, searchDate, announcements]);
 
   // Create announcement
   const createAnnouncement = async (
@@ -225,8 +250,6 @@ const Announcements = () => {
       },
       body: JSON.stringify({
         ...announcement,
-        date: announcement.date || null,
-        time: announcement.time || null,
         published_by: {
           id: user?.id,
           name: user?.name || "Unknown",
@@ -310,7 +333,7 @@ const Announcements = () => {
   // Effect to handle search when search term or date changes
   useEffect(() => {
     searchAnnouncements();
-  }, [searchTerm, searchDate, filterType, searchAnnouncements]);
+  }, [searchTerm, searchDate, searchAnnouncements]);
 
   // Update formData when user changes
   useEffect(() => {
@@ -345,7 +368,6 @@ const Announcements = () => {
       date: new Date().toISOString().split("T")[0],
       time: new Date().toTimeString().slice(0, 5), // Fix time format
       audience: "All",
-      type: "announcement",
       user_id: user?.id ? String(user.id) : "",
       attachment: "",
     });
@@ -359,10 +381,9 @@ const Announcements = () => {
     setFormData({
       title: announcement.title,
       details: announcement.details,
-      date: announcement.date,
-      time: announcement.time,
+      date: formatDate(announcement.date),
+     time: announcement.time && typeof announcement.time === 'string' ? announcement.time.slice(0, 5) : new Date().toTimeString().slice(0, 5),
       audience: announcement.audience,
-      type: announcement.type,
       user_id: announcement.user_id ? String(announcement.user_id) : "",
       attachment: announcement.attachment || "",
     });
@@ -386,7 +407,6 @@ const Announcements = () => {
     e.preventDefault();
     try {
       let result: Announcement;
-      const itemType = formData.type === 'event' ? 'Event' : 'Announcement';
       if (isEditMode && currentAnnouncement) {
         result = await updateAnnouncement(currentAnnouncement.ann_id, {
           ...formData,
@@ -394,13 +414,13 @@ const Announcements = () => {
         setAnnouncements(
           announcements.map((a) => (a.ann_id === result.ann_id ? result : a))
         );
-        showToast(`${itemType} updated successfully!`, "success");
+        showToast("Announcement updated successfully!", "success");
       } else {
         result = await createAnnouncement({
           ...formData,
         });
         setAnnouncements([result, ...announcements]);
-        showToast(`${itemType} added successfully!`, "success");
+        showToast("Announcement added successfully!", "success");
       }
       closeModal();
       fetchAnnouncements();
@@ -417,19 +437,18 @@ const Announcements = () => {
   const handleDelete = async () => {
     if (!currentAnnouncement) return;
     try {
-      const itemType = currentAnnouncement.type === 'event' ? 'Event' : 'Announcement';
       await deleteAnnouncement(currentAnnouncement.ann_id);
       setAnnouncements(
         announcements.filter((a) => a.ann_id !== currentAnnouncement.ann_id)
       );
-      showToast(`${itemType} deleted successfully!`, "success");
+      showToast("Announcement deleted successfully!", "success");
       closeModal();
       fetchAnnouncements();
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error
           ? error.message
-          : "Failed to delete";
+          : "Failed to delete announcement";
       showToast(errorMessage, "error");
     }
   };
@@ -438,7 +457,6 @@ const Announcements = () => {
   const clearFilters = () => {
     setSearchTerm("");
     setSearchDate("");
-    setFilterType('all');
   };
 
   if (isLoading) {
@@ -464,7 +482,7 @@ const Announcements = () => {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-800 flex items-center">
           <span className="bg-gradient-to-r from-[#4f46e5] to-[#7c73e6] bg-clip-text text-transparent">
-            Announcements & Events
+            Announcements
           </span>
         </h1>
         {user?.session_id && (
@@ -472,42 +490,6 @@ const Announcements = () => {
             Session: {user.session_id}
           </span>
         )}
-      </div>
-
-      {/* Type Filter Tabs */}
-      <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-        <div className="flex space-x-2">
-          <button
-            onClick={() => setFilterType('all')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              filterType === 'all'
-                ? 'bg-indigo-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            All ({announcements.length})
-          </button>
-          <button
-            onClick={() => setFilterType('announcement')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              filterType === 'announcement'
-                ? 'bg-indigo-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            Announcements ({announcements.filter(a => a.type === 'announcement').length})
-          </button>
-          <button
-            onClick={() => setFilterType('event')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              filterType === 'event'
-                ? 'bg-indigo-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            Events ({announcements.filter(a => a.type === 'event').length})
-          </button>
-        </div>
       </div>
 
       {/* Search and Add Announcement */}
@@ -563,16 +545,16 @@ const Announcements = () => {
               className="btn-primary flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors whitespace-nowrap"
             >
               <Plus className="w-4 h-4 mr-2" />
-              New Post
+              New Announcement
             </button>
           </div>
+
           {(searchTerm || searchDate) && (
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-500">
                 Showing {filteredAnnouncements.length} results
                 {searchTerm && ` for "${searchTerm}"`}
-                {searchDate &&
-                  ` on ${new Date(searchDate).toLocaleDateString()}`}
+                {searchDate && ` on ${searchDate}`}
               </span>
               <button
                 onClick={clearFilters}
@@ -596,18 +578,9 @@ const Announcements = () => {
               >
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-lg font-medium text-gray-900">
-                        {announcement.title}
-                      </h3>
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        announcement.type === 'event' 
-                          ? 'bg-purple-100 text-purple-800' 
-                          : 'bg-blue-100 text-blue-800'
-                      }`}>
-                        {announcement.type === 'event' ? '📅 Event' : '📢 Announcement'}
-                      </span>
-                    </div>
+                    <h3 className="text-lg font-medium text-gray-900">
+                      {announcement.title}
+                    </h3>
                     <p className="text-sm text-gray-600 mt-1">
                       {announcement.details}
                     </p>
@@ -615,11 +588,9 @@ const Announcements = () => {
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                         To: {announcement.audience}
                       </span>
-                      {announcement.date && (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          Date: {announcement.date.split('T')[0]}
-                        </span>
-                      )}
+                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+  Time: {announcement.time && typeof announcement.time === 'string' ? announcement.time.slice(0, 5) : 'N/A'}
+</span>
                       {announcement.time && (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
                           Time: {announcement.time.slice(0, 5)}
@@ -630,30 +601,24 @@ const Announcements = () => {
                           {/* Session: {announcement.session_id} */}
                         </span>
                       )}
+                      {announcement.attachment && (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                          Attachment
+                          {/* Attachment: {announcement.attachment} */}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
-                
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
-                    Published by: {announcement.published_by?.name || user?.name || 'Unknown'} 
-                    ({announcement.published_by?.role || user?.role || 'Admin'})
+
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {/* ...existing tags... */}
+
+                  {/* Add this publisher badge */}
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                    Published by: {announcement.published_by?.name || "Unknown"}
+                    ({announcement.published_by?.role || "Admin"})
                   </span>
-                  
-                  {announcement.created_at && (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                      Published at: {formatDateTime(announcement.created_at).date} at {formatDateTime(announcement.created_at).time}
-                    </span>
-                  )}
-                  
-                  {announcement.attachment && (
-                    <button
-                      onClick={() => window.open(announcement.attachment, '_blank')}
-                      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 hover:bg-yellow-200 transition-colors cursor-pointer"
-                    >
-                      📎 View Attachment
-                    </button>
-                  )}
                 </div>
 
                 <div className="mt-4 text-xs text-gray-500">
@@ -663,10 +628,9 @@ const Announcements = () => {
                   </div>
                   {announcement.updated_at && (
                     <div className="flex items-center mt-1">
-                      <span>
-                        Updated: {formatDateTime(announcement.updated_at).date}{" "}
-                        at {formatDateTime(announcement.updated_at).time}
-                      </span>
+                     <span>
+  Updated: {announcement.updated_at ? `${formatDateTime(announcement.updated_at).date} at ${formatDateTime(announcement.updated_at).time}` : 'N/A'}
+</span>
                     </div>
                   )}
                 </div>
@@ -695,16 +659,16 @@ const Announcements = () => {
             <p className="text-gray-500">
               {isSearching
                 ? "Searching..."
-                : searchTerm || searchDate || filterType !== 'all'
-                ? "No matching items found"
-                : "No announcements or events found"}
+                : searchTerm || searchDate
+                ? "No matching announcements found"
+                : "No announcements found"}
             </p>
-            {searchTerm || searchDate || filterType !== 'all' ? (
+            {searchTerm || searchDate ? (
               <button
                 onClick={clearFilters}
                 className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
               >
-                Clear all filters
+                Clear search filters
               </button>
             ) : (
               <button
@@ -712,7 +676,7 @@ const Announcements = () => {
                 className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Create New Post
+                Create New Announcement
               </button>
             )}
           </div>
@@ -726,7 +690,7 @@ const Announcements = () => {
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold text-gray-800">
-                  {isEditMode ? "Edit Announcement/Event" : "New Announcement/Event"}
+                  {isEditMode ? "Edit Announcement" : "New Announcement"}
                 </h2>
                 <button
                   onClick={closeModal}
@@ -738,27 +702,6 @@ const Announcements = () => {
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Type*
-                  </label>
-                  <select
-                    name="type"
-                    value={formData.type}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    required
-                  >
-                    <option value="announcement">📢 Announcement</option>
-                    <option value="event">📅 Event</option>
-                  </select>
-                  <p className="mt-1 text-xs text-gray-500">
-                    {formData.type === 'event' 
-                      ? 'Events require date and time details' 
-                      : 'General announcements for the community'}
-                  </p>
-                </div>
-
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Title*
@@ -800,6 +743,7 @@ const Announcements = () => {
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     required
+                    title="Select target audience"
                   >
                     <option value="All">All</option>
                     <option value="Teachers">Teachers</option>
@@ -810,8 +754,7 @@ const Announcements = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      {formData.type === 'event' ? 'Event Date*' : 'Date'} 
-                      {formData.type !== 'event' && <span className="text-gray-400 text-xs"> (Optional)</span>}
+                      Date*
                     </label>
                     <input
                       type="date"
@@ -819,13 +762,13 @@ const Announcements = () => {
                       value={formData.date}
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      required={formData.type === 'event'}
+                      required
+                      title="Select announcement date"
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      {formData.type === 'event' ? 'Event Time*' : 'Time'}
-                      {formData.type !== 'event' && <span className="text-gray-400 text-xs"> (Optional)</span>}
+                      Time*
                     </label>
                     <input
                       type="time"
@@ -833,7 +776,8 @@ const Announcements = () => {
                       value={formData.time}
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      required={formData.type === 'event'}
+                      required
+                      title="Select announcement time"
                     />
                   </div>
                 </div>
@@ -853,6 +797,7 @@ const Announcements = () => {
                       }
                     }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    title="Upload attachment file"
                   />
                   {formData.attachment && (
                     <p className="mt-1 text-sm text-gray-500">
@@ -873,7 +818,7 @@ const Announcements = () => {
                     type="submit"
                     className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
                   >
-                    {isEditMode ? "Update" : "Create"} {formData.type === 'event' ? 'Event' : 'Announcement'}
+                    {isEditMode ? "Update" : "Create"} Announcement
                   </button>
                 </div>
               </form>
@@ -902,7 +847,7 @@ const Announcements = () => {
               </div>
 
               <p className="mb-6 text-gray-600">
-                Are you sure you want to delete {currentAnnouncement?.type === 'event' ? 'event' : 'announcement'}{" "}
+                Are you sure you want to delete announcement{" "}
                 <span className="font-semibold">
                   "{currentAnnouncement?.title}"
                 </span>

@@ -1,11 +1,10 @@
 import { Users, Baby, DollarSign, CheckCircle } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 
 interface Stats {
   totalChildren: number;
   activeParents: number;
   activeTeachers: number;
-  todayCheckIns: number;
+  todayAttendance: number;
   monthlyRevenue: number;
   activeSupervisors?: number;
 }
@@ -23,14 +22,14 @@ const StatsCards = ({ stats }: { stats: Stats }) => {
     },
     { 
       icon: Users, 
-      title: 'Active Parents', 
+      title: 'Total Active Parents', 
       value: stats.activeParents, 
       color: 'bg-blue-100 text-blue-800',
       link: '/admin/parents'
     },
     { 
       icon: Users, 
-      title: 'Teachers', 
+      title: 'Total Teachers', 
       value: stats.activeTeachers, 
       color: 'bg-amber-100 text-amber-800',
       link: '/admin/users'
@@ -39,8 +38,8 @@ const StatsCards = ({ stats }: { stats: Stats }) => {
       icon: CheckCircle, 
       title: "Today's Check-ins", 
       value: stats.todayCheckIns, 
-      color: 'bg-cyan-100 text-cyan-800',
-      link: '/admin/attendance'
+
+      color: 'bg-cyan-100 text-cyan-800'
     },
     { 
       icon: DollarSign, 
