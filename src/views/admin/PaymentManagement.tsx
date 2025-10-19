@@ -1,85 +1,100 @@
-import { useState, useEffect } from 'react';
-import { 
-  Search, CreditCard, Download, Filter, ChevronUp, ChevronDown, Eye, Calendar, DollarSign, User, Package
-} from 'lucide-react';
+import { useState, useEffect } from "react";
+import {
+  Search,
+  CreditCard,
+  Download,
+  Filter,
+  ChevronUp,
+  ChevronDown,
+  Eye,
+  Calendar,
+  DollarSign,
+  User,
+  Package,
+} from "lucide-react";
 
 interface Payment {
-  payment_id: string;
-  amount: number;
+  payment_id: number;
+  amount: string;
   created_at: string;
   parent_id: string;
-  child_id: string;
+  child_id: number;
   package_id: string;
   month: string;
   method: string;
   transaction_ref: string;
   notes: string | null;
   order_id: string;
-  status: 'paid' | 'unpaid';
+  status: "paid" | "unpaid";
   parent_name?: string;
   child_name?: string;
+  currency?: string;
+  paid_at?: string | null;
 }
 
-
 // API endpoints
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const API_ENDPOINTS = {
-  PAYMENTS: `${API_BASE_URL}/admin/payments`,  // Changed from /api/payment
+  PAYMENTS: `${API_BASE_URL}/admin/payments`, // Changed from /api/payment
 } as const;
 
 const PaymentManagement = () => {
   // State for payments data and loading
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string>('');
+  const [error, setError] = useState<string>("");
 
   // Helper: read stored token from localStorage
   const getStoredToken = (): string | null => {
-    return localStorage.getItem('token');
+    return localStorage.getItem("token");
   };
 
   // Fetch payments from API
   const fetchPayments = async () => {
     setLoading(true);
-    setError('');
+    setError("");
     try {
       const token = getStoredToken();
       if (!token) {
-        throw new Error('No authentication token found');
+        throw new Error("No authentication token found");
       }
 
-      console.log('Fetching payments from:', API_ENDPOINTS.PAYMENTS);
+      console.log("Fetching payments from:", API_ENDPOINTS.PAYMENTS);
       const response = await fetch(API_ENDPOINTS.PAYMENTS, {
         headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
       });
 
-      console.log('Response status:', response.status);
+      console.log("Response status:", response.status);
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
         if (response.status === 401) {
-          throw new Error('Unauthorized access. Please log in again.');
+          throw new Error("Unauthorized access. Please log in again.");
         } else if (response.status === 404) {
-          throw new Error('API endpoint not found. Please check the server configuration.');
+          throw new Error(
+            "API endpoint not found. Please check the server configuration."
+          );
         } else {
-          throw new Error(errorData?.message || 'Failed to fetch payments');
+          throw new Error(errorData?.message || "Failed to fetch payments");
         }
       }
 
       const data = await response.json();
-      console.log('API Response:', data);
+      console.log("API Response:", data);
 
       if (data.success && Array.isArray(data.data)) {
         setPayments(data.data);
       } else {
-        throw new Error(data.message || 'Invalid data format received from server');
+        throw new Error(
+          data.message || "Invalid data format received from server"
+        );
       }
     } catch (err) {
-      console.error('Error fetching payments:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch payments');
+      console.error("Error fetching payments:", err);
+      setError(err instanceof Error ? err.message : "Failed to fetch payments");
     } finally {
       setLoading(false);
     }
@@ -88,40 +103,65 @@ const PaymentManagement = () => {
   // Load payments on component mount
   useEffect(() => {
     fetchPayments();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Sort keys based on the Payment interface
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const sortKeys = ['created_at', 'amount', 'method', 'parent_id', 'child_id'] as const;
-  type SortKey = typeof sortKeys[number];
+  const sortKeys = [
+    "created_at",
+    "amount",
+    "method",
+    "parent_id",
+    "child_id",
+  ] as const;
+  type SortKey = (typeof sortKeys)[number];
 
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
-  const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: 'asc' | 'desc' }>({ 
-    key: 'created_at', 
-    direction: 'desc' 
+  const [sortConfig, setSortConfig] = useState<{
+    key: SortKey;
+    direction: "asc" | "desc";
+  }>({
+    key: "created_at",
+    direction: "desc",
   });
-  const [activeFilter, setActiveFilter] = useState('all');
-  const [paymentStatusFilter, setPaymentStatusFilter] = useState<'all' | 'paid' | 'unpaid'>('all');
+  const [activeFilter, setActiveFilter] = useState("all");
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState<
+    "all" | "paid" | "unpaid"
+  >("all");
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
-  const [showStatusFilterDropdown, setShowStatusFilterDropdown] = useState(false);
+  const [showStatusFilterDropdown, setShowStatusFilterDropdown] =
+    useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
   const [showExportModal, setShowExportModal] = useState(false);
 
   // Filter and sort payments
   const filteredPayments = payments
-    .filter(payment => 
-      (payment.order_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-       payment.transaction_ref.toLowerCase().includes(searchTerm.toLowerCase()) ||
-       payment.parent_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-       payment.child_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-       (payment.parent_name && payment.parent_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-       (payment.child_name && payment.child_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-       payment.method.toLowerCase().includes(searchTerm.toLowerCase())) &&
-      (activeFilter === 'all' || payment.method === activeFilter) &&
-      (paymentStatusFilter === 'all' || payment.status === paymentStatusFilter)
+    .filter(
+      (payment) =>
+        (payment.order_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          payment.transaction_ref
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
+          payment.parent_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          String(payment.child_id)
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
+          (payment.parent_name &&
+            payment.parent_name
+              .toLowerCase()
+              .includes(searchTerm.toLowerCase())) ||
+          (payment.child_name &&
+            payment.child_name
+              .toLowerCase()
+              .includes(searchTerm.toLowerCase())) ||
+          payment.method.toLowerCase().includes(searchTerm.toLowerCase())) &&
+        (activeFilter === "all" || payment.method === activeFilter) &&
+        (paymentStatusFilter === "all" ||
+          payment.status === paymentStatusFilter)
     )
     .sort((a, b) => {
       const key = sortConfig.key;
@@ -129,10 +169,10 @@ const PaymentManagement = () => {
       const bValue = b[key];
 
       if (String(aValue) < String(bValue)) {
-        return sortConfig.direction === 'asc' ? -1 : 1;
+        return sortConfig.direction === "asc" ? -1 : 1;
       }
       if (String(aValue) > String(bValue)) {
-        return sortConfig.direction === 'asc' ? 1 : -1;
+        return sortConfig.direction === "asc" ? 1 : -1;
       }
       return 0;
     });
@@ -140,13 +180,16 @@ const PaymentManagement = () => {
   // Pagination
   const indexOfLastPayment = currentPage * itemsPerPage;
   const indexOfFirstPayment = indexOfLastPayment - itemsPerPage;
-  const currentPayments = filteredPayments.slice(indexOfFirstPayment, indexOfLastPayment);
+  const currentPayments = filteredPayments.slice(
+    indexOfFirstPayment,
+    indexOfLastPayment
+  );
   const totalPages = Math.ceil(filteredPayments.length / itemsPerPage);
 
   const requestSort = (key: SortKey) => {
-    let direction: 'asc' | 'desc' = 'asc';
-    if (sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
+    let direction: "asc" | "desc" = "asc";
+    if (sortConfig.key === key && sortConfig.direction === "asc") {
+      direction = "desc";
     }
     setSortConfig({ key, direction });
   };
@@ -156,31 +199,31 @@ const PaymentManagement = () => {
     setShowDetailsModal(true);
   };
 
-  const handleExport = (format: 'csv' | 'pdf') => {
+  const handleExport = (format: "csv" | "pdf") => {
     console.log(`Exporting payments as ${format}`);
     setShowExportModal(false);
   };
 
   // Get unique payment methods for filter
-  const paymentMethods = Array.from(new Set(payments.map(p => p.method)));
+  const paymentMethods = Array.from(new Set(payments.map((p) => p.method)));
 
   // Format currency
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'LKR',
-      minimumFractionDigits: 2
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "LKR",
+      minimumFractionDigits: 2,
     }).format(amount);
   };
 
   // Format date
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
@@ -194,15 +237,19 @@ const PaymentManagement = () => {
             </span>
           </h1>
           <p className="text-sm text-gray-500 mt-1">
-            Total: {filteredPayments.length} | 
-            Paid: {filteredPayments.filter(p => p.status === 'paid').length} | 
-            Unpaid: {filteredPayments.filter(p => p.status === 'unpaid').length} | 
-            Amount: {formatCurrency(filteredPayments.reduce((sum, p) => sum + p.amount, 0))}
+            Total: {filteredPayments.length} | Paid:{" "}
+            {filteredPayments.filter((p) => p.status === "paid").length} |
+            Unpaid:{" "}
+            {filteredPayments.filter((p) => p.status === "unpaid").length} |
+            Amount:{" "}
+            {formatCurrency(
+              filteredPayments.reduce((sum, p) => sum + parseFloat(p.amount), 0)
+            )}
           </p>
         </div>
         <div className="flex space-x-3 w-full sm:w-auto">
-          <button 
-            onClick={() => setShowExportModal(true)} 
+          <button
+            onClick={() => setShowExportModal(true)}
             className="bg-[#6339C0] text-white py-2 px-4 rounded-lg hover:bg-[#5227a3] transition-colors flex items-center"
           >
             <Download className="w-4 h-4 mr-2" />
@@ -233,7 +280,7 @@ const PaymentManagement = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          
+
           <div className="flex space-x-2">
             {/* Payment Status Filter */}
             <div className="dropdown relative">
@@ -242,7 +289,12 @@ const PaymentManagement = () => {
                 onClick={() => setShowStatusFilterDropdown((prev) => !prev)}
               >
                 <Filter className="w-4 h-4 mr-2" />
-                Status: {paymentStatusFilter === 'all' ? 'All' : paymentStatusFilter === 'paid' ? 'Paid' : 'Unpaid'}
+                Status:{" "}
+                {paymentStatusFilter === "all"
+                  ? "All"
+                  : paymentStatusFilter === "paid"
+                  ? "Paid"
+                  : "Unpaid"}
                 {showStatusFilterDropdown ? (
                   <ChevronUp className="w-4 h-4 ml-2" />
                 ) : (
@@ -252,21 +304,42 @@ const PaymentManagement = () => {
               {showStatusFilterDropdown && (
                 <div className="dropdown-menu absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-200">
                   <div className="p-2 space-y-1">
-                    <button 
-                      className={`w-full text-left px-4 py-2 text-sm rounded ${paymentStatusFilter === 'all' ? 'bg-[#f3eeff] text-[#6339C0]' : 'hover:bg-gray-50'}`}
-                      onClick={() => { setPaymentStatusFilter('all'); setShowStatusFilterDropdown(false); }}
+                    <button
+                      className={`w-full text-left px-4 py-2 text-sm rounded ${
+                        paymentStatusFilter === "all"
+                          ? "bg-[#f3eeff] text-[#6339C0]"
+                          : "hover:bg-gray-50"
+                      }`}
+                      onClick={() => {
+                        setPaymentStatusFilter("all");
+                        setShowStatusFilterDropdown(false);
+                      }}
                     >
                       All Status
                     </button>
-                    <button 
-                      className={`w-full text-left px-4 py-2 text-sm rounded ${paymentStatusFilter === 'paid' ? 'bg-[#f3eeff] text-[#6339C0]' : 'hover:bg-gray-50'}`}
-                      onClick={() => { setPaymentStatusFilter('paid'); setShowStatusFilterDropdown(false); }}
+                    <button
+                      className={`w-full text-left px-4 py-2 text-sm rounded ${
+                        paymentStatusFilter === "paid"
+                          ? "bg-[#f3eeff] text-[#6339C0]"
+                          : "hover:bg-gray-50"
+                      }`}
+                      onClick={() => {
+                        setPaymentStatusFilter("paid");
+                        setShowStatusFilterDropdown(false);
+                      }}
                     >
                       ✓ Paid
                     </button>
-                    <button 
-                      className={`w-full text-left px-4 py-2 text-sm rounded ${paymentStatusFilter === 'unpaid' ? 'bg-[#f3eeff] text-[#6339C0]' : 'hover:bg-gray-50'}`}
-                      onClick={() => { setPaymentStatusFilter('unpaid'); setShowStatusFilterDropdown(false); }}
+                    <button
+                      className={`w-full text-left px-4 py-2 text-sm rounded ${
+                        paymentStatusFilter === "unpaid"
+                          ? "bg-[#f3eeff] text-[#6339C0]"
+                          : "hover:bg-gray-50"
+                      }`}
+                      onClick={() => {
+                        setPaymentStatusFilter("unpaid");
+                        setShowStatusFilterDropdown(false);
+                      }}
                     >
                       ✗ Unpaid
                     </button>
@@ -274,7 +347,7 @@ const PaymentManagement = () => {
                 </div>
               )}
             </div>
-            
+
             {/* Payment Method Filter */}
             <div className="dropdown relative">
               <button
@@ -282,7 +355,7 @@ const PaymentManagement = () => {
                 onClick={() => setShowFilterDropdown((prev) => !prev)}
               >
                 <Filter className="w-4 h-4 mr-2" />
-                Method: {activeFilter === 'all' ? 'All' : activeFilter}
+                Method: {activeFilter === "all" ? "All" : activeFilter}
                 {showFilterDropdown ? (
                   <ChevronUp className="w-4 h-4 ml-2" />
                 ) : (
@@ -292,17 +365,31 @@ const PaymentManagement = () => {
               {showFilterDropdown && (
                 <div className="dropdown-menu absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-200">
                   <div className="p-2 space-y-1">
-                    <button 
-                      className={`w-full text-left px-4 py-2 text-sm rounded ${activeFilter === 'all' ? 'bg-[#f3eeff] text-[#6339C0]' : 'hover:bg-gray-50'}`}
-                      onClick={() => { setActiveFilter('all'); setShowFilterDropdown(false); }}
+                    <button
+                      className={`w-full text-left px-4 py-2 text-sm rounded ${
+                        activeFilter === "all"
+                          ? "bg-[#f3eeff] text-[#6339C0]"
+                          : "hover:bg-gray-50"
+                      }`}
+                      onClick={() => {
+                        setActiveFilter("all");
+                        setShowFilterDropdown(false);
+                      }}
                     >
                       All Methods
                     </button>
                     {paymentMethods.map((method) => (
-                      <button 
+                      <button
                         key={method}
-                        className={`w-full text-left px-4 py-2 text-sm rounded ${activeFilter === method ? 'bg-[#f3eeff] text-[#6339C0]' : 'hover:bg-gray-50'}`}
-                        onClick={() => { setActiveFilter(method); setShowFilterDropdown(false); }}
+                        className={`w-full text-left px-4 py-2 text-sm rounded ${
+                          activeFilter === method
+                            ? "bg-[#f3eeff] text-[#6339C0]"
+                            : "hover:bg-gray-50"
+                        }`}
+                        onClick={() => {
+                          setActiveFilter(method);
+                          setShowFilterDropdown(false);
+                        }}
                       >
                         {method}
                       </button>
@@ -321,61 +408,79 @@ const PaymentManagement = () => {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
                   Order ID
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
                   Status
                 </th>
-                <th 
-                  scope="col" 
+                <th
+                  scope="col"
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => requestSort('created_at')}
+                  onClick={() => requestSort("created_at")}
                 >
                   <div className="flex items-center">
                     Date
-                    {sortConfig.key === 'created_at' && (
-                      sortConfig.direction === 'asc' ? 
-                        <ChevronUp className="ml-1 w-4 h-4" /> : 
+                    {sortConfig.key === "created_at" &&
+                      (sortConfig.direction === "asc" ? (
+                        <ChevronUp className="ml-1 w-4 h-4" />
+                      ) : (
                         <ChevronDown className="ml-1 w-4 h-4" />
-                    )}
+                      ))}
                   </div>
                 </th>
-                <th 
-                  scope="col" 
+                <th
+                  scope="col"
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => requestSort('amount')}
+                  onClick={() => requestSort("amount")}
                 >
                   <div className="flex items-center">
                     Amount
-                    {sortConfig.key === 'amount' && (
-                      sortConfig.direction === 'asc' ? 
-                        <ChevronUp className="ml-1 w-4 h-4" /> : 
+                    {sortConfig.key === "amount" &&
+                      (sortConfig.direction === "asc" ? (
+                        <ChevronUp className="ml-1 w-4 h-4" />
+                      ) : (
                         <ChevronDown className="ml-1 w-4 h-4" />
-                    )}
+                      ))}
                   </div>
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
                   Parent
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
                   Child
                 </th>
-                <th 
-                  scope="col" 
+                <th
+                  scope="col"
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => requestSort('method')}
+                  onClick={() => requestSort("method")}
                 >
                   <div className="flex items-center">
                     Method
-                    {sortConfig.key === 'method' && (
-                      sortConfig.direction === 'asc' ? 
-                        <ChevronUp className="ml-1 w-4 h-4" /> : 
+                    {sortConfig.key === "method" &&
+                      (sortConfig.direction === "asc" ? (
+                        <ChevronUp className="ml-1 w-4 h-4" />
+                      ) : (
                         <ChevronDown className="ml-1 w-4 h-4" />
-                    )}
+                      ))}
                   </div>
                 </th>
-                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
                   Actions
                 </th>
               </tr>
@@ -383,7 +488,10 @@ const PaymentManagement = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="px-6 py-4 text-center text-sm text-gray-500">
+                  <td
+                    colSpan={8}
+                    className="px-6 py-4 text-center text-sm text-gray-500"
+                  >
                     Loading payments...
                   </td>
                 </tr>
@@ -394,27 +502,33 @@ const PaymentManagement = () => {
                       {payment.order_id}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                        payment.status === 'paid' 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {payment.status === 'paid' ? '✓ Paid' : '✗ Unpaid'}
+                      <span
+                        className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                          payment.status === "paid"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-red-100 text-red-800"
+                        }`}
+                      >
+                        {payment.status === "paid" ? "✓ Paid" : "✗ Unpaid"}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {formatDate(payment.created_at)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
-                      {formatCurrency(payment.amount)}
+                      {formatCurrency(parseFloat(payment.amount))}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      <div>{payment.parent_name || 'N/A'}</div>
-                      <div className="text-xs text-gray-400">ID: {payment.parent_id}</div>
+                      <div>{payment.parent_name || "N/A"}</div>
+                      <div className="text-xs text-gray-400">
+                        ID: {payment.parent_id}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      <div>{payment.child_name || 'N/A'}</div>
-                      <div className="text-xs text-gray-400">ID: {payment.child_id}</div>
+                      <div>{payment.child_name || "N/A"}</div>
+                      <div className="text-xs text-gray-400">
+                        ID: {payment.child_id}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
@@ -434,7 +548,10 @@ const PaymentManagement = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={8} className="px-6 py-4 text-center text-sm text-gray-500">
+                  <td
+                    colSpan={8}
+                    className="px-6 py-4 text-center text-sm text-gray-500"
+                  >
                     No payments found matching your criteria
                   </td>
                 </tr>
@@ -448,14 +565,16 @@ const PaymentManagement = () => {
           <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
             <div className="flex-1 flex justify-between sm:hidden">
               <button
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
                 className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
               >
                 Previous
               </button>
               <button
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                onClick={() =>
+                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                }
                 disabled={currentPage === totalPages}
                 className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
               >
@@ -465,15 +584,26 @@ const PaymentManagement = () => {
             <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm text-gray-700">
-                  Showing <span className="font-medium">{indexOfFirstPayment + 1}</span> to{' '}
-                  <span className="font-medium">{Math.min(indexOfLastPayment, filteredPayments.length)}</span> of{' '}
-                  <span className="font-medium">{filteredPayments.length}</span> results
+                  Showing{" "}
+                  <span className="font-medium">{indexOfFirstPayment + 1}</span>{" "}
+                  to{" "}
+                  <span className="font-medium">
+                    {Math.min(indexOfLastPayment, filteredPayments.length)}
+                  </span>{" "}
+                  of{" "}
+                  <span className="font-medium">{filteredPayments.length}</span>{" "}
+                  results
                 </p>
               </div>
               <div>
-                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                <nav
+                  className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
+                  aria-label="Pagination"
+                >
                   <button
-                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.max(prev - 1, 1))
+                    }
                     disabled={currentPage === 1}
                     className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
                   >
@@ -485,15 +615,17 @@ const PaymentManagement = () => {
                       onClick={() => setCurrentPage(index + 1)}
                       className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
                         currentPage === index + 1
-                          ? 'z-10 bg-[#6339C0] border-[#6339C0] text-white'
-                          : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                          ? "z-10 bg-[#6339C0] border-[#6339C0] text-white"
+                          : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
                       }`}
                     >
                       {index + 1}
                     </button>
                   ))}
                   <button
-                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                    }
                     disabled={currentPage === totalPages}
                     className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
                   >
@@ -512,122 +644,174 @@ const PaymentManagement = () => {
           <div className="bg-white rounded-xl shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold text-gray-800">Payment Details</h2>
-                <button 
-                  onClick={() => setShowDetailsModal(false)} 
+                <h2 className="text-xl font-bold text-gray-800">
+                  Payment Details
+                </h2>
+                <button
+                  onClick={() => setShowDetailsModal(false)}
                   className="text-gray-400 hover:text-gray-500"
                 >
                   <Eye className="w-6 h-6" />
                 </button>
               </div>
-              
+
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <div className="flex items-center mb-2">
                       <CreditCard className="w-5 h-5 text-gray-500 mr-2" />
-                      <h4 className="text-sm font-medium text-gray-700">Order ID</h4>
+                      <h4 className="text-sm font-medium text-gray-700">
+                        Order ID
+                      </h4>
                     </div>
-                    <p className="text-sm text-gray-900 font-mono">{selectedPayment.order_id}</p>
+                    <p className="text-sm text-gray-900 font-mono">
+                      {selectedPayment.order_id}
+                    </p>
                   </div>
-                  
+
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <div className="flex items-center mb-2">
                       <span className="w-5 h-5 text-gray-500 mr-2">●</span>
-                      <h4 className="text-sm font-medium text-gray-700">Payment Status</h4>
+                      <h4 className="text-sm font-medium text-gray-700">
+                        Payment Status
+                      </h4>
                     </div>
-                    <span className={`inline-block px-3 py-1 text-sm font-semibold rounded-full ${
-                      selectedPayment.status === 'paid' 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {selectedPayment.status === 'paid' ? '✓ Paid' : '✗ Unpaid'}
+                    <span
+                      className={`inline-block px-3 py-1 text-sm font-semibold rounded-full ${
+                        selectedPayment.status === "paid"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-red-100 text-red-800"
+                      }`}
+                    >
+                      {selectedPayment.status === "paid"
+                        ? "✓ Paid"
+                        : "✗ Unpaid"}
                     </span>
                   </div>
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <div className="flex items-center mb-2">
                       <DollarSign className="w-5 h-5 text-gray-500 mr-2" />
-                      <h4 className="text-sm font-medium text-gray-700">Amount</h4>
+                      <h4 className="text-sm font-medium text-gray-700">
+                        Amount
+                      </h4>
                     </div>
-                    <p className="text-lg font-bold text-gray-900">{formatCurrency(selectedPayment.amount)}</p>
+                    <p className="text-lg font-bold text-gray-900">
+                      {formatCurrency(parseFloat(selectedPayment.amount))}
+                    </p>
                   </div>
-                  
+
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <div className="flex items-center mb-2">
                       <Calendar className="w-5 h-5 text-gray-500 mr-2" />
-                      <h4 className="text-sm font-medium text-gray-700">Date</h4>
+                      <h4 className="text-sm font-medium text-gray-700">
+                        Date
+                      </h4>
                     </div>
-                    <p className="text-sm text-gray-900">{formatDate(selectedPayment.created_at)}</p>
+                    <p className="text-sm text-gray-900">
+                      {formatDate(selectedPayment.created_at)}
+                    </p>
                   </div>
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <div className="flex items-center mb-2">
                       <CreditCard className="w-5 h-5 text-gray-500 mr-2" />
-                      <h4 className="text-sm font-medium text-gray-700">Payment Method</h4>
+                      <h4 className="text-sm font-medium text-gray-700">
+                        Payment Method
+                      </h4>
                     </div>
-                    <p className="text-sm text-gray-900">{selectedPayment.method}</p>
+                    <p className="text-sm text-gray-900">
+                      {selectedPayment.method}
+                    </p>
                   </div>
-                  
+
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <div className="flex items-center mb-2">
                       <CreditCard className="w-5 h-5 text-gray-500 mr-2" />
-                      <h4 className="text-sm font-medium text-gray-700">Transaction Reference</h4>
+                      <h4 className="text-sm font-medium text-gray-700">
+                        Transaction Reference
+                      </h4>
                     </div>
-                    <p className="text-sm text-gray-900 font-mono">{selectedPayment.transaction_ref}</p>
+                    <p className="text-sm text-gray-900 font-mono">
+                      {selectedPayment.transaction_ref}
+                    </p>
                   </div>
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <div className="flex items-center mb-2">
                       <User className="w-5 h-5 text-gray-500 mr-2" />
-                      <h4 className="text-sm font-medium text-gray-700">Parent</h4>
+                      <h4 className="text-sm font-medium text-gray-700">
+                        Parent
+                      </h4>
                     </div>
-                    <p className="text-sm text-gray-900 font-medium">{selectedPayment.parent_name || 'N/A'}</p>
-                    <p className="text-xs text-gray-500 mt-1">ID: {selectedPayment.parent_id}</p>
+                    <p className="text-sm text-gray-900 font-medium">
+                      {selectedPayment.parent_name || "N/A"}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      ID: {selectedPayment.parent_id}
+                    </p>
                   </div>
-                  
+
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <div className="flex items-center mb-2">
                       <User className="w-5 h-5 text-gray-500 mr-2" />
-                      <h4 className="text-sm font-medium text-gray-700">Child</h4>
+                      <h4 className="text-sm font-medium text-gray-700">
+                        Child
+                      </h4>
                     </div>
-                    <p className="text-sm text-gray-900 font-medium">{selectedPayment.child_name || 'N/A'}</p>
-                    <p className="text-xs text-gray-500 mt-1">ID: {selectedPayment.child_id}</p>
+                    <p className="text-sm text-gray-900 font-medium">
+                      {selectedPayment.child_name || "N/A"}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      ID: {selectedPayment.child_id}
+                    </p>
                   </div>
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <div className="flex items-center mb-2">
                       <Package className="w-5 h-5 text-gray-500 mr-2" />
-                      <h4 className="text-sm font-medium text-gray-700">Package ID</h4>
+                      <h4 className="text-sm font-medium text-gray-700">
+                        Package ID
+                      </h4>
                     </div>
-                    <p className="text-sm text-gray-900">{selectedPayment.package_id}</p>
+                    <p className="text-sm text-gray-900">
+                      {selectedPayment.package_id}
+                    </p>
                   </div>
-                  
+
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <div className="flex items-center mb-2">
                       <Calendar className="w-5 h-5 text-gray-500 mr-2" />
-                      <h4 className="text-sm font-medium text-gray-700">Month</h4>
+                      <h4 className="text-sm font-medium text-gray-700">
+                        Month
+                      </h4>
                     </div>
-                    <p className="text-sm text-gray-900">{selectedPayment.month}</p>
+                    <p className="text-sm text-gray-900">
+                      {selectedPayment.month}
+                    </p>
                   </div>
                 </div>
-                
+
                 {selectedPayment.notes && (
                   <div className="bg-gray-50 p-4 rounded-lg">
-                    <h4 className="text-sm font-medium text-gray-700 mb-2">Notes</h4>
-                    <p className="text-sm text-gray-900 whitespace-pre-line">{selectedPayment.notes}</p>
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">
+                      Notes
+                    </h4>
+                    <p className="text-sm text-gray-900 whitespace-pre-line">
+                      {selectedPayment.notes}
+                    </p>
                   </div>
                 )}
               </div>
-              
+
               <div className="mt-6 flex justify-end">
                 <button
                   onClick={() => setShowDetailsModal(false)}
@@ -647,8 +831,13 @@ const PaymentManagement = () => {
           <div className="bg-white rounded-xl shadow-lg max-w-md w-full">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-gray-800">Export Payments</h2>
-                <button onClick={() => setShowExportModal(false)} className="text-gray-400 hover:text-gray-500">
+                <h2 className="text-xl font-bold text-gray-800">
+                  Export Payments
+                </h2>
+                <button
+                  onClick={() => setShowExportModal(false)}
+                  className="text-gray-400 hover:text-gray-500"
+                >
                   <Eye className="w-6 h-6" />
                 </button>
               </div>
@@ -658,20 +847,24 @@ const PaymentManagement = () => {
                 </p>
                 <div className="grid grid-cols-2 gap-4">
                   <button
-                    onClick={() => handleExport('csv')}
+                    onClick={() => handleExport("csv")}
                     className="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:border-[#6339C0] hover:bg-[#f3eeff] transition-colors"
                   >
                     <Download className="w-8 h-8 text-gray-600 mb-2" />
                     <span className="font-medium">CSV Format</span>
-                    <span className="text-xs text-gray-500 mt-1">Excel, Numbers, etc.</span>
+                    <span className="text-xs text-gray-500 mt-1">
+                      Excel, Numbers, etc.
+                    </span>
                   </button>
                   <button
-                    onClick={() => handleExport('pdf')}
+                    onClick={() => handleExport("pdf")}
                     className="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:border-[#6339C0] hover:bg-[#f3eeff] transition-colors"
                   >
                     <Download className="w-8 h-8 text-gray-600 mb-2" />
                     <span className="font-medium">PDF Format</span>
-                    <span className="text-xs text-gray-500 mt-1">Adobe Reader, etc.</span>
+                    <span className="text-xs text-gray-500 mt-1">
+                      Adobe Reader, etc.
+                    </span>
                   </button>
                 </div>
               </div>
