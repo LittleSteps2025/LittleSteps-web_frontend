@@ -39,7 +39,7 @@ export interface UpdateMeetingData {
 export interface SearchParams {
   searchTerm?: string;
   recipient?: string;
-  response?: string;
+  status?: string;
   dateFrom?: string;
   dateTo?: string;
 }
@@ -191,8 +191,8 @@ class MeetingService {
       if (searchParams.recipient) {
         params.append("recipient", searchParams.recipient);
       }
-      if (searchParams.response) {
-        params.append("response", searchParams.response);
+      if (searchParams.status) {
+        params.append("status", searchParams.status);
       }
       if (searchParams.dateFrom) {
         params.append("dateFrom", searchParams.dateFrom);

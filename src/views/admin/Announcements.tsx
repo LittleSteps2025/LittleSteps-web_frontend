@@ -114,19 +114,51 @@ const Announcements = () => {
   const ANNOUNCEMENTS_API_URL = `${API_BASE_URL}/announcements`;
 
   // Format date and time for display
-  const formatDateTime = (dateString: string) => {
-    const date = new Date(dateString);
+ // Format date and time for display - handle backend normalized dates
+const formatDateTime = (dateString: string) => {
+  // Backend already returns dates as YYYY-MM-DD strings, so parse accordingly
+  if (!dateString) return { date: "N/A", time: "N/A" };
+  
+  try {
+    // If it's already in YYYY-MM-DD format, parse it directly
+    let date: Date;
+    if (typeof dateString === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+      // Parse as UTC to avoid timezone shift
+      date = new Date(dateString + 'T00:00:00Z');
+    } else {
+      date = new Date(dateString);
+    }
+    
+    if (isNaN(date.getTime())) {
+      return { date: "Invalid Date", time: "N/A" };
+    }
+    
     return {
       date: date.toLocaleDateString("en-US", {
         year: "numeric",
         month: "short",
         day: "numeric",
+        timeZone: 'UTC' // Use UTC to match backend
       }),
       time: date.toLocaleTimeString("en-US", {
         hour: "2-digit",
         minute: "2-digit",
+        timeZone: 'UTC'
       }),
     };
+  } catch (error) {
+    console.error('Error formatting date:', error, dateString);
+    return { date: String(dateString), time: "N/A" };
+  }
+};
+
+  // Format date without timezone issues (returns YYYY-MM-DD)
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "N/A";
+    if (typeof dateString === "string" && dateString.includes("T")) {
+      return dateString.split("T")[0];
+    }
+    return String(dateString);
   };
 
   // Show toast notification
@@ -170,7 +202,7 @@ const Announcements = () => {
       setIsLoading(false);
       setIsSearching(false);
     }
-  }, []);
+  }, [ANNOUNCEMENTS_API_URL]);
 
   // Search announcements with debounce
   const searchAnnouncements = useCallback(() => {
@@ -192,9 +224,9 @@ const Announcements = () => {
               .includes(searchTerm.toLowerCase())
           : true;
 
-        const dateMatch = searchDate
-          ? announcement.date.includes(searchDate)
-          : true;
+       const dateMatch = searchDate
+  ? announcement.date && announcement.date.includes(searchDate)
+  : true;
 
         return termMatch && dateMatch;
       });
@@ -349,8 +381,8 @@ const Announcements = () => {
     setFormData({
       title: announcement.title,
       details: announcement.details,
-      date: announcement.date,
-      time: announcement.time,
+      date: formatDate(announcement.date),
+     time: announcement.time && typeof announcement.time === 'string' ? announcement.time.slice(0, 5) : new Date().toTimeString().slice(0, 5),
       audience: announcement.audience,
       user_id: announcement.user_id ? String(announcement.user_id) : "",
       attachment: announcement.attachment || "",
@@ -522,8 +554,7 @@ const Announcements = () => {
               <span className="text-sm text-gray-500">
                 Showing {filteredAnnouncements.length} results
                 {searchTerm && ` for "${searchTerm}"`}
-                {searchDate &&
-                  ` on ${new Date(searchDate).toLocaleDateString()}`}
+                {searchDate && ` on ${searchDate}`}
               </span>
               <button
                 onClick={clearFilters}
@@ -557,9 +588,9 @@ const Announcements = () => {
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                         To: {announcement.audience}
                       </span>
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        Date: {announcement.date.split("T")[0]}
-                      </span>
+                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+  Time: {announcement.time && typeof announcement.time === 'string' ? announcement.time.slice(0, 5) : 'N/A'}
+</span>
                       {announcement.time && (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
                           Time: {announcement.time.slice(0, 5)}
@@ -597,10 +628,9 @@ const Announcements = () => {
                   </div>
                   {announcement.updated_at && (
                     <div className="flex items-center mt-1">
-                      <span>
-                        Updated: {formatDateTime(announcement.updated_at).date}{" "}
-                        at {formatDateTime(announcement.updated_at).time}
-                      </span>
+                     <span>
+  Updated: {announcement.updated_at ? `${formatDateTime(announcement.updated_at).date} at ${formatDateTime(announcement.updated_at).time}` : 'N/A'}
+</span>
                     </div>
                   )}
                 </div>
@@ -713,6 +743,7 @@ const Announcements = () => {
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     required
+                    title="Select target audience"
                   >
                     <option value="All">All</option>
                     <option value="Teachers">Teachers</option>
@@ -732,6 +763,7 @@ const Announcements = () => {
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       required
+                      title="Select announcement date"
                     />
                   </div>
                   <div>
@@ -745,6 +777,7 @@ const Announcements = () => {
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       required
+                      title="Select announcement time"
                     />
                   </div>
                 </div>
@@ -764,6 +797,7 @@ const Announcements = () => {
                       }
                     }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    title="Upload attachment file"
                   />
                   {formData.attachment && (
                     <p className="mt-1 text-sm text-gray-500">

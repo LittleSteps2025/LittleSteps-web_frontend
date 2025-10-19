@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useLocation } from "react-router-dom";
 import { Calendar, Search, Plus, X, Edit } from "lucide-react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -57,7 +58,10 @@ const BASE_URL = API_BASE_URL.replace("/api", "");
 
 const Events = () => {
   const { user } = useAuth(); // Get the logged-in user
+  const location = useLocation();
   const [events, setEvents] = useState<Event[]>([]);
+  const [allEventsCount, setAllEventsCount] = useState(0);
+  const [upcomingEventsCount, setUpcomingEventsCount] = useState(0);
   const [filteredEvents, setFilteredEvents] = useState<Event[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchDate, setSearchDate] = useState("");
@@ -79,6 +83,16 @@ const Events = () => {
     message: string;
     type: "success" | "error";
   } | null>(null);
+  const [highlightedEventId, setHighlightedEventId] = useState<number | null>(null);
+
+  // Calculate min and max dates for events
+  // Min: 7 days from today
+  // Max: 4 months from today
+  const minDate = new Date();
+  minDate.setDate(minDate.getDate() + 7);
+
+  const maxDate = new Date();
+  maxDate.setMonth(maxDate.getMonth() + 4);
 
   // Format date and time for display
   const formatDateTime = (dateString: string) => {
@@ -119,6 +133,22 @@ const Events = () => {
       const data = await response.json();
       console.log("Fetched events:", data);
 
+      // Calculate upcoming events count (events from today onwards)
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Reset to start of day
+      
+      const upcomingEvents = data.filter((event: Event) => {
+        const eventDate = new Date(event.date);
+        eventDate.setHours(0, 0, 0, 0);
+        return eventDate >= today;
+      });
+
+      // Store counts
+      setAllEventsCount(data.length);
+      setUpcomingEventsCount(upcomingEvents.length);
+      console.log(`Total events: ${data.length}, Upcoming events: ${upcomingEvents.length}`);
+
+      // Display all events in the table
       setEvents(data);
       setFilteredEvents(data);
       // Remove success toast on fetch to avoid too many notifications
@@ -176,6 +206,36 @@ const Events = () => {
     fetchEvents();
   }, [fetchEvents]);
 
+  // Effect to handle navigation from dashboard (scroll to specific event)
+  useEffect(() => {
+    const state = location.state as { eventId?: string; scrollToEvent?: boolean } | null;
+    if (state?.eventId && events.length > 0) {
+      const eventId = parseInt(state.eventId);
+      const targetEvent = events.find(e => e.event_id === eventId);
+      
+      if (targetEvent) {
+        // Highlight the event
+        setHighlightedEventId(eventId);
+        
+        // Scroll to the event after a short delay to ensure rendering
+        setTimeout(() => {
+          const eventRow = document.getElementById(`event-row-${eventId}`);
+          if (eventRow) {
+            eventRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 300);
+        
+        // Remove highlight after 3 seconds
+        setTimeout(() => {
+          setHighlightedEventId(null);
+        }, 3000);
+        
+        // Clear the navigation state
+        window.history.replaceState({}, document.title);
+      }
+    }
+  }, [location.state, events]);
+
   // Effect to handle search when search term or date changes
   useEffect(() => {
     searchEvents();
@@ -191,14 +251,14 @@ const Events = () => {
     });
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setFormData({
-        ...formData,
-        image: e.target.files[0],
-      });
-    }
-  };
+  // const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   if (e.target.files && e.target.files[0]) {
+  //     setFormData({
+  //       ...formData,
+  //       image: e.target.files[0],
+  //     });
+  //   }
+  // };
 
   const handleDateChange = (date: Date | null) => {
     if (date) {
@@ -285,6 +345,17 @@ const Events = () => {
       !formData.venue.trim()
     ) {
       showToast("Please fill in all required fields", "error");
+      return;
+    }
+
+    // Validate date range (7 days from today to 4 months from today)
+    const selectedDate = new Date(formData.date);
+    if (selectedDate < minDate) {
+      showToast("Cannot create events less than 7 days in advance", "error");
+      return;
+    }
+    if (selectedDate > maxDate) {
+      showToast("Cannot create events more than 4 months in advance", "error");
       return;
     }
 
@@ -469,6 +540,34 @@ const Events = () => {
         </h1>
       </div>
 
+      {/* Event Statistics Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-500 mb-1">Total Events</p>
+              <p className="text-3xl font-bold text-gray-800">{allEventsCount}</p>
+              <p className="text-xs text-gray-400 mt-1">All events in the system</p>
+            </div>
+            <div className="p-3 rounded-lg bg-blue-100">
+              <Calendar className="w-8 h-8 text-blue-600" />
+            </div>
+          </div>
+        </div>
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-500 mb-1">Upcoming Events</p>
+              <p className="text-3xl font-bold text-gray-800">{upcomingEventsCount}</p>
+              <p className="text-xs text-gray-400 mt-1">Events from today onwards</p>
+            </div>
+            <div className="p-3 rounded-lg bg-green-100">
+              <Calendar className="w-8 h-8 text-green-600" />
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Search and Add Event */}
       <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
         <div className="flex flex-col gap-4">
@@ -585,9 +684,17 @@ const Events = () => {
                   const createdDateTime = event.created_time
                     ? formatDateTime(event.created_time)
                     : null;
+                  
+                  const isHighlighted = highlightedEventId === event.event_id;
 
                   return (
-                    <tr key={event.event_id} className="hover:bg-gray-50">
+                    <tr 
+                      key={event.event_id} 
+                      id={`event-row-${event.event_id}`}
+                      className={`hover:bg-gray-50 transition-colors duration-300 ${
+                        isHighlighted ? 'bg-blue-50 ring-2 ring-blue-400 ring-inset' : ''
+                      }`}
+                    >
                       <td className="px-6 py-4 whitespace-nowrap w-1/5">
                         <div className="text-sm font-medium text-gray-900">
                           {event.topic}
@@ -721,7 +828,7 @@ const Events = () => {
 
       {/* Add/Edit Event Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
@@ -784,7 +891,7 @@ const Events = () => {
                       />
                     </div>
 
-                    <div>
+                    {/* <div>
                       <label
                         htmlFor="image"
                         className="block text-sm font-medium text-gray-700 mb-1"
@@ -815,7 +922,7 @@ const Events = () => {
                           />
                         </div>
                       )}
-                    </div>
+                    </div> */}
                   </div>
 
                   {/* Event Details */}
@@ -837,12 +944,8 @@ const Events = () => {
                             formData.date ? new Date(formData.date) : null
                           }
                           onChange={handleDateChange}
-                          minDate={new Date()}
-                          maxDate={(() => {
-                            const maxDate = new Date();
-                            maxDate.setFullYear(maxDate.getFullYear() + 1);
-                            return maxDate;
-                          })()}
+                          minDate={minDate}
+                          maxDate={maxDate}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 pl-10"
                           required
                           dateFormat="yyyy-MM-dd"
@@ -850,7 +953,7 @@ const Events = () => {
                         <Calendar className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                       </div>
                       <p className="mt-1 text-xs text-gray-500">
-                        Select a date between today and one year from now
+                        Select a date between 7 days from today and 4 months from now
                       </p>
                     </div>
 

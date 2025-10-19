@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Search, Plus, Edit, X, Calendar } from "lucide-react";
+import { Search, Plus, X, Calendar } from "lucide-react";
 import { useAuth } from "../../context/AuthContext"; // Assuming you have an auth context
 import { API_BASE_URL } from "../../config/api";
 
@@ -16,6 +16,28 @@ type Announcement = {
   user_id: string;
   updated_at?: string;
 };
+
+// API Response interface
+interface ApiAnnouncement {
+  ann_id: string;
+  title: string;
+  details: string;
+  date: string;
+  time: string;
+  audience?: number;
+  created_at?: string;
+  attachment?: string;
+  session_id?: string;
+  user_id?: string;
+  updated_at?: string;
+}
+
+// API Response wrapper
+interface ApiResponse<T> {
+  status: number;
+  message: string;
+  data: T;
+}
 
 // Audience mapping
 const audienceMap: { [key: number]: string } = {
@@ -67,6 +89,16 @@ const Toast = ({
 
 const Announcements = () => {
   const { user } = useAuth(); // Get current user from auth context
+  
+  // Helper function to get local date in YYYY-MM-DD format
+  const getLocalDateString = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [filteredAnnouncements, setFilteredAnnouncements] = useState<
     Announcement[]
@@ -77,17 +109,19 @@ const Announcements = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [currentAnnouncement, setCurrentAnnouncement] =
     useState<Announcement | null>(null);
-  const [isEditMode, setIsEditMode] = useState(false);
   const [formData, setFormData] = useState<
     Omit<Announcement, "ann_id" | "created_at" | "session_id">
-  >({
-    title: "",
-    details: "",
-    date: new Date().toISOString().split("T")[0],
-    time: new Date().toTimeString().split(" ")[0],
-    audience: "All",
-    user_id: user?.id ? String(user.id) : "",
-    attachment: "",
+  >(() => {
+    const now = new Date();
+    return {
+      title: "",
+      details: "",
+      date: getLocalDateString(), // Use local date, not UTC
+      time: now.toTimeString().slice(0, 5), // HH:MM format only
+      audience: "All",
+      user_id: user?.id ? String(user.id) : "",
+      attachment: "",
+    };
   });
   const [isLoading, setIsLoading] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
@@ -109,20 +143,80 @@ const Announcements = () => {
     }
   }, [user?.id]);
 
-  // Format date and time for display
-  const formatDateTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return {
-      date: date.toLocaleDateString("en-US", {
+  // Format date without timezone issues (returns YYYY-MM-DD)
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "N/A";
+    // Extract just the date part (YYYY-MM-DD) to avoid timezone conversion issues
+    if (typeof dateString === "string" && dateString.includes("T")) {
+      return dateString.split("T")[0];
+    }
+    return String(dateString);
+  };
+
+  // Format date for display in cards - avoiding timezone issues
+  const formatDateForDisplay = (dateString: string) => {
+    if (!dateString) return "N/A";
+    
+    try {
+      // Parse as UTC to avoid timezone shift
+      let date: Date;
+      if (typeof dateString === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+        // If it's already in YYYY-MM-DD format, parse it as UTC
+        date = new Date(dateString + 'T00:00:00Z');
+      } else {
+        date = new Date(dateString);
+      }
+      
+      if (isNaN(date.getTime())) {
+        return String(dateString);
+      }
+      
+      return date.toLocaleDateString("en-US", {
         year: "numeric",
         month: "short",
         day: "numeric",
-      }),
-      time: date.toLocaleTimeString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-    };
+        timeZone: 'UTC' // Use UTC to match backend
+      });
+    } catch (error) {
+      console.error('Error formatting date:', error, dateString);
+      return String(dateString);
+    }
+  };
+
+  // Format date and time for display
+  const formatDateTime = (dateString: string) => {
+    if (!dateString) return { date: "N/A", time: "N/A" };
+    
+    try {
+      // Parse as UTC to avoid timezone shift
+      let date: Date;
+      if (typeof dateString === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+        date = new Date(dateString + 'T00:00:00Z');
+      } else {
+        date = new Date(dateString);
+      }
+      
+      if (isNaN(date.getTime())) {
+        return { date: "Invalid Date", time: "N/A" };
+      }
+      
+      return {
+        date: date.toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+          timeZone: 'UTC'
+        }),
+        time: date.toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+          timeZone: 'UTC'
+        }),
+      };
+    } catch (error) {
+      console.error('Error formatting date:', error, dateString);
+      return { date: String(dateString), time: "N/A" };
+    }
   };
 
   // Show toast notification
@@ -136,11 +230,23 @@ const Announcements = () => {
     try {
       const response = await fetch(ANNOUNCEMENTS_API_URL);
       if (!response.ok) throw new Error("Failed to fetch announcements");
-      const data = await response.json();
-      // Map audience integer to string
-      const mappedData = data.map((a: { audience: string | number }) => ({
-        ...a,
-        audience: audienceMap[Number(a.audience)] || "All",
+      const result = await response.json();
+      // Handle both wrapped response {data: [...]} and direct array response [...]
+      const data = Array.isArray(result) ? result : result.data || [];
+
+      // Map API data to Announcement interface, providing defaults for missing fields
+      const mappedData = data.map((a: ApiAnnouncement, index: number) => ({
+        ann_id: a.ann_id || `ann_${index}`,
+        title: a.title || "",
+        details: a.details || "",
+        date: a.date || "",
+        time: a.time || "",
+        audience: audienceMap[Number(a.audience)] || "All", // Default to "All" if no audience
+        created_at: a.created_at || new Date().toISOString(),
+        attachment: a.attachment || "",
+        session_id: a.session_id || "",
+        user_id: a.user_id || "",
+        updated_at: a.updated_at || "",
       }));
       setAnnouncements(mappedData);
       setFilteredAnnouncements(mappedData);
@@ -176,7 +282,7 @@ const Announcements = () => {
         const dateMatch = searchDate
           ? announcement.date &&
             typeof announcement.date === "string" &&
-            announcement.date.includes(searchDate)
+            formatDate(announcement.date).includes(searchDate)
           : true;
 
         return termMatch && dateMatch;
@@ -193,53 +299,17 @@ const Announcements = () => {
   const createAnnouncement = async (
     announcement: Omit<Announcement, "ann_id" | "created_at">
   ) => {
-    const response = await fetch(ANNOUNCEMENTS_API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-      body: JSON.stringify({
-        ...announcement,
-        audience: audienceReverseMap[announcement.audience] || 1,
-        // Don't explicitly send session_id - let backend handle it
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to create announcement");
-    }
-
-    return await response.json();
-  };
-
-  // Update announcement
-  const updateAnnouncement = async (
-    id: string,
-    announcement: Partial<Announcement>
-  ) => {
-    interface UserWithSession {
-      session_id?: string | number;
-    }
-    const userWithSession = user as UserWithSession;
-    const sessionId =
-      typeof userWithSession?.session_id === "number"
-        ? userWithSession.session_id
-        : userWithSession?.session_id
-        ? Number(userWithSession.session_id)
-        : null;
-
     const payload = {
-      ...announcement,
-      audience:
-        audienceReverseMap[
-          announcement.audience as "All" | "Teachers" | "Parents"
-        ] || 1,
-      session_id: sessionId,
+      title: announcement.title,
+      details: announcement.details,
+      date: announcement.date,
+      time: announcement.time,
+      audience: audienceReverseMap[announcement.audience] || 1,
+      user_id: announcement.user_id,
     };
 
-    const response = await fetch(`${ANNOUNCEMENTS_API_URL}/${id}`, {
-      method: "PUT",
+    const response = await fetch(ANNOUNCEMENTS_API_URL, {
+      method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -248,7 +318,8 @@ const Announcements = () => {
     });
 
     if (!response.ok) {
-      throw new Error("Failed to update announcement");
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to create announcement");
     }
 
     return await response.json();
@@ -295,32 +366,16 @@ const Announcements = () => {
 
   // Open modal for adding new announcement
   const openAddModal = () => {
+    const now = new Date();
     setIsModalOpen(true);
-    setIsEditMode(false);
     setFormData({
       title: "",
       details: "",
-      date: new Date().toISOString().split("T")[0],
-      time: new Date().toTimeString().split(" ")[0],
+      date: getLocalDateString(), // Use local date, not UTC
+      time: now.toTimeString().slice(0, 5), // HH:MM format only
       audience: "All",
       user_id: user?.id ? String(user.id) : "",
       attachment: "",
-    });
-  };
-
-  // Open modal for editing announcement
-  const openEditModal = (announcement: Announcement) => {
-    setIsModalOpen(true);
-    setIsEditMode(true);
-    setCurrentAnnouncement(announcement);
-    setFormData({
-      title: announcement.title,
-      details: announcement.details,
-      date: announcement.date,
-      time: announcement.time,
-      audience: announcement.audience,
-      user_id: announcement.user_id ? String(announcement.user_id) : "",
-      attachment: announcement.attachment || "",
     });
   };
 
@@ -342,9 +397,18 @@ const Announcements = () => {
       !formData.title.trim() ||
       !formData.details.trim() ||
       !formData.date ||
+      !formData.time ||
       !formData.user_id
     ) {
       showToast("Please fill in all required fields", "error");
+      return;
+    }
+
+    // Validate date is today only (use local date comparison)
+    const todayLocalDate = getLocalDateString();
+    
+    if (formData.date !== todayLocalDate) {
+      showToast("Can only create announcements for today", "error");
       return;
     }
 
@@ -354,22 +418,16 @@ const Announcements = () => {
     }
 
     try {
-      let result: Announcement;
-      if (isEditMode && currentAnnouncement) {
-        result = await updateAnnouncement(currentAnnouncement.ann_id, {
+      const createResult: ApiResponse<Announcement> | Announcement =
+        await createAnnouncement({
           ...formData,
         });
-        setAnnouncements(
-          announcements.map((a) => (a.ann_id === result.ann_id ? result : a))
-        );
-        showToast("Announcement updated successfully!", "success");
-      } else {
-        result = await createAnnouncement({
-          ...formData,
-        });
-        setAnnouncements([result, ...announcements]);
-        showToast("Announcement added successfully!", "success");
-      }
+      // Handle both wrapped response and direct data response
+      const newData =
+        (createResult as ApiResponse<Announcement>).data ||
+        (createResult as Announcement);
+      setAnnouncements([newData, ...announcements]);
+      showToast("Announcement created successfully!", "success");
       closeModal();
       fetchAnnouncements();
     } catch (error: unknown) {
@@ -498,8 +556,7 @@ const Announcements = () => {
               <span className="text-sm text-gray-500">
                 Showing {filteredAnnouncements.length} results
                 {searchTerm && ` for "${searchTerm}"`}
-                {searchDate &&
-                  ` on ${new Date(searchDate).toLocaleDateString()}`}
+                {searchDate && ` on ${searchDate}`}
               </span>
               <button
                 onClick={clearFilters}
@@ -535,13 +592,7 @@ const Announcements = () => {
                           To: {announcement.audience}
                         </span>
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          Date:{" "}
-                          {announcement.date
-                            ? typeof announcement.date === "string" &&
-                              announcement.date.includes("T")
-                              ? announcement.date.split("T")[0]
-                              : announcement.date
-                            : "N/A"}
+                          Date: {formatDateForDisplay(announcement.date)}
                         </span>
                         {announcement.time && (
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
@@ -582,22 +633,7 @@ const Announcements = () => {
                     )}
                   </div>
 
-                  <div className="flex mt-4 space-x-3">
-                    <button
-                      onClick={() => openEditModal(announcement)}
-                      className="text-gray-600 hover:text-gray-900 flex items-center text-sm font-medium hover:bg-gray-50 px-2 py-1 rounded transition-colors"
-                    >
-                      <Edit className="w-4 h-4 mr-1" />
-                      Edit
-                    </button>
-                    {/* <button
-                      onClick={() => openDeleteModal(announcement)}
-                      className="text-red-600 hover:text-red-900 flex items-center text-sm font-medium hover:bg-red-50 px-2 py-1 rounded transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4 mr-1" />
-                      Delete
-                    </button> */}
-                  </div>
+
                 </div>
               );
             })}
@@ -633,12 +669,12 @@ const Announcements = () => {
 
       {/* Add/Edit Announcement Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold text-gray-800">
-                  {isEditMode ? "Edit Announcement" : "New Announcement"}
+                  New Announcement
                 </h2>
                 <button
                   onClick={closeModal}
@@ -699,28 +735,46 @@ const Announcements = () => {
                   </select>
                 </div>
 
-                {/* <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Attachment (optional)</label>
-
-                  <input
-                    type="file"
-                    name="attachment"
-                    accept="*"
-                    onChange={(e) => {
-                      const file = e.target.files && e.target.files[0];
-                      if (file) {
-                        setFormData({ ...formData, attachment: file.name });
-                      }
-                    }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    title="Upload an attachment"
-                  />
-                  {formData.attachment && (
-                    <p className="mt-1 text-sm text-gray-500">
-                      Selected: {formData.attachment}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Date*
+                    </label>
+                    <input
+                      type="text"
+                      name="date"
+                      value={new Date(formData.date).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })}
+                      readOnly
+                      disabled
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 cursor-not-allowed text-gray-700"
+                      title="Date is automatically set to today"
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      Automatically set to today
                     </p>
-                  )}
-                </div> */}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Time*
+                    </label>
+                    <input
+                      type="time"
+                      name="time"
+                      value={formData.time}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      required
+                      title="Select announcement time"
+                    />
+                  </div>
+                </div>
+
+                
 
                 <div className="flex justify-end space-x-3 pt-4">
                   <button
@@ -734,7 +788,7 @@ const Announcements = () => {
                     type="submit"
                     className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
                   >
-                    {isEditMode ? "Update" : "Create"} Announcement
+                    Create Announcement
                   </button>
                 </div>
               </form>

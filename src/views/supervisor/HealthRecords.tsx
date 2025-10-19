@@ -90,7 +90,7 @@ const HealthRecords = () => {
     const record = {
       id: records.length + 1,
       child: newRecord.child,
-      age: parseInt(newRecord.age) || 0,
+      age: parseInt(newRecord.age),
       allergies: newRecord.allergies,
       medications: newRecord.medications,
       lastCheckup: newRecord.lastCheckup,

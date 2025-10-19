@@ -1,13 +1,12 @@
-import { useState, useEffect, useCallback } from "react";
-import { useSearchParams } from "react-router-dom";
-import { Search, AlertCircle, User, Filter, Eye, X, Edit } from "lucide-react";
-import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import complaintService from "../../services/complaintService";
-import type {
-  Complaint,
-  CreateComplaintData,
-} from "../../services/complaintService";
+import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { 
+  Search, AlertCircle, User, Filter,Eye, X, Edit
+} from 'lucide-react';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import complaintService from '../../services/complaintService';
+import type { Complaint, CreateComplaintData } from '../../services/complaintService';
 
 const Complaints = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -168,6 +167,8 @@ const Complaints = () => {
     setIsViewModalOpen(true);
     setCurrentComplaint(complaint);
   };
+
+
 
   // Close all modals
   const closeModal = () => {
@@ -520,7 +521,7 @@ const Complaints = () => {
 
       {/* Edit Complaint Status and Action Modal */}
       {isModalOpen && isEditMode && currentComplaint && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
@@ -667,7 +668,7 @@ const Complaints = () => {
 
       {/* View Complaint Details Modal */}
       {isViewModalOpen && currentComplaint && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
