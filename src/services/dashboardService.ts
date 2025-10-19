@@ -4,7 +4,7 @@ export interface DashboardStats {
   totalChildren: number;
   activeParents: number;
   activeTeachers: number;
-  todayCheckIns: number;
+  todayAttendance: number;
   monthlyRevenue: number;
   upcomingEvents?: number;
   pendingComplaints?: number;
@@ -57,7 +57,7 @@ interface DashboardApiResponse {
       activeParents: number;
       activeTeachers: number;
       activeSupervisors: number;
-      todayCheckIns: number;
+      todayAttendance: number;
       monthlyRevenue: number;
       upcomingEvents: number;
       pendingComplaints: number;
@@ -124,7 +124,7 @@ export const fetchDashboardStats = async (): Promise<DashboardStats> => {
       activeParents: result.data.overview.activeParents,
       activeTeachers: result.data.overview.activeTeachers,
       activeSupervisors: result.data.overview.activeSupervisors,
-      todayCheckIns: result.data.overview.todayCheckIns,
+      todayAttendance: result.data.overview.todayAttendance,
       monthlyRevenue: result.data.overview.monthlyRevenue,
       upcomingEvents: result.data.overview.upcomingEvents,
       pendingComplaints: result.data.overview.pendingComplaints,
@@ -139,7 +139,7 @@ export const fetchDashboardStats = async (): Promise<DashboardStats> => {
       totalChildren: 0,
       activeParents: 0,
       activeTeachers: 0,
-      todayCheckIns: 0,
+      todayAttendance: 0,
       monthlyRevenue: 0,
       upcomingEvents: 0,
       pendingComplaints: 0,

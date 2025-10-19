@@ -95,10 +95,10 @@ const Appointments = () => {
     try {
       const searchParams: {
         searchTerm?: string;
-        response?: string;
+        status?: string;
       } = {};
       if (searchTerm.trim()) searchParams.searchTerm = searchTerm;
-      if (statusFilter !== 'All Status') searchParams.response = statusFilter;
+      if (statusFilter !== 'All Status') searchParams.status = statusFilter.toLowerCase();
       
       // Search only supervisor meetings
       const data = await meetingService.searchMeetings(searchParams);

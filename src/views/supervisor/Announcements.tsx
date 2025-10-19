@@ -84,7 +84,7 @@ const Announcements = () => {
     title: "",
     details: "",
     date: new Date().toISOString().split("T")[0],
-    time: new Date().toTimeString().split(" ")[0],
+    time: new Date().toTimeString().slice(0, 5), // HH:MM format only
     audience: "All",
     user_id: user?.id ? String(user.id) : "",
     attachment: "",
@@ -95,6 +95,9 @@ const Announcements = () => {
     message: string;
     type: "success" | "error";
   } | null>(null);
+
+  // Calculate date for announcement (today only)
+  const today = new Date().toISOString().split("T")[0];
 
   // API base URL
   const ANNOUNCEMENTS_API_URL = `${API_BASE_URL}/announcements`;
@@ -108,6 +111,16 @@ const Announcements = () => {
       }));
     }
   }, [user?.id]);
+
+  // Format date without timezone issues
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "N/A";
+    // Extract just the date part (YYYY-MM-DD) to avoid timezone conversion issues
+    if (dateString.includes("T")) {
+      return dateString.split("T")[0];
+    }
+    return dateString;
+  };
 
   // Format date and time for display
   const formatDateTime = (dateString: string) => {
@@ -176,7 +189,7 @@ const Announcements = () => {
         const dateMatch = searchDate
           ? announcement.date &&
             typeof announcement.date === "string" &&
-            announcement.date.includes(searchDate)
+            formatDate(announcement.date).includes(searchDate)
           : true;
 
         return termMatch && dateMatch;
@@ -301,7 +314,7 @@ const Announcements = () => {
       title: "",
       details: "",
       date: new Date().toISOString().split("T")[0],
-      time: new Date().toTimeString().split(" ")[0],
+      time: new Date().toTimeString().slice(0, 5), // HH:MM format only
       audience: "All",
       user_id: user?.id ? String(user.id) : "",
       attachment: "",
@@ -316,8 +329,10 @@ const Announcements = () => {
     setFormData({
       title: announcement.title,
       details: announcement.details,
-      date: announcement.date,
-      time: announcement.time,
+      date: formatDate(announcement.date), // Format date properly to YYYY-MM-DD
+      time: typeof announcement.time === 'string' 
+        ? announcement.time.slice(0, 5)  // Ensure HH:MM format only
+        : announcement.time,
       audience: announcement.audience,
       user_id: announcement.user_id ? String(announcement.user_id) : "",
       attachment: announcement.attachment || "",
@@ -346,6 +361,19 @@ const Announcements = () => {
     ) {
       showToast("Please fill in all required fields", "error");
       return;
+    }
+
+    // Validate date is today only - but only when creating new announcements
+    if (!isEditMode) {
+      const selectedDate = new Date(formData.date);
+      const todayDate = new Date();
+      todayDate.setHours(0, 0, 0, 0);
+      selectedDate.setHours(0, 0, 0, 0);
+
+      if (selectedDate.getTime() !== todayDate.getTime()) {
+        showToast("Can only create announcements for today", "error");
+        return;
+      }
     }
 
     if (!user) {
@@ -498,8 +526,7 @@ const Announcements = () => {
               <span className="text-sm text-gray-500">
                 Showing {filteredAnnouncements.length} results
                 {searchTerm && ` for "${searchTerm}"`}
-                {searchDate &&
-                  ` on ${new Date(searchDate).toLocaleDateString()}`}
+                {searchDate && ` on ${searchDate}`}
               </span>
               <button
                 onClick={clearFilters}
@@ -535,13 +562,7 @@ const Announcements = () => {
                           To: {announcement.audience}
                         </span>
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          Date:{" "}
-                          {announcement.date
-                            ? typeof announcement.date === "string" &&
-                              announcement.date.includes("T")
-                              ? announcement.date.split("T")[0]
-                              : announcement.date
-                            : "N/A"}
+                          Date: {formatDate(announcement.date)}
                         </span>
                         {announcement.time && (
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
@@ -697,6 +718,47 @@ const Announcements = () => {
                     <option value="Teachers">Teachers</option>
                     <option value="Parents">Parents</option>
                   </select>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Date*
+                    </label>
+                    <input
+                      type="date"
+                      name="date"
+                      value={formData.date}
+                      onChange={handleInputChange}
+                      min={today}
+                      max={today}
+                      readOnly={isEditMode}
+                      disabled={isEditMode}
+                      className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                        isEditMode ? "bg-gray-100 cursor-not-allowed" : ""
+                      }`}
+                      required
+                      title={isEditMode ? "Date cannot be changed" : "Select announcement date (today only)"}
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      {isEditMode ? "Date cannot be changed" : "Today only"}
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Time*
+                    </label>
+                    <input
+                      type="time"
+                      name="time"
+                      value={formData.time}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      required
+                      title="Select announcement time"
+                    />
+                  </div>
                 </div>
 
                 {/* <div>
