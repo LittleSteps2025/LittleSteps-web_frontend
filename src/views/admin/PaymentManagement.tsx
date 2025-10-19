@@ -20,16 +20,11 @@ interface Payment {
   child_name?: string;
 }
 
-interface ApiResponse<T> {
-  success: boolean;
-  message: string;
-  data: T;
-}
 
 // API endpoints
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ;
 const API_ENDPOINTS = {
-  PAYMENTS: `${API_BASE_URL}/api/admin/payments`,  // Changed from /api/payment
+  PAYMENTS: `${API_BASE_URL}/admin/payments`,  // Changed from /api/payment
 } as const;
 
 const PaymentManagement = () => {
@@ -96,6 +91,7 @@ const PaymentManagement = () => {
   }, []);
 
   // Sort keys based on the Payment interface
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const sortKeys = ['created_at', 'amount', 'method', 'parent_id', 'child_id'] as const;
   type SortKey = typeof sortKeys[number];
 
