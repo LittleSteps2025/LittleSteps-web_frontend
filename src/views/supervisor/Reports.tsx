@@ -1,4 +1,4 @@
-import { FileText, Download, Printer, X, FileBarChart2, ChevronDown } from 'lucide-react';
+import { FileText, X, ChevronDown } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -7,7 +7,6 @@ import supervisorReportService, { type SupervisorReport } from '../../services/s
 const Reports = () => {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [selectedReport, setSelectedReport] = useState<SupervisorReport | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
   const [reports, setReports] = useState<SupervisorReport[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState<number>(0); // 0 means all months
@@ -44,37 +43,12 @@ const Reports = () => {
     setSelectedReport(null);
   };
 
-  // Delete report
-  const deleteReport = async (reportId: number | string) => {
-    if (!window.confirm('Are you sure you want to delete this report?')) {
-      return;
-    }
-
-    const loadingToast = toast.loading('Deleting report...');
-    
-    try {
-      await supervisorReportService.deleteReport(reportId);
-      setReports(reports.filter(r => r.report_id !== reportId));
-      toast.dismiss(loadingToast);
-      toast.success('✅ Report deleted successfully!');
-      closeDetails();
-    } catch (error) {
-      toast.dismiss(loadingToast);
-      console.error('Error deleting report:', error);
-      toast.error('❌ Failed to delete report');
-    }
-  };
-
-  // Filter reports based on search term, month, and year
+  // Filter reports based on month and year
   const filteredReports = reports.filter(report => {
-    const matchesSearch = report.report_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      report.report_type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      supervisorReportService.getMonthName(report.month).toLowerCase().includes(searchTerm.toLowerCase());
-    
     const matchesMonth = selectedMonth === 0 || report.month === selectedMonth;
     const matchesYear = report.year === selectedYear;
     
-    return matchesSearch && matchesMonth && matchesYear;
+    return matchesMonth && matchesYear;
   });
 
   // Get available years from reports
@@ -96,17 +70,7 @@ const Reports = () => {
 
       {/* Search and Filters */}
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="relative md:col-span-1">
-            <input
-              type="text"
-              placeholder="Search reports..."
-              className="pl-4 pr-4 py-2 w-full border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <div className="relative">
             <select
               value={selectedMonth}
@@ -154,16 +118,12 @@ const Reports = () => {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Report Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Size</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {isLoading ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center">
+                  <td colSpan={1} className="px-6 py-8 text-center">
                     <div className="flex justify-center items-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500"></div>
                     </div>
@@ -171,63 +131,25 @@ const Reports = () => {
                 </tr>
               ) : filteredReports.length > 0 ? (
                 filteredReports.map((report) => (
-                  <tr key={report.report_id} className="hover:bg-gray-50">
+                  <tr key={report.report_id} className="hover:bg-gray-50 cursor-pointer" onClick={() => openDetails(report)}>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <FileText className="flex-shrink-0 h-8 w-8 text-indigo-600" />
-                        <div className="ml-4">
-                          <div 
-                            className="text-sm font-medium text-gray-900 hover:text-indigo-600 cursor-pointer"
-                            onClick={() => openDetails(report)}
-                          >
+                        <FileText className="flex-shrink-0 h-6 w-6 text-indigo-600 mr-3" />
+                        <div>
+                          <div className="text-sm font-medium text-gray-900 hover:text-indigo-600">
                             {report.report_name}
                           </div>
+                          <div className="text-xs text-gray-500">
+                            {supervisorReportService.getMonthName(report.month)} {report.year}
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
-                        {supervisorReportService.getMonthName(report.month)} {report.year}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {supervisorReportService.formatDate(report.generated_date)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      <span className={`px-2 py-1 text-xs rounded-full ${
-                        report.status === 'completed' ? 'bg-green-100 text-green-800' :
-                        report.status === 'generating' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-red-100 text-red-800'
-                      }`}>
-                        {report.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex space-x-2">
-                        <button 
-                          className="text-indigo-600 hover:text-indigo-900 flex items-center"
-                          onClick={() => openDetails(report)}
-                          title="View report details"
-                        >
-                          <FileBarChart2 className="w-4 h-4 mr-1" />
-                          View
-                        </button>
-                        {/* {report.status === 'completed' && (
-                          <button 
-                            className="text-green-600 hover:text-green-900 flex items-center"
-                            title="Download PDF"
-                          >
-                            <Download className="w-4 h-4 mr-1" />
-                            PDF
-                          </button>
-                        )} */}
                       </div>
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={5} className="px-6 py-4 text-center text-sm text-gray-500">
+                  <td colSpan={1} className="px-6 py-4 text-center text-sm text-gray-500">
                     No reports found matching your search criteria.
                   </td>
                 </tr>
@@ -256,51 +178,41 @@ const Reports = () => {
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">Report Period</h3>
-                    <p className="mt-1 text-sm text-gray-900">
-                      <span className="px-2 py-1 rounded-full bg-blue-100 text-blue-800">
-                        {supervisorReportService.getMonthName(selectedReport.month)} {selectedReport.year}
-                      </span>
-                    </p>
-                  </div>
-                  
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">Generated On</h3>
-                    <p className="mt-1 text-sm text-gray-900">
-                      {supervisorReportService.formatDate(selectedReport.generated_date)}
-                    </p>
-                  </div>
-                  
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">Generated By</h3>
-                    <p className="mt-1 text-sm text-gray-900">{selectedReport.generated_by_name || 'System'}</p>
-                  </div>
-
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">Status</h3>
-                    <p className="mt-1 text-sm text-gray-900">
-                      <span className={`px-2 py-1 text-xs rounded-full ${
-                        selectedReport.status === 'completed' ? 'bg-green-100 text-green-800' :
-                        selectedReport.status === 'generating' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-red-100 text-red-800'
-                      }`}>
-                        {selectedReport.status}
-                      </span>
-                    </p>
-                  </div>
+              <div className="mb-6">
+                <div className="bg-gradient-to-r from-indigo-50 to-blue-50 p-4 rounded-lg border border-indigo-100">
+                  <h3 className="text-sm font-medium text-gray-700 mb-3">Report Period</h3>
+                  <p className="text-lg font-semibold text-indigo-600">
+                    {supervisorReportService.getMonthName(selectedReport.month)} {selectedReport.year}
+                  </p>
                 </div>
                 
-                <div>
-                  <h3 className="text-sm font-medium text-gray-500 mb-2">Report Summary</h3>
-                  <div className="space-y-2 text-sm text-gray-700">
-                    <p>• New Admissions: <strong>{selectedReport.report_data.children.newAdmissions}</strong></p>
-                    <p>• Total Enrolled: <strong>{selectedReport.report_data.children.totalEnrolled}</strong></p>
-                    <p>• Total Complaints: <strong>{selectedReport.report_data.complaints.total}</strong></p>
-                    <p>• Total Meetings: <strong>{selectedReport.report_data.meetings.total}</strong></p>
-                    <p>• Avg. Attendance: <strong>{selectedReport.report_data.attendance.averageRate}%</strong></p>
+                <div className="mt-4">
+                  <h3 className="text-sm font-medium text-gray-700 mb-3">Report Summary</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
+                      <p className="text-xs text-gray-600">New Admissions</p>
+                      <p className="text-xl font-bold text-blue-600">{selectedReport.report_data.children.newAdmissions}</p>
+                    </div>
+                    <div className="bg-green-50 p-3 rounded-lg border border-green-100">
+                      <p className="text-xs text-gray-600">Total Enrolled</p>
+                      <p className="text-xl font-bold text-green-600">{selectedReport.report_data.children.totalEnrolled}</p>
+                    </div>
+                    <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-100">
+                      <p className="text-xs text-gray-600">Total Complaints</p>
+                      <p className="text-xl font-bold text-yellow-600">{selectedReport.report_data.complaints.total}</p>
+                    </div>
+                    <div className="bg-purple-50 p-3 rounded-lg border border-purple-100">
+                      <p className="text-xs text-gray-600">Total Meetings</p>
+                      <p className="text-xl font-bold text-purple-600">{selectedReport.report_data.meetings.total}</p>
+                    </div>
+                    <div className="bg-pink-50 p-3 rounded-lg border border-pink-100">
+                      <p className="text-xs text-gray-600">Total Events</p>
+                      <p className="text-xl font-bold text-pink-600">{selectedReport.report_data.events?.total || 0}</p>
+                    </div>
+                    <div className="bg-indigo-50 p-3 rounded-lg border border-indigo-100">
+                      <p className="text-xs text-gray-600">Avg. Attendance</p>
+                      <p className="text-xl font-bold text-indigo-600">{selectedReport.report_data.attendance.averageRate}%</p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -355,7 +267,7 @@ const Reports = () => {
                 </div>
 
                 {/* Meetings Section */}
-                <div>
+                <div className="mb-4">
                   <h4 className="text-sm font-semibold text-gray-700 mb-2">📅 Meetings & Appointments</h4>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <div className="bg-gray-50 p-3 rounded-lg">
@@ -378,24 +290,13 @@ const Reports = () => {
                 </div>
               </div>
 
-              <div className="flex justify-between border-t border-gray-200 pt-4">
+              <div className="flex justify-end border-t border-gray-200 pt-4">
                 <button 
-                  onClick={() => deleteReport(selectedReport.report_id)}
-                  className="flex items-center px-4 py-2 border border-red-300 text-red-700 rounded-lg hover:bg-red-50"
+                  onClick={closeDetails}
+                  className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
                 >
-                  <X className="w-4 h-4 mr-2" />
-                  Delete Report
+                  Close
                 </button>
-                <div className="flex space-x-3">
-                  <button className="flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
-                    <Printer className="w-4 h-4 mr-2" />
-                    Print
-                  </button>
-                  <button className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
-                    <Download className="w-4 h-4 mr-2" />
-                    Download PDF
-                  </button>
-                </div>
               </div>
             </div>
           </div>
