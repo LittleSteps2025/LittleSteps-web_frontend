@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BarChart, Download, RefreshCw, TrendingUp, TrendingDown, Calendar, Users, DollarSign, AlertCircle } from 'lucide-react';
+import { BarChart, Download, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import StatsCards from '../components/stats/StatsCards';
 import RecentActivity from '../components/activity/RecentActivity';
@@ -91,9 +91,9 @@ interface ApiResponse<T> {
 // API endpoints
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001';
 const API_ENDPOINTS = {
-  DASHBOARD_STATS: `${API_BASE_URL}/api/admin/dashboard/stats`,
-  RECENT_ACTIVITIES: `${API_BASE_URL}/api/admin/dashboard/activities`,
-  ANALYTICS: `${API_BASE_URL}/api/admin/dashboard/analytics`,
+  DASHBOARD_STATS: `${API_BASE_URL}/admin/dashboard/stats`,
+  RECENT_ACTIVITIES: `${API_BASE_URL}/admin/dashboard/activities`,
+  ANALYTICS: `${API_BASE_URL}/admin/dashboard/analytics`,
 } as const;
 
 const Dashboard = () => {
@@ -113,14 +113,14 @@ const Dashboard = () => {
   const [refreshing, setRefreshing] = useState(false);
 
   // Analytics data states
-  const [attendanceTrends, setAttendanceTrends] = useState<AttendanceTrend[]>([]);
-  const [revenueTrends, setRevenueTrends] = useState<RevenueTrend[]>([]);
-  const [enrollmentData, setEnrollmentData] = useState<EnrollmentData[]>([]);
-  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>({ paid: 0, unpaid: 0, overdue: 0, total: 0 });
-  const [complaintStats, setComplaintStats] = useState<ComplaintStats>({ pending: 0, resolved: 0, inProgress: 0, total: 0 });
-  const [subscriptionBreakdown, setSubscriptionBreakdown] = useState<SubscriptionBreakdown[]>([]);
-  const [staffPerformance, setStaffPerformance] = useState<StaffPerformance[]>([]);
-  const [peakHours, setPeakHours] = useState<{ hour: string; count: number }[]>([]);
+  const [, setAttendanceTrends] = useState<AttendanceTrend[]>([]);
+  const [, setRevenueTrends] = useState<RevenueTrend[]>([]);
+  const [, setEnrollmentData] = useState<EnrollmentData[]>([]);
+  const [, setPaymentStatus] = useState<PaymentStatus>({ paid: 0, unpaid: 0, overdue: 0, total: 0 });
+  const [, setComplaintStats] = useState<ComplaintStats>({ pending: 0, resolved: 0, inProgress: 0, total: 0 });
+  const [, setSubscriptionBreakdown] = useState<SubscriptionBreakdown[]>([]);
+  const [, setStaffPerformance] = useState<StaffPerformance[]>([]);
+  const [, setPeakHours] = useState<{ hour: string; count: number }[]>([]);
 
   // Fetch analytics data
   const fetchAnalytics = async () => {
@@ -214,6 +214,7 @@ const Dashboard = () => {
       
       if (data.success && Array.isArray(data.data)) {
         // Transform activities to include formatted time
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const formattedActivities = data.data.map((activity: any) => ({
           id: activity.id || activity.activity_id,
           user: activity.user || activity.user_name,
