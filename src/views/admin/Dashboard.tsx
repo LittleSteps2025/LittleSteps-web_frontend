@@ -89,7 +89,7 @@ interface ApiResponse<T> {
 }
 
 // API endpoints
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const API_ENDPOINTS = {
   DASHBOARD_STATS: `${API_BASE_URL}/admin/dashboard/stats`,
   RECENT_ACTIVITIES: `${API_BASE_URL}/admin/dashboard/activities`,
