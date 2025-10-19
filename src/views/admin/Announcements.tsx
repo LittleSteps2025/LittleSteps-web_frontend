@@ -92,6 +92,7 @@ const Announcements = () => {
   const [currentAnnouncement, setCurrentAnnouncement] =
     useState<Announcement | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
+
   const [formData, setFormData] = useState<
     Omit<Announcement, "ann_id" | "created_at" | "session_id">
   >({
@@ -102,6 +103,7 @@ const Announcements = () => {
     audience: "All",
     user_id: "",
     attachment: "",
+
   });
   const [isLoading, setIsLoading] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
@@ -159,6 +161,7 @@ const Announcements = () => {
         session_id: a.session_id,
         user_id: a.user_id,
         updated_at: a.updated_at,
+        published_by: a.published_by || null
       }));
 
       setAnnouncements(mappedAnnouncements);
@@ -218,6 +221,8 @@ const Announcements = () => {
       },
       body: JSON.stringify({
         ...announcement,
+        date: announcement.date || null,
+        time: announcement.time || null,
         published_by: {
           id: user?.id,
           name: user?.name || "Unknown",
@@ -557,9 +562,11 @@ const Announcements = () => {
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                         To: {announcement.audience}
                       </span>
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        Date: {announcement.date.split("T")[0]}
-                      </span>
+                      {announcement.date && (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          Date: {announcement.date.split('T')[0]}
+                        </span>
+                      )}
                       {announcement.time && (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
                           Time: {announcement.time.slice(0, 5)}
@@ -570,24 +577,30 @@ const Announcements = () => {
                           {/* Session: {announcement.session_id} */}
                         </span>
                       )}
-                      {announcement.attachment && (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                          Attachment
-                          {/* Attachment: {announcement.attachment} */}
-                        </span>
-                      )}
                     </div>
                   </div>
                 </div>
-
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {/* ...existing tags... */}
-
-                  {/* Add this publisher badge */}
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                    Published by: {announcement.published_by?.name || "Unknown"}
-                    ({announcement.published_by?.role || "Admin"})
+                
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                    Published by: {announcement.published_by?.name || user?.name || 'Unknown'} 
+                    ({announcement.published_by?.role || user?.role || 'Admin'})
                   </span>
+                  
+                  {announcement.created_at && (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                      Published at: {formatDateTime(announcement.created_at).date} at {formatDateTime(announcement.created_at).time}
+                    </span>
+                  )}
+                  
+                  {announcement.attachment && (
+                    <button
+                      onClick={() => window.open(announcement.attachment, '_blank')}
+                      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 hover:bg-yellow-200 transition-colors cursor-pointer"
+                    >
+                      📎 View Attachment
+                    </button>
+                  )}
                 </div>
 
                 <div className="mt-4 text-xs text-gray-500">
@@ -723,7 +736,7 @@ const Announcements = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Date*
+                      Event Date <span className="text-gray-400 text-xs">(Optional - for event announcements)</span>
                     </label>
                     <input
                       type="date"
@@ -731,12 +744,11 @@ const Announcements = () => {
                       value={formData.date}
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      required
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Time*
+                      Event Time <span className="text-gray-400 text-xs">(Optional)</span>
                     </label>
                     <input
                       type="time"
@@ -744,7 +756,6 @@ const Announcements = () => {
                       value={formData.time}
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      required
                     />
                   </div>
                 </div>

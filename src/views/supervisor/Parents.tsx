@@ -3,10 +3,10 @@ import { Users, Search, Trash2, Send, RefreshCw } from "lucide-react";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { X } from "lucide-react";
-import { redirect } from "react-router-dom";
+// import { redirect } from "react-router-dom";
 import { API_BASE_URL } from "../../config/api";
 
-const API_PARENTS = `${API_BASE_URL}/supervisors/child/parent`;
+const API_PARENTS = `${API_BASE_URL}/supervisor/children/parent`;
 
 type Parent = {
   id: string;
@@ -460,13 +460,13 @@ const Parents = () => {
                       >
                         <Edit className="w-4 h-4" />
                       </button> */}
-                          <button
+                          {/* <button
                             onClick={() => redirect}
                             className="text-green-600 hover:text-green-900 p-1.5 rounded-md hover:bg-green-50 transition-colors"
                             title="Send Message"
                           >
                             <Send className="w-4 h-4" />
-                          </button>
+                          </button> */}
                           <button
                             onClick={() => openDeleteModal(parent)}
                             className="text-red-600 hover:text-red-900 p-1.5 rounded-md hover:bg-red-50 transition-colors"
