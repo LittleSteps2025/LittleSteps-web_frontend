@@ -29,9 +29,11 @@ export interface MonthlyReportData {
     newAdmissions: number;
     totalEnrolled: number;
     admissionsList: Array<{
+      child_id: number;
       name: string;
       dob: string;
       parent_id: number;
+      admitted_date: string;
     }>;
   };
   complaints: {
@@ -40,18 +42,28 @@ export interface MonthlyReportData {
     inProgress: number;
     solved: number;
     closed: number;
-    supervisorComplaints: number;
   };
   meetings: {
     total: number;
     pending: number;
     confirmed: number;
     cancelled: number;
-    supervisorMeetings: number;
+  };
+  events: {
+    total: number;
+    eventsList: Array<{
+      event_id: number;
+      topic: string;
+      description: string;
+      date: string;
+      time: string;
+      venue: string;
+    }>;
   };
   attendance: {
     averageRate: number;
     totalStudents: number;
+    attendedCount: number;
   };
 }
 
