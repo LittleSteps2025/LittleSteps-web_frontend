@@ -41,7 +41,7 @@ const Login: React.FC = () => {
       }
 
       // Store user data and use AuthContext
-      login(data.user, data.customToken);
+      login(data.user, data.token);
 
       // Redirect based on role
       switch (data.user.role) {

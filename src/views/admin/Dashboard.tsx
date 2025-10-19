@@ -91,9 +91,9 @@ interface ApiResponse<T> {
 // API endpoints
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001';
 const API_ENDPOINTS = {
-  DASHBOARD_STATS: `${API_BASE_URL}/api/admin/dashboard/stats`,
-  RECENT_ACTIVITIES: `${API_BASE_URL}/api/admin/dashboard/activities`,
-  ANALYTICS: `${API_BASE_URL}/api/admin/dashboard/analytics`,
+  DASHBOARD_STATS: `${API_BASE_URL}/admin/dashboard/stats`,
+  RECENT_ACTIVITIES: `${API_BASE_URL}/admin/dashboard/activities`,
+  ANALYTICS: `${API_BASE_URL}/admin/dashboard/analytics`,
 } as const;
 
 const Dashboard = () => {
@@ -251,6 +251,7 @@ const Dashboard = () => {
       
       if (data.success && Array.isArray(data.data)) {
         // Transform activities to include formatted time
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const formattedActivities = data.data.map((activity: any) => ({
           id: activity.id || activity.activity_id,
           user: activity.user || activity.user_name,

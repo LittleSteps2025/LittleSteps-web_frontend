@@ -42,10 +42,10 @@ interface ClassGroup {
   group_name: string;
 }
 
-const API_URL = `${API_BASE_URL}/supervisors/child/`;
-const GROUPS_API_URL = `${API_BASE_URL}/supervisors/child/groups`; // Correct groups endpoint
-const PACKAGES_API_URL = `${API_BASE_URL}/supervisors/child/packages`; // Placeholder for future packages API
-const CHECK_NIC_API_URL = `${API_BASE_URL}/supervisors/child/check-nic`; // Placeholder for NIC check API
+const API_URL = `${API_BASE_URL}/supervisor/children/`;
+const GROUPS_API_URL = `${API_BASE_URL}/supervisor/children/groups`; // Correct groups endpoint
+const PACKAGES_API_URL = `${API_BASE_URL}/supervisor/children/packages`; // Placeholder for future packages API
+const CHECK_NIC_API_URL = `${API_BASE_URL}/supervisor/children/check-nic`; // Placeholder for NIC check API
 // Utility function to calculate age from date of birth
 const calculateAge = (dob: string): number => {
   if (!dob) return 0;
@@ -274,6 +274,8 @@ const updateStudent = async (student: Student): Promise<Student> => {
     body: JSON.stringify({
       name: student.name,
       package_name: student.packageName || null,
+      parentContact: student.parentContact,
+      parentAddress: student.parentAddress,
     }),
   });
 
@@ -510,6 +512,8 @@ export default function Childrens() {
           id: editingId,
           name: form.name, // Can edit name
           packageName: form.packageName, // Can edit package
+          parentContact: form.parentContact, // Can edit parent contact
+          parentAddress: form.parentAddress, // Can edit parent address
         };
 
         console.log("Sending update with data:", updateData);
