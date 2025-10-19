@@ -22,16 +22,16 @@ type Parent = {
 // API Response interface to match backend
 interface ApiParent {
   user_id: string;
-  username: string;
+  name: string;
   email: string;
-  password: string;
-  role: string;
-  phone_number: string;
   address: string;
   nic: string;
-  profile_picture: string;
+  phone: string;
+  image: string | null;
+  role: string;
   created_at: string;
-  updated_at: string;
+  status: string;
+  fcm_token: string | null;
   child_count: number;
 }
 
@@ -78,11 +78,11 @@ const Parents = () => {
       const transformedParents: Parent[] = data.map((apiParent: ApiParent) => ({
         id: apiParent.user_id,
         nic: apiParent.nic || "",
-        name: apiParent.username || "",
+        name: apiParent.name || "",
         email: apiParent.email || "",
-        phone: apiParent.phone_number || "",
-        children: apiParent.child_count || 0,
-        profile_image: apiParent.profile_picture || "",
+        phone: apiParent.phone || "",
+        children: parseInt(apiParent.child_count.toString()) || 0,
+        profile_image: apiParent.image || "",
         created_at: apiParent.created_at || new Date().toISOString(),
       }));
 
