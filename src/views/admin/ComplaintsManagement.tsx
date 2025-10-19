@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Search,
   AlertCircle,
@@ -34,7 +34,7 @@ interface ApiResponse<T> {
 // API endpoints
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const API_ENDPOINTS = {
-  COMPLAINTS: `${API_BASE_URL}/admin/complaint`,
+  COMPLAINTS: `${API_BASE_URL}/admin/complaints`,
   CHILDREN: `${API_BASE_URL}/parent/children`,
 } as const;
 
@@ -50,7 +50,7 @@ const ComplaintsManagement = () => {
   };
 
   // Fetch complaints from API
-  const fetchComplaints = async () => {
+  const fetchComplaints = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
@@ -106,7 +106,7 @@ const ComplaintsManagement = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // Create new complaint
 

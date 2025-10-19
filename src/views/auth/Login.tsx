@@ -24,7 +24,7 @@ const Login: React.FC = () => {
 
     try {
       const response = await fetch(
-        `${API_BASE_URL}/supervisors/supervisorLogin`,
+        `${API_BASE_URL}/supervisor/supervisorLogin`,
         {
           method: "POST",
           headers: {
