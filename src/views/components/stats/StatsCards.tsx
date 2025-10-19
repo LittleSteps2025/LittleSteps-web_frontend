@@ -34,7 +34,7 @@ const StatsCards = ({ stats }: { stats: Stats }) => {
     { 
       icon: UserCheck, 
       title: "Today's Attendance", 
-      value: stats.todayAttendance, 
+      value: stats.todayCheckIns, 
 
       color: 'bg-cyan-100 text-cyan-800'
     },

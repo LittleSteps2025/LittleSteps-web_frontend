@@ -41,8 +41,6 @@ const UsersManagement = () => {
     address: "",
   });
   const [loading, setLoading] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [error, setError] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [success, setSuccess] = useState("");
 
@@ -145,7 +143,6 @@ const UsersManagement = () => {
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
     setSuccess("");
 
     try {
@@ -246,9 +243,6 @@ const UsersManagement = () => {
       // Refresh the users list
       await fetchAllUsers();
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "An unknown error occurred"
-      );
       console.error("Error creating user:", err);
     } finally {
       setLoading(false);
@@ -258,7 +252,6 @@ const UsersManagement = () => {
   React.useEffect(() => {
     const fetchUsers = async () => {
       try {
-        setError("");
         const response = await fetch(`${API_BASE_URL}/getEveryone`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -270,7 +263,7 @@ const UsersManagement = () => {
         const data = await response.json();
         setUsers(data.data || []);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to fetch users");
+        console.error("Error fetching users:", err);
       }
     };
     fetchUsers();

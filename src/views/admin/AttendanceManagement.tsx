@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import {
-  Calendar, Clock, User, UserCheck, UserX, CheckCircle, XCircle,
-  Download, Plus, MoreVertical, ArrowLeft, ArrowRight, ClipboardList,
-  Clock as BarChart2, Baby,  FileText, X
+  UserCheck, UserX, CheckCircle, XCircle,
+  Download, ArrowLeft, ArrowRight,
+  Clock as BarChart2, Baby,  FileText, RefreshCw
 } from 'lucide-react';
 
 // Types
@@ -85,9 +85,11 @@ const AttendanceManagement = () => {
         return;
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const data: ApiResponse<any[]> = await response.json();
       
       if (data.success && Array.isArray(data.data)) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const childrenData: Person[] = data.data.map((child: any) => ({
           id: child.child_id || child.id,
           name: child.child_name || child.name || `${child.first_name} ${child.last_name}`,
@@ -118,11 +120,14 @@ const AttendanceManagement = () => {
         return;
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const data: ApiResponse<any[]> = await response.json();
       
       if (data.success && Array.isArray(data.data)) {
         const staffData: Person[] = data.data
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           .filter((user: any) => user.role === 'teacher' || user.role === 'supervisor')
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           .map((user: any) => ({
             id: user.user_id || user.id,
             name: user.full_name || user.name || `${user.first_name} ${user.last_name}`,
@@ -154,9 +159,11 @@ const AttendanceManagement = () => {
         return;
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const data: ApiResponse<any[]> = await response.json();
       
       if (data.success && Array.isArray(data.data)) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const records: AttendanceRecord[] = data.data.map((record: any) => ({
           id: record.attendance_id || record.id,
           date: record.date || record.attendance_date,
@@ -205,9 +212,11 @@ const AttendanceManagement = () => {
         return;
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const data: ApiResponse<any[]> = await response.json();
       
       if (data.success && Array.isArray(data.data)) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const records: AttendanceRecord[] = data.data.map((record: any) => ({
           id: record.attendance_id || record.id,
           date: record.date || record.attendance_date,
@@ -266,7 +275,6 @@ const AttendanceManagement = () => {
     if (activeTab === 'summary') {
       fetchAttendance(currentDate);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentDate, activeTab]);
 
   // Load history when tab changes

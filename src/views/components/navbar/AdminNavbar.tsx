@@ -1,11 +1,10 @@
 import { Menu, X, User, Bell, LogOut } from 'lucide-react';
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 
 const AdminNavbar = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [showUserMenu, setShowUserMenu] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 

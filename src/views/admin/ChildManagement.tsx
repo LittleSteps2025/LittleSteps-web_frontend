@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { User, Edit, Trash2, Plus, Search, X } from "lucide-react";
+import { User, Edit, Plus, Search, X } from "lucide-react";
 import { API_BASE_URL } from "../../config/api";
 
 interface Student {

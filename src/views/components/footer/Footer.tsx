@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Heart, MapPin, Phone, Mail, Clock } from 'lucide-react';
+import { Heart, MapPin, Phone, Mail } from 'lucide-react';
 import logo from '../../../assets/sixth-logo.png';
 
 const Footer = () => {

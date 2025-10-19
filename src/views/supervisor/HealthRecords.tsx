@@ -1,4 +1,4 @@
-import { HeartPulse, Search, Plus, X, ChevronDown, User, Calendar } from 'lucide-react';
+import { HeartPulse, Search, Plus, X, ChevronDown, Calendar } from 'lucide-react';
 import { useState } from 'react';
 
 const HealthRecords = () => {
@@ -64,19 +64,19 @@ const HealthRecords = () => {
     });
   };
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setNewRecord(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const status = newRecord.immunizationStatus === 'Up to date' ? 'Up to date' : 'Needs update';
     
     const record = {
       id: records.length + 1,
       child: newRecord.child,
-      age: newRecord.age,
+      age: parseInt(newRecord.age),
       allergies: newRecord.allergies,
       medications: newRecord.medications,
       lastCheckup: newRecord.lastCheckup,
