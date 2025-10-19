@@ -48,6 +48,18 @@ export interface PeriodStats {
   revenue: number;
 }
 
+export interface PaymentStatus {
+  paid: number;
+  unpaid: number;
+  overdue: number;
+  total: number;
+}
+
+export interface RevenueData {
+  today: number;
+  monthly: number;
+}
+
 // Backend API response structure
 interface DashboardApiResponse {
   success: boolean;
@@ -191,27 +203,31 @@ export const fetchUpcomingEvents = async (): Promise<Event[]> => {
 /**
  * Fetch stats by period (today, week, month)
  */
-export const fetchStatsByPeriod = async (period: 'today' | 'week' | 'month'): Promise<PeriodStats> => {
+export const fetchStatsByPeriod = async (
+  period: "today" | "week" | "month"
+): Promise<PeriodStats> => {
   try {
     console.log(`📊 Fetching stats for period: ${period}`);
-    
-    const response = await fetch(`${API_BASE_URL}/dashboard/stats/period?period=${period}`);
-    
+
+    const response = await fetch(
+      `${API_BASE_URL}/dashboard/stats/period?period=${period}`
+    );
+
     if (!response.ok) {
       throw new Error(`Failed to fetch period stats: ${response.statusText}`);
     }
 
     const result = await response.json();
-    
+
     console.log(`✅ Period stats (${period}) fetched:`, result.data);
-    
+
     return result.data;
   } catch (error) {
-    console.error('❌ Error fetching period stats:', error);
+    console.error("❌ Error fetching period stats:", error);
     return {
       totalChildren: 0,
       checkIns: 0,
-      revenue: 0
+      revenue: 0,
     };
   }
 };
@@ -219,27 +235,121 @@ export const fetchStatsByPeriod = async (period: 'today' | 'week' | 'month'): Pr
 /**
  * Fetch chart data for graphs
  */
-export const fetchChartData = async (period: 'week' | 'month'): Promise<ChartData> => {
+export const fetchChartData = async (
+  period: "week" | "month"
+): Promise<ChartData> => {
   try {
     console.log(`📊 Fetching chart data for period: ${period}`);
-    
-    const response = await fetch(`${API_BASE_URL}/dashboard/charts?period=${period}`);
-    
+
+    const response = await fetch(
+      `${API_BASE_URL}/dashboard/charts?period=${period}`
+    );
+
     if (!response.ok) {
       throw new Error(`Failed to fetch chart data: ${response.statusText}`);
     }
 
     const result = await response.json();
-    
+
     console.log(`✅ Chart data (${period}) fetched:`, result.data);
-    
+
     return result.data;
   } catch (error) {
-    console.error('❌ Error fetching chart data:', error);
+    console.error("❌ Error fetching chart data:", error);
     return {
       revenue: [],
       attendance: [],
-      complaints: []
+      complaints: [],
+    };
+  }
+};
+
+/**
+ * Fetch payment status (paid, unpaid, overdue)
+ */
+export const fetchPaymentStatus = async (): Promise<PaymentStatus> => {
+  try {
+    console.log(
+      "💳 Fetching payment status from:",
+      `${API_BASE_URL}/admin/dashboard/analytics/payments`
+    );
+
+    const response = await fetch(
+      `${API_BASE_URL}/admin/dashboard/analytics/payments`
+    );
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch payment status: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+
+    console.log("✅ Payment status fetched:", result.data);
+
+    return result.data || { paid: 0, unpaid: 0, overdue: 0, total: 0 };
+  } catch (error) {
+    console.error("❌ Error fetching payment status:", error);
+    return {
+      paid: 0,
+      unpaid: 0,
+      overdue: 0,
+      total: 0,
+    };
+  }
+};
+
+/**
+ * Fetch revenue data for today and monthly
+ */
+export const fetchRevenueData = async (): Promise<RevenueData> => {
+  try {
+    console.log(
+      "💰 Fetching revenue data from:",
+      `${API_BASE_URL}/dashboard/stats/period?period=today`,
+      "and",
+      `${API_BASE_URL}/dashboard/stats`
+    );
+
+    // Get today's revenue from the period stats endpoint
+    const todayResponse = await fetch(
+      `${API_BASE_URL}/dashboard/stats/period?period=today`
+    );
+
+    if (!todayResponse.ok) {
+      throw new Error(
+        `Failed to fetch today revenue: ${todayResponse.statusText}`
+      );
+    }
+
+    const todayResult = await todayResponse.json();
+    const todayRevenue = todayResult.data?.revenue || 0;
+
+    // Get monthly revenue from the main stats endpoint
+    const statsResponse = await fetch(`${API_BASE_URL}/dashboard/stats`);
+
+    if (!statsResponse.ok) {
+      throw new Error(
+        `Failed to fetch monthly revenue: ${statsResponse.statusText}`
+      );
+    }
+
+    const statsResult = await statsResponse.json();
+    const monthlyRevenue = statsResult.data?.overview?.monthlyRevenue || 0;
+
+    console.log("✅ Revenue data fetched:", {
+      today: todayRevenue,
+      monthly: monthlyRevenue,
+    });
+
+    return {
+      today: todayRevenue,
+      monthly: monthlyRevenue,
+    };
+  } catch (error) {
+    console.error("❌ Error fetching revenue data:", error);
+    return {
+      today: 0,
+      monthly: 0,
     };
   }
 };

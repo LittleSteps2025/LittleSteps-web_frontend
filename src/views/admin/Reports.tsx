@@ -4,10 +4,8 @@ import {
   Users,
   DollarSign,
   ClipboardList,
-  Shield,
   AlertCircle,
-  Megaphone,
-  UserCircle,
+
 } from "lucide-react";
 import { useState } from "react";
 import { API_BASE_URL } from "../../config/api";
@@ -78,27 +76,27 @@ export default function ReportsPage() {
       desc: "Submitted complaints",
       color: "red",
     },
-    {
-      id: "announcements",
-      name: "Announcements",
-      icon: Megaphone,
-      desc: "Published announcements",
-      color: "yellow",
-    },
-    {
-      id: "staff",
-      name: "Staff Details",
-      icon: Shield,
-      desc: "Supervisors and teachers",
-      color: "amber",
-    },
-    {
-      id: "parents",
-      name: "Parent Details",
-      icon: UserCircle,
-      desc: "Parent contact information",
-      color: "cyan",
-    },
+    // {
+    //   id: "announcements",
+    //   name: "Announcements",
+    //   icon: Megaphone,
+    //   desc: "Published announcements",
+    //   color: "yellow",
+    // },
+    // {
+    //   id: "staff",
+    //   name: "Staff Details",
+    //   icon: Shield,
+    //   desc: "Supervisors and teachers",
+    //   color: "amber",
+    // },
+    // {
+    //   id: "parents",
+    //   name: "Parent Details",
+    //   icon: UserCircle,
+    //   desc: "Parent contact information",
+    //   color: "cyan",
+    // },
   ];
 
   return (
