@@ -1,4 +1,4 @@
-import { Users, Baby, DollarSign, UserCheck } from 'lucide-react';
+import { Users, Baby, DollarSign, UserCheck } from "lucide-react";
 
 interface Stats {
   totalChildren: number;
@@ -10,48 +10,54 @@ interface Stats {
 
 const StatsCards = ({ stats }: { stats: Stats }) => {
   const cards = [
-    { 
-      icon: Baby, 
-      title: 'Total Children', 
-      value: stats.totalChildren, 
+    {
+      icon: Baby,
+      title: "Total Children",
+      value: stats.totalChildren,
 
-      color: 'bg-purple-100 text-purple-800'
+      color: "bg-purple-100 text-purple-800",
     },
-    { 
-      icon: Users, 
-      title: 'Total Active Parents', 
-      value: stats.activeParents, 
+    {
+      icon: Users,
+      title: "Total Active Parents",
+      value: stats.activeParents,
 
-      color: 'bg-blue-100 text-blue-800'
+      color: "bg-blue-100 text-blue-800",
     },
-    { 
-      icon: Users, 
-      title: 'Total Teachers', 
-      value: stats.activeTeachers, 
+    {
+      icon: Users,
+      title: "Total Teachers",
+      value: stats.activeTeachers,
 
-      color: 'bg-amber-100 text-amber-800'
+      color: "bg-amber-100 text-amber-800",
     },
-    { 
-      icon: UserCheck, 
-      title: "Today's Attendance", 
-      value: stats.todayCheckIns, 
+    {
+      icon: UserCheck,
+      title: "Today's Attendance",
+      value: stats.todayCheckIns,
 
-      color: 'bg-cyan-100 text-cyan-800'
+      color: "bg-cyan-100 text-cyan-800",
     },
 
-    { 
-      icon: DollarSign, 
-      title: 'Monthly Revenue', 
-      value: stats.monthlyRevenue.toLocaleString('en-LK', { style: 'currency', currency: 'LKR' }), 
+    {
+      icon: DollarSign,
+      title: "Monthly Revenue",
+      value: stats.monthlyRevenue.toLocaleString("en-LK", {
+        style: "currency",
+        currency: "LKR",
+      }),
 
-      color: 'bg-emerald-100 text-emerald-800'
+      color: "bg-emerald-100 text-emerald-800",
     },
   ];
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
       {cards.map((card, index) => (
-        <div key={index} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all">
+        <div
+          key={index}
+          className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all"
+        >
           <div className="flex items-start justify-between">
             <div>
               <p className="text-sm font-medium text-gray-500 mb-1">

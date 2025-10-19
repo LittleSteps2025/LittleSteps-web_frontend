@@ -289,7 +289,7 @@ const UsersManagement = () => {
         >
           Add Supervisor
         </button>
-        
+
         {/* <button
           type="button"
           className="bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2"
@@ -302,187 +302,178 @@ const UsersManagement = () => {
       </div>
 
       {showModal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-              <div className="bg-white rounded-xl shadow-lg w-full max-w-md p-8 relative animate-fade-in">
-                <button
-                  className="absolute top-3 right-3 text-gray-400 hover:text-gray-700 text-2xl"
-                  onClick={() => setShowModal(false)}
-                  aria-label="Close"
-                  type="button"
-                >
-                  &times;
-                </button>
-                <h2 className="text-xl font-semibold mb-6 text-center">
-                  Create New Supervisor
-                </h2>
-                <form onSubmit={handleCreateUser} className="space-y-4">
-                  <div>
-                    <label className="block mb-2 text-sm font-medium">
-                      Name
-                    </label>
-                    <div className="relative">
-                      <User
-                        className="absolute left-3 top-3 text-[#6339C0]"
-                        size={20}
-                      />
-                      <input
-                        type="text"
-                        className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg"
-                        value={newUser.name}
-                        onChange={(e) =>
-                          setNewUser({ ...newUser, name: e.target.value })
-                        }
-                        required
-                        placeholder="Enter name"
-                        title="Name"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block mb-2 text-sm font-medium">
-                      Email
-                    </label>
-                    <div className="relative">
-                      <Mail
-                        className="absolute left-3 top-3 text-[#6339C0]"
-                        size={20}
-                      />
-                      <input
-                        type="email"
-                        className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg"
-                        value={newUser.email}
-                        onChange={(e) =>
-                          setNewUser({ ...newUser, email: e.target.value })
-                        }
-                        required
-                        placeholder="Enter email"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="role-select"
-                      className="block mb-2 text-sm font-medium"
-                    >
-                      Role
-                    </label>
-                    <select
-                      id="role-select"
-                      className="w-full p-3 border border-gray-200 rounded-lg hidden"
-                      value={newUser.role}
-                      onChange={(e) =>
-                        setNewUser({ ...newUser, role: e.target.value })
-                      }
-                      required
-                    >
-                      <option value="supervisor">Supervisor</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="nic"
-                      className="block mb-2 text-sm font-medium"
-                    >
-                      NIC Number
-                    </label>
-                    <input
-                      type="text"
-                      id="nic"
-                      className="w-full p-3 border border-gray-200 rounded-lg"
-                      value={newUser.nic}
-                      onChange={(e) =>
-                        setNewUser({ ...newUser, nic: e.target.value })
-                      }
-                      required
-                      placeholder="Enter NIC (e.g., 123456789V or 123456789012)"
-                      maxLength={12}
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Enter 9 digits + V/X (old format) or 12 digits (new
-                      format)
-                    </p>
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="phone"
-                      className="block mb-2 text-sm font-medium"
-                    >
-                      Phone Number
-                    </label>
-                    <input
-                      type="text"
-                      id="phone"
-                      className="w-full p-3 border border-gray-200 rounded-lg"
-                      value={newUser.phone}
-                      onChange={(e) =>
-                        setNewUser({ ...newUser, phone: e.target.value })
-                      }
-                      required
-                      placeholder="Enter phone number (e.g., 0771234567)"
-                      maxLength={10}
-                      pattern="0[0-9]{9}"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Enter 10-digit phone number starting with 0 (e.g.,
-                      0771234567)
-                    </p>
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="address"
-                      className="block mb-2 text-sm font-medium"
-                    >
-                      Address
-                    </label>
-                    <input
-                      type="text"
-                      id="address"
-                      className="w-full p-3 border border-gray-200 rounded-lg"
-                      value={newUser.address}
-                      onChange={(e) =>
-                        setNewUser({ ...newUser, address: e.target.value })
-                      }
-                      required
-                      placeholder="Enter address"
-                    />
-                  </div>
-
-                  <div className="hidden">
-                    <div className="relative">
-                      <Lock
-                        className="absolute left-3 top-3 text-[#6339C0]"
-                        size={20}
-                      />
-                      <input
-                        type="password"
-                        className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg"
-                        value={newUser.password}
-                        onChange={(e) =>
-                          setNewUser({ ...newUser, password: e.target.value })
-                        }
-                        required
-                        minLength={6}
-                        placeholder="Enter password"
-                      />
-                    </div>
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="bg-[#6339C0] w-full text-white py-2 px-4 rounded-lg"
-                    disabled={loading}
-                  >
-                    {loading ? "Creating..." : "Create Supervisor"}
-                  </button>
-                </form>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+          <div className="bg-white rounded-xl shadow-lg w-full max-w-md p-8 relative animate-fade-in">
+            <button
+              className="absolute top-3 right-3 text-gray-400 hover:text-gray-700 text-2xl"
+              onClick={() => setShowModal(false)}
+              aria-label="Close"
+              type="button"
+            >
+              &times;
+            </button>
+            <h2 className="text-xl font-semibold mb-6 text-center">
+              Create New Supervisor
+            </h2>
+            <form onSubmit={handleCreateUser} className="space-y-4">
+              <div>
+                <label className="block mb-2 text-sm font-medium">Name</label>
+                <div className="relative">
+                  <User
+                    className="absolute left-3 top-3 text-[#6339C0]"
+                    size={20}
+                  />
+                  <input
+                    type="text"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg"
+                    value={newUser.name}
+                    onChange={(e) =>
+                      setNewUser({ ...newUser, name: e.target.value })
+                    }
+                    required
+                    placeholder="Enter name"
+                    title="Name"
+                  />
+                </div>
               </div>
-            </div>
-          )}
+
+              <div>
+                <label className="block mb-2 text-sm font-medium">Email</label>
+                <div className="relative">
+                  <Mail
+                    className="absolute left-3 top-3 text-[#6339C0]"
+                    size={20}
+                  />
+                  <input
+                    type="email"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg"
+                    value={newUser.email}
+                    onChange={(e) =>
+                      setNewUser({ ...newUser, email: e.target.value })
+                    }
+                    required
+                    placeholder="Enter email"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="role-select"
+                  className="block mb-2 text-sm font-medium"
+                >
+                  Role
+                </label>
+                <select
+                  id="role-select"
+                  className="w-full p-3 border border-gray-200 rounded-lg hidden"
+                  value={newUser.role}
+                  onChange={(e) =>
+                    setNewUser({ ...newUser, role: e.target.value })
+                  }
+                  required
+                >
+                  <option value="supervisor">Supervisor</option>
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="nic" className="block mb-2 text-sm font-medium">
+                  NIC Number
+                </label>
+                <input
+                  type="text"
+                  id="nic"
+                  className="w-full p-3 border border-gray-200 rounded-lg"
+                  value={newUser.nic}
+                  onChange={(e) =>
+                    setNewUser({ ...newUser, nic: e.target.value })
+                  }
+                  required
+                  placeholder="Enter NIC (e.g., 123456789V or 123456789012)"
+                  maxLength={12}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Enter 9 digits + V/X (old format) or 12 digits (new format)
+                </p>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="phone"
+                  className="block mb-2 text-sm font-medium"
+                >
+                  Phone Number
+                </label>
+                <input
+                  type="text"
+                  id="phone"
+                  className="w-full p-3 border border-gray-200 rounded-lg"
+                  value={newUser.phone}
+                  onChange={(e) =>
+                    setNewUser({ ...newUser, phone: e.target.value })
+                  }
+                  required
+                  placeholder="Enter phone number (e.g., 0771234567)"
+                  maxLength={10}
+                  pattern="0[0-9]{9}"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Enter 10-digit phone number starting with 0 (e.g., 0771234567)
+                </p>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="address"
+                  className="block mb-2 text-sm font-medium"
+                >
+                  Address
+                </label>
+                <input
+                  type="text"
+                  id="address"
+                  className="w-full p-3 border border-gray-200 rounded-lg"
+                  value={newUser.address}
+                  onChange={(e) =>
+                    setNewUser({ ...newUser, address: e.target.value })
+                  }
+                  required
+                  placeholder="Enter address"
+                />
+              </div>
+
+              <div className="hidden">
+                <div className="relative">
+                  <Lock
+                    className="absolute left-3 top-3 text-[#6339C0]"
+                    size={20}
+                  />
+                  <input
+                    type="password"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg"
+                    value={newUser.password}
+                    onChange={(e) =>
+                      setNewUser({ ...newUser, password: e.target.value })
+                    }
+                    required
+                    minLength={6}
+                    placeholder="Enter password"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="bg-[#6339C0] w-full text-white py-2 px-4 rounded-lg"
+                disabled={loading}
+              >
+                {loading ? "Creating..." : "Create Supervisor"}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
 
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
         <div className="flex justify-between items-center mb-4">
