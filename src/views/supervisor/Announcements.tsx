@@ -17,6 +17,28 @@ type Announcement = {
   updated_at?: string;
 };
 
+// API Response interface
+interface ApiAnnouncement {
+  ann_id: string;
+  title: string;
+  details: string;
+  date: string;
+  time: string;
+  audience?: number;
+  created_at?: string;
+  attachment?: string;
+  session_id?: string;
+  user_id?: string;
+  updated_at?: string;
+}
+
+// API Response wrapper
+interface ApiResponse<T> {
+  status: number;
+  message: string;
+  data: T;
+}
+
 // Audience mapping
 const audienceMap: { [key: number]: string } = {
   1: "All",
@@ -137,11 +159,22 @@ const Announcements = () => {
       const response = await fetch(ANNOUNCEMENTS_API_URL);
       if (!response.ok) throw new Error("Failed to fetch announcements");
       const result = await response.json();
-      const data = result.data || []; // Extract the data array from the response
-      // Map audience integer to string
-      const mappedData = data.map((a: { audience: string | number }) => ({
-        ...a,
-        audience: audienceMap[Number(a.audience)] || "All",
+      // Handle both wrapped response {data: [...]} and direct array response [...]
+      const data = Array.isArray(result) ? result : result.data || [];
+
+      // Map API data to Announcement interface, providing defaults for missing fields
+      const mappedData = data.map((a: ApiAnnouncement, index: number) => ({
+        ann_id: a.ann_id || `ann_${index}`,
+        title: a.title || "",
+        details: a.details || "",
+        date: a.date || "",
+        time: a.time || "",
+        audience: audienceMap[Number(a.audience)] || "All", // Default to "All" if no audience
+        created_at: a.created_at || new Date().toISOString(),
+        attachment: a.attachment || "",
+        session_id: a.session_id || "",
+        user_id: a.user_id || "",
+        updated_at: a.updated_at || "",
       }));
       setAnnouncements(mappedData);
       setFilteredAnnouncements(mappedData);
@@ -219,31 +252,21 @@ const Announcements = () => {
     id: string,
     announcement: Partial<Announcement>
   ) => {
-    interface UserWithSession {
-      session_id?: string | number;
-    }
-    const userWithSession = user as UserWithSession;
-    const sessionId =
-      typeof userWithSession?.session_id === "number"
-        ? userWithSession.session_id
-        : userWithSession?.session_id
-        ? Number(userWithSession.session_id)
-        : null;
-
     const payload = {
-      ...announcement,
+      title: announcement.title,
+      details: announcement.details,
       audience:
         audienceReverseMap[
           announcement.audience as "All" | "Teachers" | "Parents"
         ] || 1,
-      session_id: sessionId,
+      time: announcement.time || null,
+      status: "draft", // Default status
     };
 
     const response = await fetch(`${ANNOUNCEMENTS_API_URL}/${id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
       },
       body: JSON.stringify(payload),
     });
@@ -253,9 +276,7 @@ const Announcements = () => {
     }
 
     return await response.json();
-  };
-
-  // Delete announcement
+  }; // Delete announcement
   const deleteAnnouncement = async (id: string) => {
     const response = await fetch(`${ANNOUNCEMENTS_API_URL}/${id}`, {
       method: "DELETE",
@@ -342,33 +363,44 @@ const Announcements = () => {
     if (
       !formData.title.trim() ||
       !formData.details.trim() ||
-      !formData.date ||
-      !formData.user_id
+      (!isEditMode && !formData.date) ||
+      (!isEditMode && !formData.user_id)
     ) {
       showToast("Please fill in all required fields", "error");
       return;
     }
 
-    if (!user) {
+    if (!user && !isEditMode) {
       showToast("You must be logged in to create announcements", "error");
       return;
     }
 
     try {
-      let result: Announcement;
       if (isEditMode && currentAnnouncement) {
-        result = await updateAnnouncement(currentAnnouncement.ann_id, {
-          ...formData,
-        });
+        const updateResult: ApiResponse<Announcement> | Announcement =
+          await updateAnnouncement(currentAnnouncement.ann_id, {
+            ...formData,
+          });
+        // Handle both wrapped response and direct data response
+        const updatedData =
+          (updateResult as ApiResponse<Announcement>).data ||
+          (updateResult as Announcement);
         setAnnouncements(
-          announcements.map((a) => (a.ann_id === result.ann_id ? result : a))
+          announcements.map((a) =>
+            a.ann_id === updatedData.ann_id ? updatedData : a
+          )
         );
         showToast("Announcement updated successfully!", "success");
       } else {
-        result = await createAnnouncement({
-          ...formData,
-        });
-        setAnnouncements([result, ...announcements]);
+        const createResult: ApiResponse<Announcement> | Announcement =
+          await createAnnouncement({
+            ...formData,
+          });
+        // Handle both wrapped response and direct data response
+        const newData =
+          (createResult as ApiResponse<Announcement>).data ||
+          (createResult as Announcement);
+        setAnnouncements([newData, ...announcements]);
         showToast("Announcement added successfully!", "success");
       }
       closeModal();
