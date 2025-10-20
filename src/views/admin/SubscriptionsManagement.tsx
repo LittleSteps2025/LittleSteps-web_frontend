@@ -51,6 +51,7 @@ const SubscriptionManagement = () => {
   }, []);
 
   // Create new subscription plan
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleFormInput = (key: keyof Omit<SubscriptionPlan, 'plan_id' | 'created_at' | 'updated_at'>, value: any) => {
     setNewPlan(prev => ({
       ...prev,
@@ -340,9 +341,9 @@ const SubscriptionManagement = () => {
                 {plan.type === 'yearly' ? 'Yearly plan' : 
                   plan.type === 'monthly' ? 'Monthly billing' : 'Weekly billing'}
               </span>
-              <button className="text-sm font-medium text-[#6339C0] hover:text-[#7e57ff]">
+              {/* <button className="text-sm font-medium text-[#6339C0] hover:text-[#7e57ff]">
                 View Subscribers
-              </button>
+              </button> */}
             </div>
           </div>
         ))}

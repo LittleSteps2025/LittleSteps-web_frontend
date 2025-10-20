@@ -8,8 +8,6 @@ import {
   AlertCircle,
   X,
   Filter,
-  Download,
-  FileText,
   ChevronUp,
   ChevronDown,
 } from "lucide-react";
@@ -70,7 +68,6 @@ const Payments = () => {
   );
   const [showProcessModal, setShowProcessModal] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
-  const [showExportModal, setShowExportModal] = useState(false);
   const [sortConfig, setSortConfig] = useState<{
     key: keyof Payment;
     direction: "asc" | "desc";
@@ -201,38 +198,38 @@ const Payments = () => {
   };
 
   // Export payments
-  const handleExport = async (format: "csv" | "pdf") => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/supervisor/payments`, {
-        headers: {
-          Accept: "application/json",
-        },
-      });
+  // const handleExport = async (format: "csv" | "pdf") => {
+  //   try {
+  //     const response = await fetch(`${API_BASE_URL}/supervisor/payments`, {
+  //       headers: {
+  //         Accept: "application/json",
+  //       },
+  //     });
 
-      if (!response.ok) {
-        throw new Error(`Failed to export payments as ${format}`);
-      }
+  //     if (!response.ok) {
+  //       throw new Error(`Failed to export payments as ${format}`);
+  //     }
 
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `payments-${
-        new Date().toISOString().split("T")[0]
-      }.${format}`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : `Failed to export payments as ${format}`
-      );
-    }
-    setShowExportModal(false);
-  };
+  //     const blob = await response.blob();
+  //     const url = window.URL.createObjectURL(blob);
+  //     const a = document.createElement("a");
+  //     a.href = url;
+  //     a.download = `payments-${
+  //       new Date().toISOString().split("T")[0]
+  //     }.${format}`;
+  //     document.body.appendChild(a);
+  //     a.click();
+  //     window.URL.revokeObjectURL(url);
+  //     document.body.removeChild(a);
+  //   } catch (err) {
+  //     setError(
+  //       err instanceof Error
+  //         ? err.message
+  //         : `Failed to export payments as ${format}`
+  //     );
+  //   }
+  //   setShowExportModal(false);
+  // };
 
   // Load data on component mount
   useEffect(() => {
@@ -309,13 +306,13 @@ const Payments = () => {
           </p>
         </div>
         <div className="flex space-x-3">
-          <button
+          {/* <button
             onClick={() => setShowExportModal(true)}
             className="btn-outline"
           >
             <Download className="w-4 h-4 mr-2" />
             Export
-          </button>
+          </button> */}
           <button
             onClick={() => {
               fetchPayments();
@@ -526,9 +523,9 @@ const Payments = () => {
                       ))}
                   </div>
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                {/* <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
-                </th>
+                </th> */}
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -576,7 +573,7 @@ const Payments = () => {
                         {payment.status === "paid" ? "Paid" : "Pending"}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    {/* <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       {payment.status === "pending" && (
                         <button
                           onClick={() => {
@@ -588,7 +585,7 @@ const Payments = () => {
                           Process Payment
                         </button>
                       )}
-                    </td>
+                    </td> */}
                   </tr>
                 ))
               ) : (
@@ -744,7 +741,7 @@ const Payments = () => {
                 </select>
               </div>
 
-              <div>
+              {/* <div>
                 <label className="block text-sm font-medium text-gray-700">
                   Transaction Reference
                 </label>
@@ -760,7 +757,7 @@ const Payments = () => {
                   }
                   placeholder="Enter transaction reference"
                 />
-              </div>
+              </div> */}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700">
@@ -801,7 +798,7 @@ const Payments = () => {
       )}
 
       {/* Export Modal */}
-      {showExportModal && (
+      {/* {showExportModal && (
         <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-md w-full p-6">
             <div className="flex justify-between items-center mb-4">
@@ -844,7 +841,7 @@ const Payments = () => {
             </div>
           </div>
         </div>
-      )}
+      )} */}
     </div>
   );
 };

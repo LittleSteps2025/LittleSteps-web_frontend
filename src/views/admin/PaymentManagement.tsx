@@ -248,13 +248,13 @@ const PaymentManagement = () => {
           </p>
         </div>
         <div className="flex space-x-3 w-full sm:w-auto">
-          <button
+          {/* <button
             onClick={() => setShowExportModal(true)}
             className="bg-[#6339C0] text-white py-2 px-4 rounded-lg hover:bg-[#5227a3] transition-colors flex items-center"
           >
             <Download className="w-4 h-4 mr-2" />
             Export
-          </button>
+          </button> */}
         </div>
       </div>
 

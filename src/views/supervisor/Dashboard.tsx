@@ -216,6 +216,10 @@ const SupervisorDashboard = () => {
     // Round up to nearest nice number for y-axis max
     const yAxisMax = Math.ceil((maxValue * 1.2) / 10) * 10;
 
+    // Filter data and labels to only include relevant points (where labels are not empty)
+    const filteredData = data.filter((_, index) => labels[index] !== "");
+    const filteredLabels = labels.filter((label) => label !== "");
+
     return (
       <div className="h-full flex flex-col">
         <h3 className="text-sm font-semibold text-gray-800 text-center mb-4">
@@ -251,8 +255,8 @@ const SupervisorDashboard = () => {
             </div>
 
             {/* Bars */}
-            <div className="relative flex-1 flex items-end justify-around gap-2 h-full ml-8">
-              {data.map((value, index) => {
+            <div className="relative flex-1 flex items-end justify-around gap-1 h-full m-2">
+              {filteredData.map((value, index) => {
                 const heightPercent =
                   yAxisMax > 0 ? (value / yAxisMax) * 100 : 0;
                 const minHeight = value > 0 ? 4 : 0;
@@ -274,7 +278,9 @@ const SupervisorDashboard = () => {
                       style={{
                         height: `max(${heightPercent}%, ${minHeight}px)`,
                       }}
-                      title={`${labels[index]}: ${value.toLocaleString()}`}
+                      title={`${
+                        filteredLabels[index]
+                      }: ${value.toLocaleString()}`}
                     >
                       {/* Glossy effect */}
                       <div className="absolute inset-0 bg-gradient-to-t from-transparent via-white/10 to-white/20 rounded-t-lg" />
@@ -287,7 +293,7 @@ const SupervisorDashboard = () => {
 
           {/* X-axis labels */}
           <div className="flex justify-around px-6 mt-3 border-t border-gray-200 pt-2 ml-8">
-            {labels.map((label, index) => (
+            {filteredLabels.map((label, index) => (
               <div key={index} className="flex-1 text-center max-w-[60px]">
                 <span className="text-xs text-gray-600 font-medium">
                   {label}
@@ -518,9 +524,9 @@ const SupervisorDashboard = () => {
                   <Calendar className="mr-2 text-[#4f46e5]" size={20} />
                   Upcoming Events
                 </h2>
-                <button className="text-sm text-[#4f46e5] hover:underline">
+                {/* <button className="text-sm text-[#4f46e5] hover:underline">
                   View Calendar
-                </button>
+                </button> */}
               </div>
               {events.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -543,9 +549,9 @@ const SupervisorDashboard = () => {
                           {event.description}
                         </p>
                       )}
-                      <button className="mt-3 text-xs text-[#4f46e5] hover:underline">
+                      {/* <button className="mt-3 text-xs text-[#4f46e5] hover:underline">
                         View Details
-                      </button>
+                      </button> */}
                     </div>
                   ))}
                 </div>

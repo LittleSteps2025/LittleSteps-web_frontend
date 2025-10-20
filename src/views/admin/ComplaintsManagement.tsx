@@ -8,8 +8,6 @@ import {
   ChevronDown,
   CheckCircle,
   X,
-  FileText,
-  Download,
   MessageSquare,
   Clock,
 } from "lucide-react";
@@ -305,7 +303,7 @@ const ComplaintsManagement = () => {
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showResolveModal, setShowResolveModal] = useState(false);
-  const [showExportModal, setShowExportModal] = useState(false);
+  // const [showExportModal, setShowExportModal] = useState(false);
   const [currentComplaint, setCurrentComplaint] = useState<Complaint | null>(
     null
   );
@@ -441,11 +439,11 @@ const ComplaintsManagement = () => {
     }
   };
 
-  const handleExport = (format: "csv" | "pdf") => {
-    console.log(`Exporting complaints as ${format}`);
-    // Implement export logic here
-    setShowExportModal(false);
-  };
+  // const handleExport = (format: "csv" | "pdf") => {
+  //   console.log(`Exporting complaints as ${format}`);
+  //   // Implement export logic here
+  //   setShowExportModal(false);
+  // };
 
   return (
     <div className="space-y-6">
@@ -486,13 +484,13 @@ const ComplaintsManagement = () => {
             </svg>
             Refresh
           </button>
-          <button
+          {/* <button
             onClick={() => setShowExportModal(true)}
             className="bg-[#6339C0] text-white py-2 px-4 rounded-lg hover:bg-[#5227a3] transition-colors flex items-center"
           >
             <Download className="w-4 h-4 mr-2" />
             Export
-          </button>
+          </button> */}
         </div>
       </div>
 
@@ -1069,7 +1067,7 @@ const ComplaintsManagement = () => {
 
       {/* Resolve Complaint Modal */}
       {showResolveModal && currentComplaint && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
@@ -1152,7 +1150,7 @@ const ComplaintsManagement = () => {
       )}
 
       {/* Export Modal */}
-      {showExportModal && (
+      {/* {showExportModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-lg max-w-md w-full">
             <div className="p-6">
@@ -1253,7 +1251,7 @@ const ComplaintsManagement = () => {
             </div>
           </div>
         </div>
-      )}
+      )} */}
     </div>
   );
 };

@@ -1,17 +1,16 @@
-import { Menu, X, User, Bell, LogOut } from "lucide-react";
+import { Menu, X, User} from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
 
 const AdminNavbar = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
 
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
-  };
+
+  // const handleLogout = () => {
+  //   logout();
+  //   navigate("/login");
+  // };
 
   return (
     <nav className="bg-white shadow-sm">
@@ -32,10 +31,10 @@ const AdminNavbar = () => {
           </div>
           <div className="flex-1 flex items-center justify-end">
             <div className="flex items-center space-x-4">
-              <button className="bg-white p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+              {/* <button className="bg-white p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                 <span className="sr-only">View notifications</span>
                 <Bell className="h-6 w-6" />
-              </button>
+              </button> */}
 
               <div className="ml-3 relative">
                 <div className="flex items-center space-x-3">
@@ -50,14 +49,14 @@ const AdminNavbar = () => {
                       </div>
                     )}
                   </div>
-                  <button
+                  {/* <button
                     onClick={handleLogout}
                     className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
                     title="Logout"
                   >
                     <LogOut className="h-5 w-5" />
                     <span className="hidden sm:inline">Logout</span>
-                  </button>
+                  </button> */}
                 </div>
               </div>
             </div>
