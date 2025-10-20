@@ -9,7 +9,7 @@ type Announcement = {
   details: string;
   date: string;
   time: string;
-  audience: "All" | "Teachers" | "Parents";
+  audience: "All" | "Teachers" | "Parents" | number | 1 | 2 | 3;
   created_at: string;
   attachment?: string;
   session_id?: string;
@@ -235,19 +235,30 @@ const Announcements = () => {
       const data = Array.isArray(result) ? result : result.data || [];
 
       // Map API data to Announcement interface, providing defaults for missing fields
-      const mappedData = data.map((a: ApiAnnouncement, index: number) => ({
-        ann_id: a.ann_id || `ann_${index}`,
-        title: a.title || "",
-        details: a.details || "",
-        date: a.date || "",
-        time: a.time || "",
-        audience: audienceMap[Number(a.audience)] || "All", // Default to "All" if no audience
-        created_at: a.created_at || new Date().toISOString(),
-        attachment: a.attachment || "",
-        session_id: a.session_id || "",
-        user_id: a.user_id || "",
-        updated_at: a.updated_at || "",
-      }));
+      const mappedData = data.map((a: ApiAnnouncement, index: number) => {
+        // Ensure audience is properly converted from number to string
+        const audienceValue = a.audience !== undefined && a.audience !== null 
+          ? Number(a.audience) 
+          : 1; // Default to 1 (All) if undefined
+        
+        const audienceString = audienceMap[audienceValue] || "All";
+        
+        console.log(`Announcement ${index}: audience DB value = ${a.audience}, mapped to = ${audienceString}`);
+        
+        return {
+          ann_id: a.ann_id || `ann_${index}`,
+          title: a.title || "",
+          details: a.details || "",
+          date: a.date || "",
+          time: a.time || "",
+          audience: audienceString as "All" | "Teachers" | "Parents",
+          created_at: a.created_at || new Date().toISOString(),
+          attachment: a.attachment || "",
+          session_id: a.session_id || "",
+          user_id: a.user_id || "",
+          updated_at: a.updated_at || "",
+        };
+      });
       setAnnouncements(mappedData);
       setFilteredAnnouncements(mappedData);
     } catch (error) {
@@ -299,12 +310,17 @@ const Announcements = () => {
   const createAnnouncement = async (
     announcement: Omit<Announcement, "ann_id" | "created_at">
   ) => {
+    // Convert audience to number if it's a string
+    const audienceValue = typeof announcement.audience === 'string' 
+      ? audienceReverseMap[announcement.audience as keyof typeof audienceReverseMap] || 1
+      : announcement.audience;
+    
     const payload = {
       title: announcement.title,
       details: announcement.details,
       date: announcement.date,
       time: announcement.time,
-      audience: audienceReverseMap[announcement.audience] || 1,
+      audience: audienceValue,
       user_id: announcement.user_id,
     };
 
@@ -588,8 +604,16 @@ const Announcements = () => {
                         {announcement.details}
                       </p>
                       <div className="mt-2 flex flex-wrap gap-2">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          To: {announcement.audience}
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          announcement.audience === 'All' || announcement.audience === 1 || String(announcement.audience) === '1'
+                            ? 'bg-blue-100 text-blue-800' 
+                            : announcement.audience === 'Teachers' || announcement.audience === 2 || String(announcement.audience) === '2'
+                            ? 'bg-purple-100 text-purple-800'
+                            : 'bg-pink-100 text-pink-800'
+                        }`}>
+                          To: {typeof announcement.audience === 'number' 
+                            ? audienceMap[announcement.audience] || 'All'
+                            : announcement.audience}
                         </span>
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                           Date: {formatDateForDisplay(announcement.date)}

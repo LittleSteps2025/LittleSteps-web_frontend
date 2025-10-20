@@ -4,7 +4,7 @@ interface Stats {
   totalChildren: number;
   activeParents: number;
   activeTeachers: number;
-  todayCheckIns: number;
+  todayAttendance: number;
   monthlyRevenue: number;
 }
 
@@ -54,9 +54,7 @@ const StatsCards = ({ stats }: { stats: Stats }) => {
         <div key={index} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-500 mb-1">
-                {card.title}
-              </p>
+              <p className="text-sm font-medium text-gray-500 mb-1">{card.title}</p>
               <p className="text-2xl font-bold text-gray-800">{card.value}</p>
             </div>
             <div className={`p-2 rounded-lg ${card.color}`}>
