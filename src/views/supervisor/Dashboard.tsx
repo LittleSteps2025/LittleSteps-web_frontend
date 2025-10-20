@@ -21,7 +21,6 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const SupervisorDashboard = () => {
-  const navigate = useNavigate();
   const [stats, setStats] = useState<DashboardStats>({
     totalChildren: 0,
     activeParents: 0,
@@ -510,7 +509,6 @@ const SupervisorDashboard = () => {
                   </div>
                 )}
               </div>
-
             </div>
 
             {/* Upcoming Events Section */}
@@ -561,51 +559,9 @@ const SupervisorDashboard = () => {
                 </div>
               )}
             </div>
-          </div>
-
-          {/* Upcoming Events Section */}
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-gray-800 flex items-center">
-                <Calendar className="mr-2 text-[#4f46e5]" size={20} />
-                Upcoming Events
-              </h2>
-              <button 
-                onClick={handleViewCalendar}
-                className="text-sm text-[#4f46e5] hover:underline"
-              >
-                View All Events
-              </button>
-            </div>
-            {events.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {events.map(event => (
-                  <div key={event.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                    <h3 className="font-medium text-gray-900">{event.title}</h3>
-                    <p className="text-sm text-gray-600 mt-1">{formatDateTime(event.date, event.time)}</p>
-                    <p className="text-xs text-gray-500 mt-2">{event.location}</p>
-                    {event.description && (
-                      <p className="text-xs text-gray-400 mt-2 line-clamp-2">{event.description}</p>
-                    )}
-                    <button 
-                      onClick={() => handleViewEventDetails(event.id)}
-                      className="mt-3 text-xs text-[#4f46e5] hover:underline font-medium"
-                    >
-                      View Details
-                    </button>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <Calendar className="w-12 h-12 mx-auto text-gray-300 mb-3" />
-                <p className="text-gray-500">No upcoming events scheduled</p>
-                <p className="text-sm text-gray-400 mt-1">Check back later for new events</p>
-              </div>
-            )}
-          </div>
-        </>
-      )}
+          </>
+        )}
+      </div>
     </div>
   );
 };
